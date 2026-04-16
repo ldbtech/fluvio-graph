@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::fs::File;
 use std::error::Error;
 use memmap2::MmapOptions;

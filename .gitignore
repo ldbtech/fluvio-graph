@@ -2,3 +2,4 @@
 .fastembed_cache/
 planet.txt
 speech.txt
+.env

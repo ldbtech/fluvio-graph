@@ -1,9 +1,9 @@
 
 // Each domain graph is a separate fluvio_graph-* crate with its own schema, but they all implement a shared 
 // Trait from fluvio-graph-core.
-use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
-use std::cmp::Reverse;
-use std::sync::Arc;
+#![allow(dead_code)]
+
+use std::collections::HashMap;
 use tokio::sync::broadcast;
 use serde::{Serialize, Deserialize};
 use serde_json::to_string_pretty;
@@ -143,7 +143,7 @@ impl FluvioGraph for DomainGraph {
         }
     }
 
-    fn subscribe(&self, event: GraphEvent) -> broadcast::Receiver<GraphEvent> { self.tx.subscribe() }
+    fn subscribe(&self, _event: GraphEvent) -> broadcast::Receiver<GraphEvent> { self.tx.subscribe() }
 
     fn node_count(&self) -> usize { self.nodes.len() }
     fn edge_count(&self) -> usize { self.adj.values().map(|v| v.len()).sum() }

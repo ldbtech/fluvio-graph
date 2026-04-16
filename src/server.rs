@@ -183,7 +183,7 @@ async fn chat(
 ) -> Result<Json<ChatResponse>, (StatusCode, String)> {
 
     // ── do all graph work under the lock, then drop it ────────────────────────
-    let (query_vec, context, sources) = {
+    let (_query_vec, context, sources) = {
         let pipeline = state.pipeline.lock().unwrap();
 
         let query_vec = pipeline.graph.embed_ctx

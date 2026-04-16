@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // src/processing/cleaner.rs
 
 /**

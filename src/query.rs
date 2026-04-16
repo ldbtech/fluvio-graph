@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::graph::{Graph, NodeId};
 use uuid::Uuid;
 

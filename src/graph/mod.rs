@@ -1,4 +1,5 @@
 //! Node/edge schema, persistence, and graph operations.
+#![allow(dead_code)]
 
 mod document;
 mod embeddings;
@@ -10,6 +11,7 @@ pub mod graph_registry;
 
 pub use document::{Document, TextChunk};
 pub use embeddings::EmbeddingContext;
+#[allow(unused_imports)]
 pub use pdf::Pdf;
 
 use std::collections::{HashMap, VecDeque};

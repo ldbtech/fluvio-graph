@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use tokio::sync::broadcast;
 use std::cmp::Reverse;
 use serde::{Deserialize, Serialize};
