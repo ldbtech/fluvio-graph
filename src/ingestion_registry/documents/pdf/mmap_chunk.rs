@@ -4,10 +4,8 @@ use std::error::Error;
 use memmap2::MmapOptions;
 use pdf_extract::Document;
 
-/**
- * Byte-range read of a file via mmap (same mechanism as `PDFChunkIterator`).
- * Use for `Document::read_chunk` when the source lives on disk.
- */
+/// Byte-range read of a file via mmap (same mechanism as `PDFChunkIterator`).
+/// Used by `Pdf::read_chunk` when the source lives on disk.
 pub fn read_file_chunk(path: &str, offset: usize, size: usize) -> Result<Vec<u8>, Box<dyn Error>> {
     let file = File::open(path)?;
     let mmap = unsafe { MmapOptions::new().map(&file)? };
@@ -16,10 +14,7 @@ pub fn read_file_chunk(path: &str, offset: usize, size: usize) -> Result<Vec<u8>
     Ok(mmap[start..end].to_vec())
 }
 
-/**
- * This Mini-Lib responsible of reading pdf files in chunks using System level control of memmap2.
- *
- */
+/// Reads a PDF in page chunks using memory-mapped I/O (`memmap2`).
 pub struct PDFChunkIterator {
     doc: Document,
     pages: Vec<u32>,
@@ -52,7 +47,7 @@ impl Iterator for PDFChunkIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.pages.len() {
-            return None
+            return None;
         }
 
         let end = (self.index + self.pages_per_chunk).min(self.pages.len());
@@ -60,8 +55,7 @@ impl Iterator for PDFChunkIterator {
 
         self.index = end;
 
-        // Extract & Clean only this chunk
-        let raw = match self.doc.extract_text(slice){
+        let raw = match self.doc.extract_text(slice) {
             Ok(r) => r,
             Err(e) => return Some(Err(Box::new(e))),
         };
@@ -71,7 +65,6 @@ impl Iterator for PDFChunkIterator {
         Some(Ok(cleaned))
     }
 }
-
 
 fn clean_text(text: &str) -> String {
     // PDF extract often emits one token per line; joining line-by-line preserves that junk.

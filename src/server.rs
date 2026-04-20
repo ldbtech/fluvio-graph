@@ -22,12 +22,11 @@ use crate::{
             GmailSyncProgress, GmailSyncProgressSnapshot, GmailSyncResultSummary,
         },
     },
-    processing::mmap_manager::PDFChunkIterator,
+    ingestion_registry::documents::pdf::PDFChunkIterator,
     query::KnowledgeGraphQuery,
 };
 
-/// Server embedding graphs live under `fluvio_graphs/workspace/` (same top-level folder as CLI
-/// domain graphs, but a subfolder so we do not overwrite CLI `DomainGraph` JSON like `pdf.json`).
+/// Workspace graphs live under `fluvio_graphs/workspace/` (`unified.json` plus filtered snapshots).
 const WORKSPACE_GRAPHS_DIR: &str = "fluvio_graphs/workspace";
 const WORKSPACE_UNIFIED: &str = "fluvio_graphs/workspace/unified.json";
 const WORKSPACE_PDF: &str = "fluvio_graphs/workspace/pdf.json";

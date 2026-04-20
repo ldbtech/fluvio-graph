@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use kg_engine::processing::cleaner::{Cleaner, CleanerConfig};
+    use kg_engine::ingestion_registry::documents::pdf::cleaner::{Cleaner, CleanerConfig};
 
     use super::*;
 

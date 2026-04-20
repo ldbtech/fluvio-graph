@@ -1,19 +1,16 @@
 #![allow(dead_code)]
-// src/processing/cleaner.rs
 
 /**
- * This file responsible of cleaning texts/pages from naunance. 
- * It is modular so developer using this will be able to modify it directly on their code base. 
- * 
- * 
+ * Text cleanup tuned for PDF extraction noise (line breaks, page markers, bullets).
+ * Configurable so callers can adjust behavior for their corpus.
  */
 
- #[derive(Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct CleanerConfig {
     pub normalize_whitespaces: bool,
     pub fix_line_breaks: bool,
     pub remove_page_numbers: bool,
-    pub remove_bullets: bool
+    pub remove_bullets: bool,
 }
 
 impl Default for CleanerConfig {
@@ -60,7 +57,7 @@ impl Cleaner {
      * Fix broken pdf line breaks:
      * - Joins lines that should not be split.
      * - Preserves paragraphs boundaries.
-     * 
+     *
      */
     fn fix_line_breaks(&self, input: &str) -> String {
         let mut result = String::new();
@@ -83,7 +80,7 @@ impl Cleaner {
                 // if next line starts lowercase -> likely same sentence
                 if next_trimmed.chars().next().map(|c| c.is_lowercase()).unwrap_or(false) {
                     result.push(' ');
-                }else{
+                } else {
                     result.push(' ');
                 }
             }
@@ -93,7 +90,7 @@ impl Cleaner {
     }
 
     /**
-     * Remove simple page numbers like: 
+     * Remove simple page numbers like:
      * - Page 3, 3, - 3 -
      */
     fn remove_page_numbers(&self, input: &str) -> String {
@@ -101,17 +98,17 @@ impl Cleaner {
             .split_whitespace()
             .filter(|word| {
                 let lower = word.to_lowercase();
-    
+
                 // remove "page"
                 if lower == "page" {
                     return false;
                 }
-    
+
                 // remove pure numbers
                 if word.chars().all(|c| c.is_numeric()) {
                     return false;
                 }
-    
+
                 true
             })
             .collect::<Vec<_>>()
@@ -120,30 +117,28 @@ impl Cleaner {
 
     /**
      * collapse multiple spaces/newlines into clean spacing
-     * 
+     *
      */
     fn normalize_whitespaces(&self, input: &str) -> String {
-        input.split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+        input.split_whitespace().collect::<Vec<_>>().join(" ")
     }
 
     /***
      * Remove bullet points and replace them with something cheaper.
      */
     fn remove_bulletpoints(&self, input: &str) -> String {
-        // println!("input: {}", input.lines());
         let heavy_bullets: &[char] = &['*', '+', '•', '●', '▪', '◦', '‣'];
 
-        input.lines()
-        .map(|line| {
-            line.trim()
-                .trim_start_matches(heavy_bullets)
-                .trim_start_matches('-')
-                .trim()
-        }) 
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>()
-        .join("\n")
+        input
+            .lines()
+            .map(|line| {
+                line.trim()
+                    .trim_start_matches(heavy_bullets)
+                    .trim_start_matches('-')
+                    .trim()
+            })
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::graph::{Graph, GraphError, NodeId, TextChunk};
+use crate::graph::{Graph, GraphError, NodeId};
+use crate::ingestion_registry::documents::TextChunk;
 use crate::ingestion_registry::connector::NormalizedChunk;
 
 pub struct IngestionPipeline {

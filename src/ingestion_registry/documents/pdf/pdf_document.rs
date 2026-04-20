@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use crate::processing::mmap_manager;
+use super::mmap_chunk;
 
-use super::document::Document;
+use crate::ingestion_registry::documents::document::Document;
 
 #[derive(Debug)]
 pub struct Pdf {
@@ -41,7 +41,7 @@ impl Document for Pdf {
 
     fn read_chunk(&self, offset: usize, size: usize) -> Vec<u8> {
         if let Some(ref path) = self.file_path {
-            if let Ok(chunk) = mmap_manager::read_file_chunk(path, offset, size) {
+            if let Ok(chunk) = mmap_chunk::read_file_chunk(path, offset, size) {
                 return chunk;
             }
         }

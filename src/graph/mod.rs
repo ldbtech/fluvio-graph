@@ -1,18 +1,15 @@
 //! Node/edge schema, persistence, and graph operations.
 #![allow(dead_code)]
 
-mod document;
 mod embeddings;
-mod pdf;
 pub mod fluvio_graph;
 pub mod enums;
 pub mod structs;
 pub mod graph_registry;
 
-pub use document::{Document, TextChunk};
 pub use embeddings::EmbeddingContext;
-#[allow(unused_imports)]
-pub use pdf::Pdf;
+
+use crate::ingestion_registry::documents::Document;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
