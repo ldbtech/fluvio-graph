@@ -1,5 +1,6 @@
 mod graph;
 mod ingestion;
+mod ingestion_registry;
 mod processing;
 mod query;
 mod server;
@@ -56,12 +57,16 @@ async fn main() -> anyhow::Result<()> {
         Some("server") => {
             server::serve(anthropic_api_key()?).await?;
         }
+        Some("ingest-email") => {
+            cmd_ingest_email().await?;
+        }
         _ => {
             println!("Fluvio KG — multi-graph CLI");
             println!("  fluvio ingest <domain> <file>   ingest file into domain graph");
             println!("  fluvio chat   [domain]           chat with a domain graph");
             println!("  fluvio stats                     show all graph stats");
             println!("  fluvio server                    start REST API on :8001");
+            println!("  fluvio ingest-email               ingest email into email graph");
             println!();
             println!("  domains: pdf | email | whatsapp | music | codebase");
         }
@@ -229,24 +234,18 @@ async fn cmd_chat(domain_str: &str, api_key: &str) -> anyhow::Result<()> {
             continue;
         }
 
-        // 3. Build context block
-        let context = results.iter()
-            .map(|r| {
-                let page   = r.metadata.get("page").cloned().unwrap_or_else(|| "?".into());
-                let source = r.metadata.get("source").cloned().unwrap_or_default();
-                format!("[{source} | page {page}]\n{}", r.source_text)
-            })
-            .collect::<Vec<_>>()
-            .join("\n\n---\n\n");
+        // 3. Build context: seeds + outgoing edges (probability, token, labels)
+        let context = format_fluvio_chat_context(graph, &results, 5);
 
         // 4. Call Claude
         history.push(serde_json::json!({"role": "user", "content": question}));
 
         let system = format!(
-            "You are a helpful assistant answering questions about the user's [{domain_str}] data.\n\
-             Answer using ONLY the context below. Be concise and direct.\n\
-             If the answer is not in the context, say \"I don't see that in the graph.\"\n\n\
-             CONTEXT:\n{context}"
+            "You are a helpful assistant answering questions using the user's [{domain_str}] knowledge graph.\n\
+             The context lists semantically retrieved seed nodes and their outgoing edges (relationship_probability, token_cost, edge_label, linked neighbor text).\n\
+             Answer using ONLY this graph context. Be concise and direct.\n\
+             If the answer is not supported, say \"I don't see that in the knowledge graph context.\"\n\n\
+             KNOWLEDGE GRAPH CONTEXT:\n{context}"
         );
 
         let res = client
@@ -360,9 +359,85 @@ fn wire_edges(graph: &mut (dyn FluvioGraph + Send + Sync), threshold: f32) -> an
 
 #[derive(Debug)]
 struct SearchResult {
+    id: NodeId,
     score: f32,
     source_text: String,
     metadata: HashMap<String, String>,
+}
+
+fn truncate_for_prompt(s: &str, max_chars: usize) -> String {
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    s.chars().take(max_chars).collect::<String>() + "…"
+}
+
+/// Seeds from similarity search plus outgoing edges (probability, token, label, neighbor text).
+fn format_fluvio_chat_context(
+    graph: &(dyn FluvioGraph + Send + Sync),
+    seeds: &[SearchResult],
+    max_edges_per_seed: usize,
+) -> String {
+    let intro = "Knowledge graph retrieval: each section is a semantically matched node (seed) and its outgoing edges. \
+relationship_probability is the confidence of the semantic link when the edge was created. \
+token_cost is the graph traversal weight used for path ranking (higher means a weaker or more expensive link).";
+    let mut parts: Vec<String> = vec![intro.to_string()];
+
+    for seed in seeds {
+        let page = seed
+            .metadata
+            .get("page")
+            .cloned()
+            .unwrap_or_else(|| "?".into());
+        let source = seed
+            .metadata
+            .get("source")
+            .cloned()
+            .unwrap_or_default();
+        let id8 = seed.id.0.to_string().chars().take(8).collect::<String>();
+
+        let mut block = format!(
+            "## Seed {id8} (semantic match score {:.4})\nSource: {source} | Page {page}\n{}\n",
+            seed.score,
+            truncate_for_prompt(&seed.source_text, 700),
+        );
+
+        let mut edges: Vec<_> = graph.get_edges_from(&seed.id).to_vec();
+        edges.sort_by(|a, b| {
+            b.relationship_probability
+                .partial_cmp(&a.relationship_probability)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.token.cmp(&b.token))
+        });
+        edges.truncate(max_edges_per_seed);
+
+        if edges.is_empty() {
+            block.push_str("Outgoing relationships: (none)\n");
+        } else {
+            block.push_str("Outgoing relationships:\n");
+            for e in &edges {
+                let neighbor = graph.get_node(&e.to);
+                let preview = neighbor
+                    .map(|n| truncate_for_prompt(&n.source_text, 220))
+                    .unwrap_or_else(|| "(missing node)".into());
+                let to_page = neighbor
+                    .and_then(|n| n.metadata.get("page"))
+                    .cloned()
+                    .unwrap_or_else(|| "?".into());
+                let to8 = e.to.0.to_string().chars().take(8).collect::<String>();
+                block.push_str(&format!(
+                    "- → node {to8} … page {to_page} | relationship_probability={:.4} | token_cost={} | edge_label={} | linked text: {}\n",
+                    e.relationship_probability,
+                    e.token,
+                    e.label,
+                    preview.replace('\n', " "),
+                ));
+            }
+        }
+        parts.push(block);
+    }
+
+    parts.join("\n")
 }
 
 fn search_graph(
@@ -382,6 +457,7 @@ fn search_graph(
         .into_iter()
         .filter_map(|(id, score)| {
             graph.get_node(&id).map(|node| SearchResult {
+                id,
                 score,
                 source_text: node.source_text.clone(),
                 metadata: node.metadata.clone(),
@@ -420,5 +496,11 @@ fn cmd_stats() -> anyhow::Result<()> {
         meta.edge_count(),
     );
 
+    Ok(())
+}
+
+// ── ingest-email ─────────────────────────────────────────────────────────────
+async fn cmd_ingest_email() -> anyhow::Result<()> {
+    println!("Ingesting email...");
     Ok(())
 }

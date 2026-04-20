@@ -106,3 +106,4 @@ pub enum Domain {
     Web,
     Custom(String),
 }
+

@@ -14,7 +14,7 @@ pub use embeddings::EmbeddingContext;
 #[allow(unused_imports)]
 pub use pdf::Pdf;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -31,7 +31,7 @@ pub enum GraphError {
 
 pub type NodeId = Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Node {
     pub id: NodeId,
     pub embeddings: Vec<f32>,
@@ -39,7 +39,7 @@ pub struct Node {
     pub metadata: HashMap<String, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Edge {
     pub from: NodeId,
     pub to: NodeId,
@@ -61,10 +61,66 @@ impl Graph {
             adj_list: &'a HashMap<NodeId, Vec<Edge>>,
         }
 
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
         let snap = Snapshot {
             nodes: &self.nodes,
             adj_list: &self.adj_list,
         };
+        let json = to_string_pretty(&snap)?;
+        std::fs::write(path, json)?;
+        Ok(())
+    }
+
+    /// Same JSON shape as [`Self::save`], but only nodes matching `filter` and edges whose
+    /// endpoints are both included.
+    pub fn save_filtered<P>(&self, path: &str, mut filter: P) -> anyhow::Result<()>
+    where
+        P: FnMut(&Node) -> bool,
+    {
+        let ids: HashSet<NodeId> = self
+            .nodes
+            .values()
+            .filter(|n| filter(n))
+            .map(|n| n.id)
+            .collect();
+
+        let nodes: HashMap<NodeId, Node> = self
+            .nodes
+            .iter()
+            .filter(|(id, _)| ids.contains(id))
+            .map(|(k, v)| (*k, v.clone()))
+            .collect();
+
+        let mut adj_list: HashMap<NodeId, Vec<Edge>> = HashMap::new();
+        for (&from, edges) in &self.adj_list {
+            if !ids.contains(&from) {
+                continue;
+            }
+            let kept: Vec<Edge> = edges
+                .iter()
+                .filter(|e| ids.contains(&e.to))
+                .cloned()
+                .collect();
+            adj_list.insert(from, kept);
+        }
+        for id in nodes.keys() {
+            adj_list.entry(*id).or_default();
+        }
+
+        #[derive(Serialize)]
+        struct Snapshot {
+            nodes: HashMap<NodeId, Node>,
+            adj_list: HashMap<NodeId, Vec<Edge>>,
+        }
+
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let snap = Snapshot { nodes, adj_list };
         let json = to_string_pretty(&snap)?;
         std::fs::write(path, json)?;
         Ok(())
