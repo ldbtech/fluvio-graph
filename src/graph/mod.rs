@@ -235,6 +235,12 @@ impl Graph {
         true
     }
 
+    /// Remove all nodes and edges (empty workspace).
+    pub fn clear(&mut self) {
+        self.nodes.clear();
+        self.adj_list.clear();
+    }
+
     pub fn update_node(&mut self, id: NodeId, data: Box<dyn Document>) -> Result<(), GraphError> {
         let text = data.extracted_text().to_string();
 

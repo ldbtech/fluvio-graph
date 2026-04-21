@@ -166,6 +166,12 @@ export default function Home() {
     }
   }, []);
 
+  /** After workspace snapshot / reset / load (kg-engine mutates graph on disk + in memory). */
+  const onWorkspaceGraphChanged = useCallback(async () => {
+    await loadGraphMeta();
+    await runWorkspaceGraphLoad(undefined);
+  }, [loadGraphMeta, runWorkspaceGraphLoad]);
+
   useEffect(() => {
     void loadGraphMeta();
   }, [loadGraphMeta]);
@@ -613,6 +619,8 @@ export default function Home() {
             statusById={connectorStatus}
             onSelectSurface={onSelectSurface}
             activity={activity}
+            kgUrl={KG_URL}
+            onWorkspaceGraphChanged={onWorkspaceGraphChanged}
           />
 
           <div className="relative min-w-0 flex-1">

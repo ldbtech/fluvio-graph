@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConnectorDef, ConnectorId, ConnectorStatus, WorkspaceKind, WorkspaceSurface } from "@/lib/types";
+import { WorkspaceProjectsPanel } from "./WorkspaceProjectsPanel";
 
 const PERSONAL_CONNECTORS: ConnectorDef[] = [
   {
@@ -100,6 +101,9 @@ type Props = {
   statusById: Partial<Record<ConnectorId, ConnectorStatus>>;
   onSelectSurface: (surface: WorkspaceSurface) => void;
   activity: string | null;
+  /** Live kg-engine base URL; when set with `onWorkspaceGraphChanged`, shows snapshot / reset controls. */
+  kgUrl?: string;
+  onWorkspaceGraphChanged?: () => void | Promise<void>;
 };
 
 export function ConnectorSidebar({
@@ -110,6 +114,8 @@ export function ConnectorSidebar({
   statusById,
   onSelectSurface,
   activity,
+  kgUrl,
+  onWorkspaceGraphChanged,
 }: Props) {
   const docActive = activeSurface === "documents";
   const connectors = workspaceKind === "invest" ? INVEST_CONNECTORS : PERSONAL_CONNECTORS;
@@ -248,6 +254,10 @@ export function ConnectorSidebar({
           })}
         </ul>
       </div>
+
+      {workspaceKind === "personal" && kgUrl && onWorkspaceGraphChanged ? (
+        <WorkspaceProjectsPanel kgUrl={kgUrl} onAfterMutation={onWorkspaceGraphChanged} />
+      ) : null}
 
       {activity && (
         <div className="border-t border-white/5 p-3">

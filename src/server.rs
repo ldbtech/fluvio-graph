@@ -8,6 +8,7 @@ use axum::{
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tower_http::cors::{Any, CorsLayer};
 use crate::{
@@ -32,6 +33,27 @@ const WORKSPACE_UNIFIED: &str = "fluvio_graphs/workspace/unified.json";
 const WORKSPACE_PDF: &str = "fluvio_graphs/workspace/pdf.json";
 const WORKSPACE_EMAIL: &str = "fluvio_graphs/workspace/email.json";
 const LEGACY_GRAPH_PATH: &str = "fluvio_graph.json";
+const WORKSPACE_PROJECTS_DIR: &str = "fluvio_graphs/projects";
+
+fn sanitize_project_id(raw: &str) -> Result<String, (StatusCode, String)> {
+    let s = raw.trim();
+    if s.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "project id is empty".to_string()));
+    }
+    if s.len() > 64 {
+        return Err((StatusCode::BAD_REQUEST, "project id must be at most 64 characters".to_string()));
+    }
+    if !s
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "project id may only contain letters, digits, hyphen, and underscore".to_string(),
+        ));
+    }
+    Ok(s.to_string())
+}
 
 fn persist_workspace_snapshots(graph: &Graph) -> anyhow::Result<()> {
     std::fs::create_dir_all(WORKSPACE_GRAPHS_DIR)?;
@@ -110,6 +132,11 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/connect/gmail", get(connect_gmail_start))
         .route("/sync/gmail/progress", get(sync_gmail_progress))
         .route("/sync/gmail", post(sync_gmail))
+        .route("/workspace/projects", get(workspace_list_projects))
+        .route("/workspace/archive", post(workspace_archive))
+        .route("/workspace/reset", post(workspace_reset))
+        .route("/workspace/load", post(workspace_load))
+        .route("/workspace/delete", post(workspace_delete))
         .layer(cors)
         .with_state(state);
 
@@ -120,6 +147,7 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
     println!("  Gmail callback: GET /connect/gmail/callback");
     println!("  Gmail sync: POST /sync/gmail (202) + GET /sync/gmail/progress");
     println!("  GET /graph — capped sample; GET /graph/meta + /graph/nodes + POST /graph/edges_subset for UI paging");
+    println!("  Workspace projects: GET /workspace/projects; POST /workspace/archive|reset|load|delete (JSON body {{\"id\":\"...\"}} where needed)");
 
     axum::serve(listner, app).await?;
 
@@ -856,4 +884,122 @@ async fn chat(
         .to_string();
 
     Ok(Json(ChatResponse { answer, sources }))
+}
+
+// ---- Workspace projects (saved under fluvio_graphs/projects/<id>/)
+
+#[derive(Deserialize)]
+struct ProjectIdBody {
+    id: String,
+}
+
+async fn workspace_list_projects() -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    std::fs::create_dir_all(WORKSPACE_PROJECTS_DIR)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut projects: Vec<serde_json::Value> = Vec::new();
+    let rd = std::fs::read_dir(WORKSPACE_PROJECTS_DIR)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    for ent in rd {
+        let ent = ent.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let ty = ent
+            .file_type()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if ty.is_dir() {
+            let name = ent.file_name().to_string_lossy().to_string();
+            if !name.is_empty() && name != "." && name != ".." {
+                projects.push(serde_json::json!({"id": name}));
+            }
+        }
+    }
+    projects.sort_by(|a, b| {
+        a["id"]
+            .as_str()
+            .unwrap_or("")
+            .cmp(b["id"].as_str().unwrap_or(""))
+    });
+    Ok(Json(serde_json::json!({ "projects": projects })))
+}
+
+async fn workspace_archive(
+    State(state): State<AppState>,
+    Json(body): Json<ProjectIdBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let id = sanitize_project_id(&body.id)?;
+    let dest = format!("{WORKSPACE_PROJECTS_DIR}/{id}");
+    if Path::new(&dest).exists() {
+        return Err((
+            StatusCode::CONFLICT,
+            format!("project '{id}' already exists — pick another id or delete it first"),
+        ));
+    }
+    {
+        let p = state
+            .pipeline
+            .lock()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        persist_workspace_snapshots(&p.graph)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+    std::fs::create_dir_all(&dest).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    for (src, fname) in [
+        (WORKSPACE_UNIFIED, "unified.json"),
+        (WORKSPACE_PDF, "pdf.json"),
+        (WORKSPACE_EMAIL, "email.json"),
+    ] {
+        if Path::new(src).exists() {
+            let to = format!("{dest}/{fname}");
+            std::fs::copy(src, &to).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        }
+    }
+    Ok(Json(serde_json::json!({ "ok": true, "id": id, "path": dest })))
+}
+
+async fn workspace_reset(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut p = state
+        .pipeline
+        .lock()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    p.graph.clear();
+    persist_workspace_snapshots(&p.graph).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "ok": true, "nodes": 0, "edges": 0 })))
+}
+
+async fn workspace_load(
+    State(state): State<AppState>,
+    Json(body): Json<ProjectIdBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let id = sanitize_project_id(&body.id)?;
+    let src = format!("{WORKSPACE_PROJECTS_DIR}/{id}/unified.json");
+    if !Path::new(&src).is_file() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("no unified.json for project '{id}'"),
+        ));
+    }
+    let mut p = state
+        .pipeline
+        .lock()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    p.graph
+        .load(&src)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    persist_workspace_snapshots(&p.graph).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let nodes = p.graph.nodes.len();
+    let edges: usize = p.graph.adj_list.values().map(|e| e.len()).sum();
+    Ok(Json(serde_json::json!({ "ok": true, "id": id, "nodes": nodes, "edges": edges })))
+}
+
+async fn workspace_delete(
+    State(_state): State<AppState>,
+    Json(body): Json<ProjectIdBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let id = sanitize_project_id(&body.id)?;
+    let dest = format!("{WORKSPACE_PROJECTS_DIR}/{id}");
+    if !Path::new(&dest).exists() {
+        return Err((StatusCode::NOT_FOUND, format!("project '{id}' not found")));
+    }
+    std::fs::remove_dir_all(&dest).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "ok": true, "id": id })))
 }
