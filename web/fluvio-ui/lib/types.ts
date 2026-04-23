@@ -43,10 +43,16 @@ export type ConnectorId =
   | "cryptocurrencies"
   | "fin_news"
   | "fin_market_data"
-  | "fin_research";
+  | "fin_research"
+  | "des_bim"
+  | "des_arch_plans"
+  | "des_structural"
+  | "des_civil_site"
+  | "des_building_codes"
+  | "des_physics_sim";
 
-/** Personal vs markets / portfolio workspace (split dashboard). */
-export type WorkspaceKind = "personal" | "invest";
+/** Personal, markets, or architecture / civil design workspace. */
+export type WorkspaceKind = "personal" | "invest" | "design";
 
 /** Main canvas mode: graph home vs connector-specific setup (production-shaped UI). */
 export type WorkspaceSurface = "documents" | ConnectorId;
@@ -69,3 +75,49 @@ export interface MockAgent {
   description: string;
   icon: string;
 }
+
+/** Frontend GitHub repo identity used by the workspace UI. */
+export type CodebaseCloneResult = {
+  owner: string;
+  repo: string;
+  local_path: string;
+  was_cloned: boolean;
+};
+
+/** Response from `POST /ingest` (kg-engine). */
+export type CodebaseIngestResult = {
+  chunks: number;
+  nodes: number;
+  edges: number;
+};
+
+/** Legacy scoped ingest response (deprecated with simplified `/ingest`). */
+export type CodebasePlanetIngestResult = {
+  path_prefix: string;
+  chunks_in_scope: number;
+  chunks_skipped_existing: number;
+  nodes_added: number;
+  structured_edges: number;
+  graph_nodes: number;
+  graph_edges: number;
+};
+
+/** Legacy file-list response (deprecated with simplified codebase flow). */
+export type CodebaseFilesResponse = {
+  paths: string[];
+  truncated: boolean;
+};
+
+/** Legacy galaxy tree node used by GitHub mock visuals. */
+export type CodebaseModuleKind = "repo" | "module" | "file";
+
+export type CodebaseModuleTree = {
+  name: string;
+  path: string;
+  kind: CodebaseModuleKind;
+  size_bytes: number;
+  file_count: number;
+  language: string;
+  depth: number;
+  children: CodebaseModuleTree[];
+};

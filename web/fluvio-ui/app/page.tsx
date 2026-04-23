@@ -1,21 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  startTransition,
+  type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { BrainDomainTabs } from "./components/workspace/BrainDomainTabs";
 import { BrainFusionLoadingMock } from "./components/workspace/BrainFusionLoadingMock";
 import { ConnectorSidebar } from "./components/workspace/ConnectorSidebar";
 import { GraphErrorBoundary } from "./components/workspace/GraphErrorBoundary";
 import { GraphCanvas } from "./components/workspace/GraphCanvas";
+import { GithubRepoFileTree } from "./components/workspace/GithubRepoFileTree";
+import { SolarSystemCanvas } from "./components/workspace/SolarSystemCanvas";
 import { WorkspaceSurfacePanel } from "./components/workspace/WorkspaceSurfacePanel";
 import { WorkspaceRightPanel } from "./components/workspace/WorkspaceRightPanel";
+import { DesignBlueprintMock } from "./components/workspace/DesignBlueprintMock";
 import { WorkspaceTopChrome } from "./components/workspace/WorkspaceTopChrome";
 import { KG_URL } from "@/lib/constants";
 import { fetchGraphMeta, fetchGraphWorkspace } from "@/lib/fetchGraphWorkspace";
 import { filterGraphBySource, filterLiveEmailGraph } from "@/lib/graphFilters";
+import { fetchCodebaseGalaxyTree } from "@/lib/fetchCodebaseGalaxy";
+import { moduleSubtreeToGraph } from "@/lib/moduleTreeToGraph";
 import { getMetaGraph, getMockGraph, getUnifiedGraph } from "@/lib/mockGraphs";
 import { mockConnectorNarrative } from "@/lib/mockWorkspace";
 import type {
   BrainTab,
+  CodebaseCloneResult,
+  CodebaseModuleTree,
   ConnectorId,
   ConnectorStatus,
   GraphEdge,
@@ -24,7 +40,7 @@ import type {
   WorkspaceKind,
   WorkspaceSurface,
 } from "@/lib/types";
-import { INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "@/lib/workspaceKinds";
+import { DESIGN_CONNECTOR_IDS, INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "@/lib/workspaceKinds";
 
 const PDF_INPUT_ID = "pdf-workspace-upload";
 const HEX_R = 80;
@@ -62,10 +78,27 @@ export default function Home() {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [activity, setActivity] = useState<string | null>(null);
   const [centerPanel, setCenterPanel] = useState<WorkspaceSurface | null>(null);
+  /** Last GitHub repo accepted for simple `/ingest` + `/parse` flow. */
+  const [githubCloneInfo, setGithubCloneInfo] = useState<CodebaseCloneResult | null>(null);
+  /** Galaxy tree for GitHub brain main graph (no mock graph). */
+  const [githubGalaxyTree, setGithubGalaxyTree] = useState<CodebaseModuleTree | null>(null);
+  /** Vertical pixel height of the solar-system band vs graph (GitHub brain only); drag the handle between them. */
+  const [githubGalaxyBandPx, setGithubGalaxyBandPx] = useState(280);
+  const githubBrainColumnRef = useRef<HTMLDivElement>(null);
 
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("sources");
   const [workspaceKind, setWorkspaceKind] = useState<WorkspaceKind>("personal");
   const [brainTab, setBrainTab] = useState<BrainTab>("documents");
+
+  /** Docked chat clears when this changes — include GitHub `owner/repo` so a new clone starts a fresh LLM thread. */
+  const chatDomainKey = useMemo(() => {
+    if (brainTab === "github" && githubCloneInfo) {
+      return `github:${githubCloneInfo.owner}/${githubCloneInfo.repo}`;
+    }
+    if (brainTab === "github") return "github:no-clone";
+    return brainTab;
+  }, [brainTab, githubCloneInfo]);
+
   const [fusionReady, setFusionReady] = useState(true);
   const [metaReady, setMetaReady] = useState(true);
 
@@ -314,6 +347,36 @@ export default function Home() {
     );
   }, []);
 
+  const onGithubPublicCloneSuccess = useCallback((info: CodebaseCloneResult) => {
+    setGithubCloneInfo(info);
+    setConnectorStatus((s) => ({ ...s, github: "mock_on" }));
+    setActivity(
+      `GitHub: cloned ${info.owner}/${info.repo} (${info.was_cloned ? "new" : "pull"}) — open brain → GitHub for the solar system; click a planet to zoom and open the small module graph.`,
+    );
+  }, []);
+
+  const onGithubGalaxySplitterDown = useCallback((e: ReactMouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const col = githubBrainColumnRef.current;
+    if (!col) return;
+    const startY = e.clientY;
+    const startPx = githubGalaxyBandPx;
+    const onMove = (ev: globalThis.MouseEvent) => {
+      const rect = col.getBoundingClientRect();
+      const reserveTabsAndGraph = 200;
+      const maxPx = Math.max(140, rect.height - reserveTabsAndGraph);
+      const minPx = 120;
+      const next = Math.min(maxPx, Math.max(minPx, startPx + (ev.clientY - startY)));
+      setGithubGalaxyBandPx(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [githubGalaxyBandPx]);
+
   const livePdf = useMemo(
     () => filterGraphBySource(nodes, edges, "pdf"),
     [nodes, edges],
@@ -330,6 +393,24 @@ export default function Home() {
 
   const documentGraphReady = pdfNodeTotal > 0;
 
+  useEffect(() => {
+    if (brainTab !== "github" || !githubCloneInfo) {
+      setGithubGalaxyTree(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchCodebaseGalaxyTree(KG_URL, githubCloneInfo)
+      .then((tree) => {
+        if (!cancelled) setGithubGalaxyTree(tree);
+      })
+      .catch(() => {
+        if (!cancelled) setGithubGalaxyTree(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [brainTab, githubCloneInfo]);
+
   const personalPreviewCount = useMemo(
     () => PERSONAL_CONNECTOR_IDS.filter((id) => connectorStatus[id] === "mock_on").length,
     [connectorStatus],
@@ -337,6 +418,11 @@ export default function Home() {
 
   const investPreviewCount = useMemo(
     () => INVEST_CONNECTOR_IDS.filter((id) => connectorStatus[id] === "mock_on").length,
+    [connectorStatus],
+  );
+
+  const designPreviewCount = useMemo(
+    () => DESIGN_CONNECTOR_IDS.filter((id) => connectorStatus[id] === "mock_on").length,
     [connectorStatus],
   );
 
@@ -350,6 +436,10 @@ export default function Home() {
         return getMetaGraph(workspaceKind, documentGraphReady, connectorStatus);
       case "documents":
         return livePdf;
+      case "github": {
+        if (!githubGalaxyTree) return { nodes: [] as GraphNode[], edges: [] as GraphEdge[] };
+        return moduleSubtreeToGraph(githubGalaxyTree, 420);
+      }
       default: {
         const id = brainTab as ConnectorId;
         const st = connectorStatus[id];
@@ -374,6 +464,7 @@ export default function Home() {
     liveEmail,
     gmailConnected,
     emailNodeTotal,
+    githubGalaxyTree,
   ]);
 
   const showBrainLoading =
@@ -388,7 +479,8 @@ export default function Home() {
   const chatSource =
     workspaceKind === "personal" &&
     ((brainTab === "documents" && pdfNodeTotal > 0) ||
-      (brainTab === "gmail" && emailNodeTotal > 0))
+      (brainTab === "gmail" && emailNodeTotal > 0) ||
+      (brainTab === "github" && githubGalaxyTree !== null))
       ? "live"
       : "mock";
 
@@ -404,17 +496,34 @@ export default function Home() {
     return first ?? "equities";
   }, [connectorStatus]);
 
+  const pickDefaultDesignBrainTab = useCallback((): BrainTab => {
+    const first = DESIGN_CONNECTOR_IDS.find((id) => connectorStatus[id] === "mock_on");
+    return first ?? "des_bim";
+  }, [connectorStatus]);
+
   useEffect(() => {
     setBrainTab((prev) => {
+      if (prev === "unified" || prev === "meta") return prev;
+
       if (workspaceKind === "invest") {
-        if (prev === "unified" || prev === "meta") return prev;
-        const invalidPersonal =
-          prev === "documents" || PERSONAL_CONNECTOR_IDS.includes(prev as ConnectorId);
-        if (invalidPersonal) return pickDefaultInvestBrainTab();
+        const invalid =
+          prev === "documents" ||
+          PERSONAL_CONNECTOR_IDS.includes(prev as ConnectorId) ||
+          DESIGN_CONNECTOR_IDS.includes(prev as ConnectorId);
+        if (invalid) return pickDefaultInvestBrainTab();
         return prev;
       }
-      if (prev === "unified" || prev === "meta") return prev;
-      if (INVEST_CONNECTOR_IDS.includes(prev as ConnectorId)) {
+
+      if (workspaceKind === "design") {
+        const invalid =
+          prev === "documents" ||
+          PERSONAL_CONNECTOR_IDS.includes(prev as ConnectorId) ||
+          INVEST_CONNECTOR_IDS.includes(prev as ConnectorId);
+        if (invalid) return pickDefaultDesignBrainTab();
+        return prev;
+      }
+
+      if (INVEST_CONNECTOR_IDS.includes(prev as ConnectorId) || DESIGN_CONNECTOR_IDS.includes(prev as ConnectorId)) {
         if (pdfNodeTotal > 0) return "documents";
         if (emailNodeTotal > 0) return "gmail";
         return PERSONAL_CONNECTOR_IDS.find((id) => connectorStatus[id] === "mock_on") ?? "documents";
@@ -427,6 +536,7 @@ export default function Home() {
     emailNodeTotal,
     connectorStatus,
     pickDefaultInvestBrainTab,
+    pickDefaultDesignBrainTab,
   ]);
 
   const onWorkspaceKindChange = useCallback((kind: WorkspaceKind) => {
@@ -434,7 +544,10 @@ export default function Home() {
     setCenterPanel((c) => {
       if (c === null) return c;
       if (kind === "invest" && (c === "documents" || PERSONAL_CONNECTOR_IDS.includes(c))) return null;
-      if (kind === "personal" && INVEST_CONNECTOR_IDS.includes(c as ConnectorId)) return null;
+      if (kind === "design" && (c === "documents" || PERSONAL_CONNECTOR_IDS.includes(c) || INVEST_CONNECTOR_IDS.includes(c)))
+        return null;
+      if (kind === "personal" && (INVEST_CONNECTOR_IDS.includes(c as ConnectorId) || DESIGN_CONNECTOR_IDS.includes(c as ConnectorId)))
+        return null;
       return c;
     });
   }, []);
@@ -442,7 +555,13 @@ export default function Home() {
   const onWorkspaceModeChange = useCallback(
     (mode: WorkspaceMode) => {
       if (mode === "brain") {
-        setBrainTab(workspaceKind === "invest" ? pickDefaultInvestBrainTab() : pickDefaultBrainDomain());
+        setBrainTab(
+          workspaceKind === "invest"
+            ? pickDefaultInvestBrainTab()
+            : workspaceKind === "design"
+              ? pickDefaultDesignBrainTab()
+              : pickDefaultBrainDomain(),
+        );
         if (nodes.length === 0) {
           setGraphLoading(true);
           setGraphLoadProgress({ message: "Opening workspace brain…", percent: 1 });
@@ -450,7 +569,7 @@ export default function Home() {
       }
       setWorkspaceMode(mode);
     },
-    [workspaceKind, pickDefaultBrainDomain, pickDefaultInvestBrainTab, nodes.length],
+    [workspaceKind, pickDefaultBrainDomain, pickDefaultInvestBrainTab, pickDefaultDesignBrainTab, nodes.length],
   );
 
   const openSourcesFor = useCallback((surface: WorkspaceSurface | null) => {
@@ -463,7 +582,7 @@ export default function Home() {
   const isIngesting = phase === "uploading" || phase === "processing" || phase === "finalizing";
 
   const ingestOverlay = isIngesting && (
-    <div className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#04040f]/80 pt-12 backdrop-blur-sm">
+    <div className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center bg-zinc-950/85 pt-12 backdrop-blur-md">
       <div className="relative mb-6">
         <svg width={HEX_R * 2} height={HEX_R * 2} viewBox={`0 0 ${HEX_R * 2} ${HEX_R * 2}`}>
           <defs>
@@ -581,7 +700,7 @@ export default function Home() {
         </div>
       </div>
 
-      <p className="font-mono text-sm text-cyan-200/90">
+      <p className="text-sm font-medium text-zinc-400">
         {phase === "uploading" && "uploading PDF…"}
         {phase === "processing" && "embedding & building graph…"}
         {phase === "finalizing" && "wiring neuron view…"}
@@ -590,7 +709,7 @@ export default function Home() {
   );
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-[#04040f] pt-12 text-slate-200 select-none">
+    <main className="relative h-screen w-screen overflow-hidden bg-zinc-950 pt-12 text-zinc-200 select-none">
       <input
         id={PDF_INPUT_ID}
         type="file"
@@ -607,10 +726,11 @@ export default function Home() {
         documentGraphReady={documentGraphReady}
         personalPreviewCount={personalPreviewCount}
         investPreviewCount={investPreviewCount}
+        designPreviewCount={designPreviewCount}
       />
 
       {workspaceMode === "sources" && (
-        <div className="flex h-[calc(100vh-3rem)] w-full">
+        <div className="flex h-[calc(100vh-3rem)] min-h-0 w-full">
           <ConnectorSidebar
             workspaceKind={workspaceKind}
             onWorkspaceKindChange={onWorkspaceKindChange}
@@ -634,13 +754,18 @@ export default function Home() {
                 graphEdges={edges.length}
                 onOAuthPreviewComplete={onOAuthPreviewComplete}
                 onGmailGraphRefresh={fetchGraph}
+                onGithubPublicCloneSuccess={onGithubPublicCloneSuccess}
+                onGithubCloneSessionStart={fetchGraph}
               />
             )}
 
-            {centerPanel === null && documentGraphReady === false && phase === "idle" && (
+            {centerPanel === null &&
+              workspaceKind === "personal" &&
+              documentGraphReady === false &&
+              phase === "idle" && (
               <label
                 htmlFor={PDF_INPUT_ID}
-                className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-2 bg-[#04040f]/40 backdrop-blur-[2px]"
+                className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-2 bg-zinc-950/50 backdrop-blur-sm"
               >
                 <div className="relative mb-6">
                   <svg width={HEX_R * 2} height={HEX_R * 2} viewBox={`0 0 ${HEX_R * 2} ${HEX_R * 2}`}>
@@ -663,7 +788,7 @@ export default function Home() {
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span
-                      className="text-5xl text-cyan-300/40 transition duration-500 hover:text-cyan-300/80"
+                      className="text-5xl text-zinc-600 transition duration-500 hover:text-sky-400/80"
                       style={{ filter: "drop-shadow(0 0 16px #00fff260)" }}
                     >
                       +
@@ -674,14 +799,17 @@ export default function Home() {
                   Sources · drop a PDF (live ingest)
                 </p>
                 <p className="max-w-sm px-6 text-center font-mono text-xs text-slate-600">
-                  Graphs live in <span className="text-cyan-600/80">Workspace brain</span> — one tab per source. Connect
+                  Graphs live in <span className="font-medium text-zinc-200">Workspace brain</span> — one tab per source. Connect
                   integrations from the rail, then open the brain to chat with each slice.
                 </p>
                 {error && <p className="mt-2 max-w-md px-6 text-center font-mono text-xs text-red-400/90">{error}</p>}
               </label>
             )}
 
-            {centerPanel === null && documentGraphReady && phase === "idle" && (
+            {centerPanel === null &&
+              workspaceKind === "personal" &&
+              documentGraphReady &&
+              phase === "idle" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-8">
                 <div className="max-w-md rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-8 text-center shadow-[0_0_40px_rgba(16,185,129,0.08)]">
                   <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/80">documents graph</p>
@@ -696,7 +824,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => onWorkspaceModeChange("brain")}
-                      className="rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-2.5 font-mono text-sm font-semibold text-slate-950 shadow-lg"
+                      className="rounded-xl bg-zinc-100 px-6 py-2.5 text-sm font-semibold text-zinc-900 shadow-lg transition hover:bg-white"
                     >
                       Open workspace brain
                     </button>
@@ -712,6 +840,22 @@ export default function Home() {
               </div>
             )}
 
+            {centerPanel === null &&
+              (workspaceKind === "invest" || workspaceKind === "design") &&
+              phase === "idle" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-950/40 px-8 text-center backdrop-blur-sm">
+                  <p className="max-w-md text-[15px] font-medium leading-relaxed text-zinc-300">
+                    {workspaceKind === "invest"
+                      ? "Pick a markets feed on the left to open its setup panel, then enable previews for graph tabs."
+                      : "Pick a design source on the left — BIM, structural, civil, codes, or physics — then open Brain to explore mock graphs for each slice."}
+                  </p>
+                  <p className="max-w-sm text-[12px] leading-relaxed text-zinc-600">
+                    Live ingestion for this workspace is not wired yet; the UI sketches how architecture and civil
+                    knowledge will fuse so future models can prove loads and physics before anything is built.
+                  </p>
+                </div>
+              )}
+
             {centerPanel === null && !documentGraphReady && error && phase === "idle" && (
               <div className="pointer-events-none absolute bottom-8 left-1/2 max-w-lg -translate-x-1/2 rounded-lg border border-red-500/30 bg-red-950/50 px-4 py-2 font-mono text-xs text-red-300">
                 {error}
@@ -725,7 +869,54 @@ export default function Home() {
 
       {workspaceMode === "brain" && (
         <div className="flex h-[calc(100vh-3rem)] w-full min-h-0">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {brainTab === "github" && connectorStatus.github === "mock_on" && (
+            <GithubRepoFileTree
+              kgUrl={KG_URL}
+              cloneInfo={githubCloneInfo}
+              className="hidden w-[min(100%,272px)] shrink-0 sm:flex"
+            />
+          )}
+          <div ref={githubBrainColumnRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {brainTab === "github" && connectorStatus.github === "mock_on" && (
+              <>
+                <div
+                  className="flex min-h-0 shrink-0 flex-col overflow-hidden border-b border-white/[0.06]"
+                  style={{ height: githubGalaxyBandPx }}
+                >
+                  <SolarSystemCanvas
+                    kgUrl={KG_URL}
+                    cloneInfo={githubCloneInfo}
+                    className="min-h-0 flex-1"
+                    onPlanetIngestComplete={fetchGraph}
+                  />
+                </div>
+                <div
+                  role="separator"
+                  aria-orientation="horizontal"
+                  aria-label="Resize solar system and graph"
+                  tabIndex={0}
+                  onMouseDown={onGithubGalaxySplitterDown}
+                  onKeyDown={(ke: KeyboardEvent<HTMLDivElement>) => {
+                    const col = githubBrainColumnRef.current;
+                    if (!col) return;
+                    const rect = col.getBoundingClientRect();
+                    const maxPx = Math.max(140, rect.height - 200);
+                    const step = 20;
+                    if (ke.key === "ArrowUp" || ke.key === "ArrowDown") {
+                      ke.preventDefault();
+                      setGithubGalaxyBandPx((p) =>
+                        ke.key === "ArrowUp"
+                          ? Math.min(maxPx, p + step)
+                          : Math.max(120, p - step),
+                      );
+                    }
+                  }}
+                  className="group relative z-30 flex h-3 shrink-0 cursor-row-resize items-center justify-center border-b border-white/[0.06] bg-zinc-900/80 outline-none hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-sky-500/40"
+                >
+                  <span className="h-1 w-12 rounded-full bg-zinc-600 transition group-hover:bg-zinc-400" />
+                </div>
+              </>
+            )}
             <BrainDomainTabs
               workspaceKind={workspaceKind}
               active={brainTab}
@@ -735,67 +926,71 @@ export default function Home() {
               gmailOAuthConnected={gmailConnected}
               connectorStatus={connectorStatus}
             />
-            <div className="relative min-h-0 flex-1">
-              {graphLoading && (
-                <div className="absolute inset-0 z-[25] flex flex-col items-center justify-center gap-4 bg-[#04040f]/92 backdrop-blur-sm">
-                  <div className="w-[min(380px,88vw)]">
-                    <div className="mb-2 flex justify-between font-mono text-[11px] text-slate-500">
-                      <span>loading graph</span>
-                      <span className="tabular-nums text-cyan-300/90">{graphLoadProgress.percent}%</span>
+            <div
+              className={`relative min-h-0 flex-1 ${workspaceKind === "design" ? "flex flex-col lg:flex-row" : ""}`}
+            >
+              <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+                {graphLoading && (
+                  <div className="absolute inset-0 z-[25] flex flex-col items-center justify-center gap-4 bg-zinc-950/90 backdrop-blur-md">
+                  <div className="w-[min(380px,88vw)] rounded-2xl border border-white/[0.06] bg-zinc-900/60 p-5 shadow-xl">
+                    <div className="mb-2 flex justify-between text-[12px] font-medium text-zinc-500">
+                      <span>Loading graph</span>
+                      <span className="tabular-nums text-zinc-200">{graphLoadProgress.percent}%</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800/80">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-[width] duration-200 ease-out"
+                        className="h-full rounded-full bg-zinc-100 transition-[width] duration-200 ease-out"
                         style={{ width: `${Math.max(0, Math.min(100, graphLoadProgress.percent))}%` }}
                       />
                     </div>
-                    <p className="mt-3 text-center font-mono text-xs leading-relaxed text-slate-400">
+                    <p className="mt-4 text-center text-[13px] leading-relaxed text-zinc-400">
                       {graphLoadProgress.message || "…"}
                     </p>
-                    <p className="mt-2 text-center font-mono text-[10px] text-slate-600">
-                      Graph data is loaded in small chunks so the UI can update; the canvas mounts when this reaches
-                      100%.
+                    <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-600">
+                      Loading in chunks so the canvas can appear as data arrives.
                     </p>
                   </div>
-                </div>
-              )}
-
-              <div className={showBrainLoading ? "pointer-events-none opacity-[0.08]" : ""}>
-                {!graphLoading && (
-                  <GraphErrorBoundary>
-                    <GraphCanvas
-                      svgRef={svgRef}
-                      nodes={brainGraph.nodes}
-                      edges={brainGraph.edges}
-                      onSelect={onSelectNode}
-                    />
-                  </GraphErrorBoundary>
+                  </div>
                 )}
-              </div>
 
-              {showBrainLoading && (
-                <BrainFusionLoadingMock
-                  variant={brainTab === "meta" ? "meta" : "unified"}
-                  workspaceKind={workspaceKind}
-                />
-              )}
+                <div className={showBrainLoading ? "pointer-events-none opacity-[0.08]" : ""}>
+                  {!graphLoading && (
+                    <GraphErrorBoundary>
+                      <GraphCanvas
+                        svgRef={svgRef}
+                        nodes={brainGraph.nodes}
+                        edges={brainGraph.edges}
+                        onSelect={onSelectNode}
+                      />
+                    </GraphErrorBoundary>
+                  )}
+                </div>
 
-              {brainGraphEmpty && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#04040f]/85 px-6 text-center backdrop-blur-sm">
-                  <p className="max-w-sm font-mono text-sm text-slate-300">
+                {showBrainLoading && (
+                  <BrainFusionLoadingMock
+                    variant={brainTab === "meta" ? "meta" : "unified"}
+                    workspaceKind={workspaceKind}
+                  />
+                )}
+
+                {brainGraphEmpty && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-zinc-950/88 px-6 text-center backdrop-blur-md">
+                    <p className="max-w-sm text-[15px] font-medium leading-relaxed text-zinc-300">
                     {brainTab === "documents"
                       ? "No PDF graph yet. Ingest a document from Sources, then return here."
                       : brainTab === "gmail" && gmailConnected && emailNodeTotal === 0
                         ? "Gmail is connected but nothing is ingested yet. Open Sources → Gmail and run Sync, then return here."
-                        : `No ${brainTab} graph yet. Finish the preview connect flow in Sources to load mock nodes, or connect the live source in Rust.`}
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2">
+                        : brainTab === "github"
+                          ? "No module graph yet. In Sources → GitHub, clone a public repo (kg-engine must reach your clone), then return here for the galaxy, file tree, and live tree graph."
+                          : `No ${brainTab} graph yet. Finish the preview connect flow in Sources to load mock nodes, or connect the live source in Rust.`}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
                     <button
                       type="button"
                       onClick={() =>
                         openSourcesFor(brainTab === "documents" ? "documents" : (brainTab as ConnectorId))
                       }
-                      className="rounded-lg border border-cyan-400/35 bg-cyan-500/10 px-4 py-2 font-mono text-xs text-cyan-100 transition hover:bg-cyan-500/20"
+                      className="rounded-xl border border-white/[0.1] bg-zinc-100 px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition hover:bg-white"
                     >
                       Open in Sources
                     </button>
@@ -807,15 +1002,15 @@ export default function Home() {
                         Quick upload PDF
                       </label>
                     )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {!brainGraphEmpty && !showBrainLoading && !graphLoading && phase === "idle" && (
-                <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex max-w-[min(92vw,520px)] -translate-x-1/2 flex-col items-center gap-1 rounded-xl border border-cyan-400/20 bg-[#0a0a1a]/90 px-4 py-1.5 font-mono text-[11px] text-slate-400 backdrop-blur-sm">
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    <span className="text-slate-500">{brainTab}</span>
-                    <span className="h-1 w-1 rounded-full bg-slate-600" />
+                {!brainGraphEmpty && !showBrainLoading && !graphLoading && phase === "idle" && (
+                  <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex max-w-[min(92vw,520px)] -translate-x-1/2 flex-col items-center gap-1 rounded-full border border-white/[0.08] bg-zinc-900/90 px-4 py-1.5 text-[11px] font-medium text-zinc-500 shadow-lg backdrop-blur-md">
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                    <span className="text-zinc-400">{brainTab}</span>
+                    <span className="h-1 w-1 rounded-full bg-zinc-600" />
                     <span>
                       {brainGraph.nodes.length} nodes · {brainGraph.edges.length} edges
                       {graphTotals &&
@@ -828,91 +1023,91 @@ export default function Home() {
                           </span>
                         )}
                     </span>
-                  </div>
-                  {graphSampleNote && (
-                    <span className="text-center text-[10px] leading-snug text-amber-200/70">{graphSampleNote}</span>
-                  )}
-                </div>
-              )}
-
-              {selected && !brainGraphEmpty && !showBrainLoading && (
-                <div
-                  className="pointer-events-auto absolute left-4 top-14 z-20 w-72 rounded-xl border border-cyan-400/20 bg-[#060616]/95 p-4 font-mono backdrop-blur-md"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-cyan-300" style={{ boxShadow: "0 0 6px #00fff2" }} />
-                      <span className="text-xs text-cyan-200">seg {selected.node.page}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelected(null)}
-                      className="text-xs text-slate-500 transition hover:text-white"
-                    >
-                      ✕
-                    </button>
+                    {graphSampleNote && (
+                      <span className="text-center text-[10px] leading-snug text-amber-200/70">{graphSampleNote}</span>
+                    )}
                   </div>
+                )}
 
-                  <p className="mb-4 line-clamp-5 border-l border-cyan-400/20 pl-3 text-xs leading-relaxed text-slate-400">
-                    {selected.node.label}
-                  </p>
+                {selected && !brainGraphEmpty && !showBrainLoading && (
+                  <div
+                    className="pointer-events-auto absolute left-4 top-14 z-20 w-72 rounded-2xl border border-white/[0.08] bg-zinc-900/95 p-4 shadow-2xl backdrop-blur-xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-sky-400" />
+                        <span className="text-[12px] font-medium text-zinc-300">Segment {selected.node.page}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(null)}
+                        className="rounded-full px-2 py-0.5 text-[13px] text-zinc-500 transition hover:bg-white/[0.06] hover:text-zinc-200"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
-                  {selected.neighbors.length > 0 && (
-                    <div className="mb-3">
-                      <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-500">connections</p>
-                      <div className="space-y-1">
-                        {selected.neighbors.map((n, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between rounded-lg bg-white/[0.04] px-3 py-1.5 text-xs"
-                          >
-                            <span className="text-slate-400">s.{n.node.page}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-violet-300">{n.token}t</span>
-                              <div className="flex items-center gap-1">
-                                <div className="h-1 w-12 overflow-hidden rounded-full bg-white/10">
-                                  <div
-                                    className="h-full rounded-full bg-cyan-300"
-                                    style={{
-                                      width: `${n.probability * 100}%`,
-                                      boxShadow: "0 0 4px #00fff2",
-                                    }}
-                                  />
+                    <p className="mb-4 line-clamp-5 border-l-2 border-white/[0.08] pl-3 text-[13px] leading-relaxed text-zinc-400">
+                      {selected.node.label}
+                    </p>
+
+                    {selected.neighbors.length > 0 && (
+                      <div className="mb-3">
+                        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-600">Connections</p>
+                        <div className="space-y-1">
+                          {selected.neighbors.map((n, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between rounded-xl bg-zinc-950/80 px-3 py-2 text-[12px]"
+                            >
+                              <span className="text-zinc-500">s.{n.node.page}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="tabular-nums text-zinc-400">{n.token}t</span>
+                                <div className="flex items-center gap-1">
+                                  <div className="h-1 w-12 overflow-hidden rounded-full bg-zinc-800">
+                                    <div
+                                      className="h-full rounded-full bg-zinc-300"
+                                      style={{ width: `${n.probability * 100}%` }}
+                                    />
+                                  </div>
+                                  <span className="w-8 text-right tabular-nums text-zinc-300">
+                                    {(n.probability * 100).toFixed(0)}%
+                                  </span>
                                 </div>
-                                <span className="w-8 text-right text-cyan-200">
-                                  {(n.probability * 100).toFixed(0)}%
-                                </span>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChatPrefill(
-                        `Tell me about this part of the ${brainTab} graph: ${selected.node.label.slice(0, 60)}`,
-                      );
-                    }}
-                    className="mt-1 w-full rounded-lg border border-cyan-400/30 py-2 text-xs text-cyan-200 transition hover:bg-cyan-400/10"
-                  >
-                    ask about this node →
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChatPrefill(
+                          `Tell me about this part of the ${brainTab} graph: ${selected.node.label.slice(0, 60)}`,
+                        );
+                      }}
+                      className="mt-1 w-full rounded-xl bg-zinc-100 py-2.5 text-[13px] font-semibold text-zinc-900 transition hover:bg-white"
+                    >
+                      Ask about this node
+                    </button>
+                  </div>
+                )}
 
-              {ingestOverlay}
+                {ingestOverlay}
+              </div>
+
+              {workspaceKind === "design" && <DesignBlueprintMock brainTab={brainTab} />}
             </div>
           </div>
 
           <WorkspaceRightPanel
             dock
             workspaceKind={workspaceKind}
-            domainKey={brainTab}
+            domainKey={chatDomainKey}
             chatSource={chatSource}
             brainTab={brainTab}
             graphEmpty={brainGraphEmpty}

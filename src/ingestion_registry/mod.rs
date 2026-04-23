@@ -1,6 +1,7 @@
 pub mod connector;
 pub mod documents;
 pub mod email;
+pub mod codebase;
 
 pub use connector::{
     ConnectorError,

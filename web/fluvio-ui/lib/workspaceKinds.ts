@@ -20,6 +20,18 @@ export const INVEST_CONNECTOR_IDS: ConnectorId[] = [
   "fin_research",
 ];
 
+/** Architecture + civil engineering design slices (mock until Rust ingestion). */
+export const DESIGN_CONNECTOR_IDS: ConnectorId[] = [
+  "des_bim",
+  "des_arch_plans",
+  "des_structural",
+  "des_civil_site",
+  "des_building_codes",
+  "des_physics_sim",
+];
+
 export function connectorsForKind(kind: WorkspaceKind): ConnectorId[] {
-  return kind === "invest" ? INVEST_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
+  if (kind === "invest") return INVEST_CONNECTOR_IDS;
+  if (kind === "design") return DESIGN_CONNECTOR_IDS;
+  return PERSONAL_CONNECTOR_IDS;
 }

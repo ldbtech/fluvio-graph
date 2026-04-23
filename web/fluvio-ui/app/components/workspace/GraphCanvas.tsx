@@ -109,7 +109,7 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
       const st = qaEdgeStatus?.[qaEdgeKey(d.from, d.to)];
       if (st === "approved") return "#34d399";
       if (st === "rejected") return "#f87171";
-      return d.probability > 0.7 ? "#5dfff8" : d.probability > 0.5 ? "#9b85ff" : "#4a3d7a";
+      return d.probability > 0.7 ? "#38bdf8" : d.probability > 0.5 ? "#a78bfa" : "#52525b";
     };
 
     const link = g
@@ -172,7 +172,7 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
       const st = qaNodeStatus?.[d.id];
       if (st === "approved") return "#34d399";
       if (st === "rejected") return "#f87171";
-      return "#00fff2";
+      return "#a1a1aa";
     };
 
     node
@@ -188,14 +188,14 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
       const st = qaNodeStatus?.[d.id];
       if (st === "approved") return "#022c1f";
       if (st === "rejected") return "#2c0a0a";
-      return "#060616";
+      return "#18181b";
     };
 
     const nodeDotFill = (d: GraphNode) => {
       const st = qaNodeStatus?.[d.id];
       if (st === "approved") return "#6ee7b7";
       if (st === "rejected") return "#fca5a5";
-      return "#00fff2";
+      return "#38bdf8";
     };
 
     node
@@ -217,7 +217,7 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
       .text((d) => `p${d.page}`)
       .attr("x", 16)
       .attr("y", 4)
-      .attr("fill", "#4a7a9b")
+      .attr("fill", "#71717a")
       .attr("font-size", "9px")
       .attr("font-family", "monospace")
       .attr("pointer-events", "none");

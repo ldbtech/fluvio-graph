@@ -17,17 +17,22 @@ type QaDetail = {
 };
 
 function statusLabel(s: QaItemStatus) {
-  if (s === "approved") return "approved";
-  if (s === "rejected") return "rejected";
-  return "pending";
+  if (s === "approved") return "Approved";
+  if (s === "rejected") return "Rejected";
+  return "Pending";
 }
 
 function statusPill(s: QaItemStatus) {
-  const base = "rounded-full px-2 py-0.5 font-mono text-[10px]";
-  if (s === "approved") return `${base} bg-emerald-500/20 text-emerald-200`;
-  if (s === "rejected") return `${base} bg-red-500/20 text-red-200`;
-  return `${base} bg-slate-500/15 text-slate-400`;
+  const base = "rounded-full px-2 py-0.5 text-[11px] font-medium";
+  if (s === "approved") return `${base} bg-emerald-500/15 text-emerald-200/95`;
+  if (s === "rejected") return `${base} bg-red-500/15 text-red-200/95`;
+  return `${base} bg-zinc-800/90 text-zinc-500`;
 }
+
+const tabBase =
+  "rounded-full px-3 py-1.5 text-[13px] font-medium tracking-tight transition-colors duration-200 ease-out";
+const tabIdle = "text-zinc-500 hover:text-zinc-300";
+const tabActive = "bg-zinc-100 text-zinc-900 shadow-sm";
 
 export default function QaInfrastructurePage() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -115,68 +120,76 @@ export default function QaInfrastructurePage() {
   const nodeBrief = detail ? bundle.nodeQa[detail.node.id] : undefined;
 
   return (
-    <main className="relative min-h-screen bg-[#04040f] pt-12 text-slate-200">
+    <main className="relative min-h-screen bg-zinc-950 pt-12 text-zinc-200">
       <QaTopChrome />
 
       <div className="flex h-[calc(100vh-3rem)] min-h-0 w-full">
-        <aside className="flex w-[min(100%,280px)] shrink-0 flex-col gap-4 border-r border-emerald-400/10 bg-[#05051a]/80 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/80">graphs</p>
-          <div className="flex flex-col gap-2">
-            {QA_GRAPHS.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => {
-                  setGraphId(g.id);
-                  setDetail(null);
-                }}
-                className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                  g.id === graphId
-                    ? "border-emerald-400/40 bg-emerald-500/[0.08] shadow-[0_0_20px_rgba(16,185,129,0.08)]"
-                    : "border-white/10 bg-white/[0.02] hover:border-emerald-400/25"
-                }`}
-              >
-                <span className="block font-mono text-xs text-emerald-100/95">{g.title}</span>
-                <span className="mt-0.5 block font-mono text-[10px] text-slate-500">{g.subtitle}</span>
-              </button>
-            ))}
+        <aside className="flex w-[min(100%,288px)] shrink-0 flex-col border-r border-white/[0.08] bg-[rgba(24,24,27,0.78)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[rgba(24,24,27,0.65)]">
+          <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
+            <h2 className="text-[17px] font-semibold tracking-tight text-zinc-100">Graphs</h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">Pick a mock graph to review.</p>
           </div>
-
-          <div className="mt-auto space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">graph verdict</p>
-            <div className="flex flex-wrap gap-2">
-              <span className={statusPill(approvals.graph)}>{statusLabel(approvals.graph)}</span>
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-gutter:stable]">
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <ul className="divide-y divide-white/[0.06]">
+                {QA_GRAPHS.map((g) => (
+                  <li key={g.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGraphId(g.id);
+                        setDetail(null);
+                      }}
+                      className={`flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors ${
+                        g.id === graphId
+                          ? "bg-sky-500/[0.1]"
+                          : "hover:bg-white/[0.04] active:bg-white/[0.06]"
+                      }`}
+                    >
+                      <span className="text-[15px] font-medium text-zinc-100">{g.title}</span>
+                      <span className="text-[12px] leading-snug text-zinc-500">{g.subtitle}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="font-mono text-[10px] leading-relaxed text-slate-500">
-              Approve the full graph when node and edge QA is good enough for downstream use.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setGraphApproval("approved")}
-                className="rounded-lg bg-emerald-500/25 px-3 py-1.5 font-mono text-[10px] text-emerald-100 hover:bg-emerald-500/35"
-              >
-                Approve graph
-              </button>
-              <button
-                type="button"
-                onClick={() => setGraphApproval("rejected")}
-                className="rounded-lg border border-red-400/30 px-3 py-1.5 font-mono text-[10px] text-red-200/90 hover:bg-red-500/10"
-              >
-                Reject
-              </button>
-              <button
-                type="button"
-                onClick={() => setGraphApproval("pending")}
-                className="rounded-lg border border-white/15 px-3 py-1.5 font-mono text-[10px] text-slate-400 hover:bg-white/5"
-              >
-                Reset
-              </button>
+
+            <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <p className="text-[13px] font-semibold text-zinc-400">Graph verdict</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className={statusPill(approvals.graph)}>{statusLabel(approvals.graph)}</span>
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-zinc-600">
+                Approve the full graph when node and edge QA is sufficient for downstream use.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGraphApproval("approved")}
+                  className="rounded-xl bg-zinc-100 px-3 py-2 text-[12px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99]"
+                >
+                  Approve graph
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGraphApproval("rejected")}
+                  className="rounded-xl border border-red-500/25 bg-red-950/35 px-3 py-2 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-950/55"
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGraphApproval("pending")}
+                  className="rounded-xl border border-white/[0.1] px-3 py-2 text-[12px] font-medium text-zinc-400 transition hover:bg-white/[0.05]"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
         </aside>
 
-        <section className="relative min-h-0 min-w-0 flex-1">
+        <section className="relative min-h-0 min-w-0 flex-1 bg-black/25">
           <GraphCanvas
             svgRef={svgRef}
             nodes={bundle.nodes}
@@ -185,79 +198,89 @@ export default function QaInfrastructurePage() {
             qaNodeStatus={approvals.nodes}
             qaEdgeStatus={approvals.edges}
           />
-          <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 rounded-xl border border-emerald-400/15 bg-[#0a0a1a]/90 px-4 py-2 font-mono text-[11px] text-slate-400 backdrop-blur-sm">
-            <span className="text-emerald-200/90">{bundle.title}</span>
-            <span>
+          <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-0.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-center backdrop-blur-md">
+            <span className="text-[13px] font-semibold text-zinc-100">{bundle.title}</span>
+            <span className="tabular-nums text-[12px] text-zinc-500">
               {summary.nodesOk}/{summary.nNodes} nodes · {summary.edgesOk}/{summary.nEdges} edges approved
             </span>
           </div>
         </section>
 
-        <aside className="flex w-[min(100%,420px)] shrink-0 flex-col border-l border-emerald-400/10 bg-[#05051a]/90">
-          <div className="flex border-b border-white/10 font-mono text-[11px]">
-            {(["node", "edges", "agents"] as const).map((t) => (
+        <aside className="flex w-[min(100%,420px)] shrink-0 flex-col border-l border-white/[0.08] bg-[rgba(24,24,27,0.78)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[rgba(24,24,27,0.65)]">
+          <div className="shrink-0 border-b border-white/[0.06] px-3 py-3">
+            <nav
+              className="flex w-full rounded-full border border-white/[0.06] bg-zinc-900/80 p-0.5 shadow-inner"
+              aria-label="Review panel"
+            >
               <button
-                key={t}
                 type="button"
-                onClick={() => setRightTab(t)}
-                className={`flex-1 px-3 py-3 transition ${
-                  rightTab === t
-                    ? "border-b-2 border-emerald-400/60 bg-emerald-500/[0.06] text-emerald-100"
-                    : "text-slate-500 hover:text-slate-300"
-                }`}
+                onClick={() => setRightTab("node")}
+                className={`flex-1 ${tabBase} ${rightTab === "node" ? tabActive : tabIdle}`}
               >
-                {t === "node" && "Node QA"}
-                {t === "edges" && "Edges & weights"}
-                {t === "agents" && "Agents"}
+                Node
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setRightTab("edges")}
+                className={`flex-1 ${tabBase} ${rightTab === "edges" ? tabActive : tabIdle}`}
+              >
+                Edges
+              </button>
+              <button
+                type="button"
+                onClick={() => setRightTab("agents")}
+                className={`flex-1 ${tabBase} ${rightTab === "agents" ? tabActive : tabIdle}`}
+              >
+                Agents
+              </button>
+            </nav>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-gutter:stable]">
             {rightTab === "node" && (
               <div className="space-y-4">
                 {!detail && (
-                  <p className="font-mono text-sm leading-relaxed text-slate-500">
-                    Select a node on the canvas to read its explanation, see inbound and outbound neighbors, and
-                    approve or reject the node for this graph.
+                  <p className="text-[13px] leading-relaxed text-zinc-500">
+                    Select a node on the canvas to read its explanation, see inbound and outbound neighbors, and approve
+                    or reject the node for this graph.
                   </p>
                 )}
                 {detail && nodeBrief && (
                   <>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">node</p>
-                        <p className="mt-1 font-mono text-xs leading-relaxed text-slate-300">{detail.node.label}</p>
+                    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Node</p>
+                          <p className="mt-1 text-[13px] font-medium leading-snug text-zinc-200">{detail.node.label}</p>
+                        </div>
+                        <span className={statusPill(approvals.nodes[detail.node.id] ?? "pending")}>
+                          {statusLabel(approvals.nodes[detail.node.id] ?? "pending")}
+                        </span>
                       </div>
-                      <span className={statusPill(approvals.nodes[detail.node.id] ?? "pending")}>
-                        {statusLabel(approvals.nodes[detail.node.id] ?? "pending")}
-                      </span>
                     </div>
 
-                    <div>
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/80">what it is</p>
-                      <p className="mt-1 font-mono text-xs leading-relaxed text-slate-400">{nodeBrief.summary}</p>
+                    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3">
+                      <p className="text-[11px] font-semibold text-zinc-500">What it is</p>
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500">{nodeBrief.summary}</p>
                     </div>
 
-                    <div>
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/80">
-                        neighbors & meaning
-                      </p>
-                      <p className="mt-1 font-mono text-xs leading-relaxed text-slate-400">{nodeBrief.neighborContext}</p>
+                    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3">
+                      <p className="text-[11px] font-semibold text-zinc-500">Neighbors & meaning</p>
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500">{nodeBrief.neighborContext}</p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => setNodeApproval(detail.node.id, "approved")}
-                        className="rounded-lg bg-emerald-500/25 px-3 py-2 font-mono text-[11px] text-emerald-100"
+                        className="rounded-xl bg-zinc-100 px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99]"
                       >
                         Approve node
                       </button>
                       <button
                         type="button"
                         onClick={() => setNodeApproval(detail.node.id, "rejected")}
-                        className="rounded-lg border border-red-400/35 px-3 py-2 font-mono text-[11px] text-red-200/90"
+                        className="rounded-xl border border-red-500/25 bg-red-950/35 px-4 py-2.5 text-[13px] font-semibold text-red-200/95 transition hover:bg-red-950/55"
                       >
                         Reject node
                       </button>
@@ -265,18 +288,20 @@ export default function QaInfrastructurePage() {
 
                     {detail.outgoing.length > 0 && (
                       <div>
-                        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-slate-500">outgoing</p>
+                        <p className="mb-2 px-1 text-[12px] font-semibold text-zinc-500">Outgoing</p>
                         <ul className="space-y-2">
                           {detail.outgoing.map((n, i) => (
                             <li
                               key={`o-${i}`}
-                              className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px]"
+                              className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[12px]"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-slate-400">→ {n.node.label.slice(0, 72)}</span>
-                                <span className="shrink-0 text-cyan-300/90">{(n.probability * 100).toFixed(0)}%</span>
+                                <span className="min-w-0 truncate text-zinc-400">→ {n.node.label.slice(0, 72)}</span>
+                                <span className="shrink-0 tabular-nums font-medium text-sky-300/90">
+                                  {(n.probability * 100).toFixed(0)}%
+                                </span>
                               </div>
-                              <p className="mt-1 text-[10px] text-slate-600">
+                              <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
                                 Model used {n.token} tokens on this edge — confirm the weight matches the relationship you
                                 expect.
                               </p>
@@ -288,16 +313,18 @@ export default function QaInfrastructurePage() {
 
                     {detail.incoming.length > 0 && (
                       <div>
-                        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-slate-500">incoming</p>
+                        <p className="mb-2 px-1 text-[12px] font-semibold text-zinc-500">Incoming</p>
                         <ul className="space-y-2">
                           {detail.incoming.map((n, i) => (
                             <li
                               key={`i-${i}`}
-                              className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px]"
+                              className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[12px]"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-slate-400">← {n.node.label.slice(0, 72)}</span>
-                                <span className="shrink-0 text-violet-300/90">{(n.probability * 100).toFixed(0)}%</span>
+                                <span className="min-w-0 truncate text-zinc-400">← {n.node.label.slice(0, 72)}</span>
+                                <span className="shrink-0 tabular-nums font-medium text-violet-300/90">
+                                  {(n.probability * 100).toFixed(0)}%
+                                </span>
                               </div>
                             </li>
                           ))}
@@ -310,8 +337,8 @@ export default function QaInfrastructurePage() {
             )}
 
             {rightTab === "edges" && (
-              <div className="space-y-3">
-                <p className="font-mono text-xs leading-relaxed text-slate-500">
+              <div className="space-y-4">
+                <p className="text-[13px] leading-relaxed text-zinc-500">
                   Each edge carries a learned weight (probability) and a token cost. Approve when the direction and
                   strength match your judgment.
                 </p>
@@ -324,36 +351,36 @@ export default function QaInfrastructurePage() {
                     return (
                       <li
                         key={key}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 font-mono text-[11px]"
+                        className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-slate-400">
+                          <span className="min-w-0 truncate text-[12px] text-zinc-400">
                             {fromN?.label.slice(0, 40)} → {toN?.label.slice(0, 40)}
                           </span>
                           <span className={statusPill(st)}>{statusLabel(st)}</span>
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
-                          <span>weight {(e.probability * 100).toFixed(1)}%</span>
-                          <span>tokens {e.token}</span>
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] tabular-nums text-zinc-600">
+                          <span>Weight {(e.probability * 100).toFixed(1)}%</span>
+                          <span>Tokens {e.token}</span>
                         </div>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-cyan-500/80 to-violet-500/80"
+                            className="h-full rounded-full bg-sky-500/75"
                             style={{ width: `${e.probability * 100}%` }}
                           />
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
                           <button
                             type="button"
                             onClick={() => setEdgeApproval(e.from, e.to, "approved")}
-                            className="rounded-md bg-emerald-500/20 px-2 py-1 text-[10px] text-emerald-200"
+                            className="rounded-xl bg-zinc-100 px-3 py-1.5 text-[12px] font-semibold text-zinc-900 transition hover:bg-white"
                           >
                             Approve weight
                           </button>
                           <button
                             type="button"
                             onClick={() => setEdgeApproval(e.from, e.to, "rejected")}
-                            className="rounded-md border border-red-400/30 px-2 py-1 text-[10px] text-red-200/90"
+                            className="rounded-xl border border-red-500/25 bg-red-950/30 px-3 py-1.5 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-950/50"
                           >
                             Reject
                           </button>
@@ -367,50 +394,50 @@ export default function QaInfrastructurePage() {
 
             {rightTab === "agents" && (
               <div className="space-y-4">
-                <p className="font-mono text-xs leading-relaxed text-slate-500">
+                <p className="text-[13px] leading-relaxed text-zinc-500">
                   Background workers for this graph (and cross-graph orchestration). Traces are illustrative until wired
                   to your task runner.
                 </p>
                 {agentsForGraph.map((a) => (
                   <article
                     key={a.id}
-                    className="rounded-xl border border-white/10 bg-[#060616]/80 p-3 font-mono text-[11px]"
+                    className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-emerald-200/95">{a.name}</p>
-                        <p className="mt-0.5 text-[10px] text-slate-500">{a.role}</p>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-semibold text-zinc-100">{a.name}</p>
+                        <p className="mt-0.5 text-[12px] text-zinc-500">{a.role}</p>
                       </div>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                           a.status === "running"
-                            ? "bg-cyan-500/15 text-cyan-200"
+                            ? "bg-sky-500/15 text-sky-200/95"
                             : a.status === "blocked"
-                              ? "bg-amber-500/15 text-amber-200"
+                              ? "bg-amber-500/15 text-amber-200/95"
                               : a.status === "done"
-                                ? "bg-emerald-500/15 text-emerald-200"
-                                : "bg-slate-500/15 text-slate-400"
+                                ? "bg-emerald-500/15 text-emerald-200/95"
+                                : "bg-zinc-800/90 text-zinc-500"
                         }`}
                       >
                         {a.status}
                       </span>
                     </div>
-                    <p className="mt-3 text-[10px] uppercase tracking-wider text-slate-600">environment</p>
-                    <ul className="mt-1 list-inside list-disc text-[10px] text-slate-400">
+                    <p className="mt-3 text-[11px] font-semibold text-zinc-500">Environment</p>
+                    <ul className="mt-1 list-inside list-disc text-[12px] leading-relaxed text-zinc-600">
                       {a.environment.map((x) => (
                         <li key={x}>{x}</li>
                       ))}
                     </ul>
-                    <p className="mt-3 text-[10px] uppercase tracking-wider text-slate-600">current task</p>
-                    <p className="mt-1 text-slate-300">{a.currentTask}</p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <p className="mt-3 text-[11px] font-semibold text-zinc-500">Current task</p>
+                    <p className="mt-1 text-[13px] text-zinc-400">{a.currentTask}</p>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                       <div
-                        className="h-full rounded-full bg-emerald-500/60"
+                        className="h-full rounded-full bg-emerald-500/65"
                         style={{ width: `${Math.round(a.progress * 100)}%` }}
                       />
                     </div>
-                    <p className="mt-3 text-[10px] uppercase tracking-wider text-slate-600">trace</p>
-                    <ol className="mt-1 space-y-1 text-[10px] text-slate-500">
+                    <p className="mt-3 text-[11px] font-semibold text-zinc-500">Trace</p>
+                    <ol className="mt-1 space-y-1 text-[11px] leading-relaxed text-zinc-600">
                       {a.trace.map((line, i) => (
                         <li key={i}>
                           {i + 1}. {line}

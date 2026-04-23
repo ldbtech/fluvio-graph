@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { ConnectorId, WorkspaceSurface } from "@/lib/types";
+import type { CodebaseCloneResult, ConnectorId, WorkspaceSurface } from "@/lib/types";
+import { DESIGN_CONNECTOR_IDS } from "@/lib/workspaceKinds";
 
 type OAuthPhase = "form" | "busy" | "done";
 
@@ -15,15 +16,39 @@ type Props = {
   onOAuthPreviewComplete: (id: ConnectorId) => void;
   /** After Gmail sync succeeds, refresh the graph from `GET /graph`. */
   onGmailGraphRefresh?: () => void | Promise<void>;
+  /** After GitHub repo is accepted — parent enables GitHub brain context. */
+  onGithubPublicCloneSuccess?: (result: CodebaseCloneResult) => void;
+  /** After GitHub ingest starts — refresh graph counts (e.g. `GET /graph`). */
+  onGithubCloneSessionStart?: () => void | Promise<void>;
 };
+
+function parseGithubRepoInput(input: string): { owner: string; repo: string } | null {
+  const trimmed = input.trim().replace(/\.git$/i, "");
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const u = new URL(trimmed);
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts.length >= 2) {
+        return { owner: parts[0], repo: parts[1] };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  const parts = trimmed.split("/").filter(Boolean);
+  if (parts.length >= 2) {
+    return { owner: parts[0], repo: parts[1] };
+  }
+  return null;
+}
 
 function RustFootnote({ lines }: { lines: string[] }) {
   return (
-    <div className="mt-8 rounded-xl border border-white/10 bg-black/30 p-4">
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-slate-500">
-        sketch for Rust / axum
-      </p>
-      <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-cyan-200/70">
+    <div className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+      <p className="mb-2 text-[11px] font-semibold text-zinc-500">Implementation notes</p>
+      <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-zinc-500">
         {lines.map((line) => (
           <li key={line}>{line}</li>
         ))}
@@ -34,9 +59,9 @@ function RustFootnote({ lines }: { lines: string[] }) {
 
 function PreviewBanner() {
   return (
-    <div className="mb-6 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 font-mono text-[11px] text-amber-100/90">
-      Preview UI — buttons do not hit Google, Meta, etc. Wire these screens to your OAuth routes and
-      ingestion workers in Rust.
+    <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-amber-100/90">
+      <span className="font-medium text-amber-50/95">Preview</span> — controls do not call real providers yet. Wire to
+      your OAuth routes and ingestion workers in Rust.
     </div>
   );
 }
@@ -202,107 +227,104 @@ function GmailKgEngineConnect({
 
   return (
     <div className="mx-auto max-w-lg">
-      <div className="mb-6 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 font-mono text-[11px] text-emerald-100/90">
-        Live · kg-engine Gmail — OAuth and sync call your Rust server at{" "}
-        <code className="text-cyan-200/90">{kgUrl}</code>
+      <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-zinc-300">
+        <span className="font-semibold text-emerald-200/95">Live</span> — Gmail OAuth and sync use your kg-engine server at{" "}
+        <code className="rounded bg-black/25 px-1 py-0.5 font-mono text-[11px] text-sky-200/90">{kgUrl}</code>
       </div>
       <div className="relative min-h-[320px]">
         {syncing && (
           <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-2xl border border-cyan-500/20 bg-[#040410]/92 px-8 py-10 text-center shadow-[inset_0_0_40px_rgba(34,211,238,0.06)] backdrop-blur-md"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/[0.08] bg-zinc-950/94 px-8 py-10 text-center backdrop-blur-md"
             role="status"
             aria-live="polite"
             aria-busy="true"
           >
-            <span className="inline-flex h-12 w-12 animate-spin rounded-full border-2 border-cyan-400/80 border-t-transparent" />
+            <span className="inline-flex h-11 w-11 animate-spin rounded-full border-2 border-sky-400/70 border-t-transparent" />
             <div className="w-full max-w-sm space-y-3">
-              <p className="font-mono text-sm font-semibold tracking-tight text-cyan-100">
-                Syncing Gmail — {syncTitle}
-              </p>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <p className="text-[15px] font-semibold tracking-tight text-zinc-100">Syncing Gmail · {syncTitle}</p>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                 {progressSnap?.percent != null ? (
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-[width] duration-300 ease-out"
+                    className="h-full rounded-full bg-sky-500/80 transition-[width] duration-300 ease-out"
                     style={{ width: `${Math.min(100, Math.max(0, progressSnap.percent))}%` }}
                   />
                 ) : (
-                  <div className="h-full w-full animate-pulse rounded-full bg-gradient-to-r from-cyan-500/40 via-violet-500/50 to-cyan-500/40" />
+                  <div className="h-full w-full animate-pulse rounded-full bg-sky-500/30" />
                 )}
               </div>
-              <p className="font-mono text-[11px] text-slate-300">
+              <p className="text-[12px] text-zinc-400">
                 {progressSnap ? (
                   <>
-                    <span className="text-cyan-200/90">{progressSnap.phase}</span>
+                    <span className="font-medium text-zinc-200">{progressSnap.phase}</span>
                     {progressSnap.threads_total > 0 && (
-                      <span className="text-slate-500">
+                      <span className="text-zinc-500">
                         {" "}
                         · threads {progressSnap.threads_done}/{progressSnap.threads_total}
                       </span>
                     )}
                     {progressSnap.percent != null && (
-                      <span className="text-slate-500"> · {progressSnap.percent.toFixed(1)}%</span>
+                      <span className="text-zinc-500"> · {progressSnap.percent.toFixed(1)}%</span>
                     )}
                     {progressSnap.chunks > 0 && (
-                      <span className="text-slate-500"> · {progressSnap.chunks} chunks</span>
+                      <span className="text-zinc-500"> · {progressSnap.chunks} chunks</span>
                     )}
                   </>
                 ) : (
-                  <span className="text-slate-500">Starting…</span>
+                  <span className="text-zinc-500">Starting…</span>
                 )}
               </p>
-              <p className="text-xs leading-relaxed text-slate-500">
-                Server returns live progress on <code className="text-cyan-600/80">GET /sync/gmail/progress</code>.
-                Large mailboxes can take many minutes — keep this tab open.
+              <p className="text-[12px] leading-relaxed text-zinc-500">
+                Progress on <code className="rounded bg-white/[0.06] px-1 font-mono text-[11px] text-zinc-400">GET /sync/gmail/progress</code>.
+                Large mailboxes can take a while — keep this tab open.
               </p>
-              <p className="font-mono text-[11px] tabular-nums text-slate-500">Elapsed {elapsedSec}s</p>
+              <p className="tabular-nums text-[11px] text-zinc-600">Elapsed {elapsedSec}s</p>
             </div>
           </div>
         )}
         <div
-          className={`overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c18] shadow-[0_24px_80px_rgba(0,0,0,0.55)] ${syncing ? "pointer-events-none opacity-40" : ""}`}
+          className={`overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${syncing ? "pointer-events-none opacity-45" : ""}`}
         >
-        <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-bold text-blue-600">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[15px] font-bold text-blue-600 shadow-sm">
             G
           </span>
           <div>
-            <p className="text-xs font-medium text-slate-400">Connect</p>
-            <p className="text-lg font-semibold tracking-tight text-slate-100">Gmail</p>
+            <p className="text-[13px] font-semibold text-zinc-400">Gmail</p>
+            <p className="text-[11px] text-zinc-600">Read-only · threads &amp; messages → graph</p>
           </div>
         </div>
-        <div className="space-y-4 px-5 py-5 text-sm text-slate-400">
+        <div className="space-y-3 px-4 py-4 text-[13px] leading-relaxed text-zinc-500">
           <p>
-            Read-only Gmail access: threads and messages are normalized in Rust, embedded, and written under{" "}
-            <code className="text-cyan-200/80">fluvio_graphs/workspace/</code> as{" "}
-            <code className="text-cyan-200/80">unified.json</code> (full graph) plus{" "}
-            <code className="text-cyan-200/80">email.json</code> and{" "}
-            <code className="text-cyan-200/80">pdf.json</code> slices. The file{" "}
-            <code className="text-cyan-200/80">fluvio_graphs/email.json</code> at the repo root is only the CLI{" "}
-            <code className="text-cyan-200/80">DomainGraph</code> placeholder — the HTTP server does not fill it.
+            Normalized in Rust and written under{" "}
+            <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-[11px] text-zinc-400">fluvio_graphs/workspace/</code> as{" "}
+            <code className="font-mono text-[11px] text-zinc-400">unified.json</code>,{" "}
+            <code className="font-mono text-[11px] text-zinc-400">email.json</code>, and{" "}
+            <code className="font-mono text-[11px] text-zinc-400">pdf.json</code>. Root{" "}
+            <code className="font-mono text-[11px] text-zinc-500">email.json</code> is CLI-only.
           </p>
-          <p className="font-mono text-[10px] text-slate-500">
+          <p className="text-[12px] text-zinc-600">
             Status:{" "}
-            {connected === null
-              ? "…"
-              : connected
-                ? "credentials on disk"
-                : "not connected"}
+            <span className="font-medium text-zinc-400">
+              {connected === null ? "Checking…" : connected ? "Signed in" : "Not connected"}
+            </span>
           </p>
           {connected && (
-            <p className="text-[11px] leading-relaxed text-slate-500">
-              One-time Google sign-in saves a token; use <strong className="text-slate-400">Sync incremental / Full</strong> and
-              optional limits below without going through Google again. Use “Full consent again” only after revoke or to force a
-              new refresh token.
+            <p className="text-[12px] leading-relaxed text-zinc-600">
+              Use <span className="font-medium text-zinc-400">Sync incremental</span> or{" "}
+              <span className="font-medium text-zinc-400">Full</span> without signing in again. “Full consent again” only if you
+              revoked access or need a new refresh token.
             </p>
           )}
-          {err && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-[11px] text-red-200/90">{err}</p>}
+          {err && (
+            <p className="rounded-xl border border-red-500/25 bg-red-950/40 px-3 py-2 text-[12px] text-red-200/95">{err}</p>
+          )}
         </div>
-        <div className="border-t border-white/5 px-5 py-4 space-y-3">
+        <div className="space-y-3 border-t border-white/[0.06] px-4 py-4">
           <button
             type="button"
             onClick={() => startOAuth()}
             disabled={syncing}
-            className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:opacity-50"
+            className="w-full rounded-xl bg-zinc-100 py-3 text-[14px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99] disabled:opacity-50"
           >
             {connected ? "Reconnect Google account" : "Sign in with Google"}
           </button>
@@ -311,23 +333,35 @@ function GmailKgEngineConnect({
               type="button"
               onClick={() => startOAuth({ forceConsent: true })}
               disabled={syncing}
-              className="w-full rounded-lg border border-white/15 py-2 font-mono text-[11px] text-slate-400 transition hover:border-amber-400/30 hover:text-amber-100/90 disabled:opacity-50"
+              className="w-full rounded-xl border border-white/[0.1] py-2.5 text-[12px] font-medium text-zinc-400 transition hover:bg-white/[0.04] hover:text-zinc-200 disabled:opacity-50"
             >
               Full consent again (new refresh token)
             </button>
           )}
-          <details className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-slate-400 open:pb-3">
-            <summary className="cursor-pointer select-none font-mono text-[11px] text-slate-300">
-              Sync scope &amp; limits (optional)
+          <details className="group overflow-hidden rounded-xl border border-white/[0.08] bg-black/20 open:pb-3">
+            <summary className="cursor-pointer list-none px-3 py-2.5 text-[13px] font-medium text-zinc-300 transition-colors hover:bg-white/[0.04] [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center justify-between gap-2">
+                Sync scope &amp; limits
+                <span className="text-zinc-600 group-open:rotate-180 transition-transform" aria-hidden>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-70">
+                    <path
+                      d="M3.5 5.25L7 8.75L10.5 5.25"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              </span>
             </summary>
-            <p className="mt-2 leading-relaxed text-slate-500">
-              Leave blank for defaults. <span className="text-slate-400">max_threads</span> caps thread listing;
-              <span className="text-slate-400"> max_messages</span> caps query list and each incremental run.
-              <span className="text-slate-400"> bootstrap_query</span> applies on first incremental when no history
-              is stored yet (e.g. <code className="text-cyan-600/80">newer_than:90d</code>).
+            <p className="px-3 pt-1 text-[12px] leading-relaxed text-zinc-600">
+              Leave blank for defaults. <span className="text-zinc-500">max_threads</span> caps listing;{" "}
+              <span className="text-zinc-500">max_messages</span> caps each run.{" "}
+              <span className="text-zinc-500">bootstrap_query</span> applies on first incremental when no history exists.
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="col-span-1 flex flex-col gap-1 font-mono text-[10px] text-slate-500">
+            <div className="mt-3 grid grid-cols-2 gap-2 px-3">
+              <label className="col-span-1 flex flex-col gap-1 text-[11px] font-medium text-zinc-600">
                 max_threads
                 <input
                   type="number"
@@ -336,10 +370,10 @@ function GmailKgEngineConnect({
                   onChange={(e) => setMaxThreads(e.target.value)}
                   disabled={syncing}
                   placeholder="e.g. 200"
-                  className="rounded border border-white/10 bg-[#0a0a14] px-2 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-600"
+                  className="rounded-xl border border-white/[0.08] bg-zinc-950/50 px-2.5 py-2 font-mono text-[12px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
                 />
               </label>
-              <label className="col-span-1 flex flex-col gap-1 font-mono text-[10px] text-slate-500">
+              <label className="col-span-1 flex flex-col gap-1 text-[11px] font-medium text-zinc-600">
                 max_messages
                 <input
                   type="number"
@@ -348,29 +382,29 @@ function GmailKgEngineConnect({
                   onChange={(e) => setMaxMessages(e.target.value)}
                   disabled={syncing}
                   placeholder="e.g. 500"
-                  className="rounded border border-white/10 bg-[#0a0a14] px-2 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-600"
+                  className="rounded-xl border border-white/[0.08] bg-zinc-950/50 px-2.5 py-2 font-mono text-[12px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
                 />
               </label>
-              <label className="col-span-2 flex flex-col gap-1 font-mono text-[10px] text-slate-500">
-                thread_query (Gmail <code className="text-cyan-600/70">q</code> for full thread list)
+              <label className="col-span-2 flex flex-col gap-1 text-[11px] font-medium text-zinc-600">
+                thread_query <span className="font-normal text-zinc-600">(Gmail q)</span>
                 <input
                   type="text"
                   value={threadQuery}
                   onChange={(e) => setThreadQuery(e.target.value)}
                   disabled={syncing}
                   placeholder="newer_than:30d -in:spam"
-                  className="rounded border border-white/10 bg-[#0a0a14] px-2 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-600"
+                  className="rounded-xl border border-white/[0.08] bg-zinc-950/50 px-2.5 py-2 font-mono text-[12px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
                 />
               </label>
-              <label className="col-span-2 flex flex-col gap-1 font-mono text-[10px] text-slate-500">
-                bootstrap_query (first incremental only, if no history yet)
+              <label className="col-span-2 flex flex-col gap-1 text-[11px] font-medium text-zinc-600">
+                bootstrap_query <span className="font-normal text-zinc-600">(first incremental)</span>
                 <input
                   type="text"
                   value={bootstrapQuery}
                   onChange={(e) => setBootstrapQuery(e.target.value)}
                   disabled={syncing}
                   placeholder="newer_than:180d"
-                  className="rounded border border-white/10 bg-[#0a0a14] px-2 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-600"
+                  className="rounded-xl border border-white/[0.08] bg-zinc-950/50 px-2.5 py-2 font-mono text-[12px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
                 />
               </label>
             </div>
@@ -380,7 +414,7 @@ function GmailKgEngineConnect({
               type="button"
               onClick={() => void runSync("incremental")}
               disabled={syncing}
-              className="flex-1 rounded-xl border border-cyan-400/35 bg-cyan-500/10 py-2.5 font-mono text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50"
+              className="flex-1 rounded-xl border border-sky-500/30 bg-sky-500/10 py-2.5 text-[13px] font-semibold text-sky-100 transition hover:bg-sky-500/15 disabled:opacity-50"
             >
               {syncing && syncKind === "incremental" ? "Syncing…" : "Sync incremental"}
             </button>
@@ -388,13 +422,14 @@ function GmailKgEngineConnect({
               type="button"
               onClick={() => void runSync("full")}
               disabled={syncing}
-              className="flex-1 rounded-xl border border-violet-400/35 bg-violet-500/10 py-2.5 font-mono text-xs font-medium text-violet-100 transition hover:bg-violet-500/20 disabled:opacity-50"
+              className="flex-1 rounded-xl border border-violet-500/30 bg-violet-500/10 py-2.5 text-[13px] font-semibold text-violet-100 transition hover:bg-violet-500/15 disabled:opacity-50"
             >
               {syncing && syncKind === "full" ? "Syncing…" : "Sync full"}
             </button>
           </div>
-          <p className="text-center font-mono text-[10px] text-slate-500">
-            OAuth callback: <code className="text-cyan-600/80">GET /connect/gmail/callback</code>
+          <p className="text-center text-[11px] text-zinc-600">
+            Callback{" "}
+            <code className="rounded bg-black/25 px-1 font-mono text-zinc-500">GET /connect/gmail/callback</code>
           </p>
         </div>
         </div>
@@ -430,39 +465,40 @@ function OauthChromeCard({
   return (
     <div className="mx-auto max-w-lg">
       <PreviewBanner />
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c18] shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-        <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
           {brand}
-          <div>
-            <p className="text-xs font-medium text-slate-400">Connect</p>
-            <p className="text-lg font-semibold tracking-tight text-slate-100">{title}</p>
+          <div className="min-w-0">
+            <p className="truncate text-[17px] font-semibold tracking-tight text-zinc-100">{title}</p>
+            <p className="text-[11px] text-zinc-600">Connect this source to your workspace.</p>
           </div>
         </div>
-        <div className="px-5 py-5">{body}</div>
+        <div className="px-4 py-4 text-[13px] leading-relaxed text-zinc-500">{body}</div>
         {oauthPhase === "form" && (
-          <div className="border-t border-white/5 px-5 py-4">
+          <div className="border-t border-white/[0.06] px-4 py-4">
             <button
               type="button"
               onClick={runOAuthPreview}
-              className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+              className="w-full rounded-xl bg-zinc-100 py-3 text-[14px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99]"
             >
-              Continue (preview flow)
+              Continue (preview)
             </button>
-            <p className="mt-2 text-center font-mono text-[10px] text-slate-500">
-              Production: 302 to IdP → <code className="text-cyan-600/80">/oauth/{id}/callback</code>
+            <p className="mt-2 text-center text-[11px] text-zinc-600">
+              Production: OAuth redirect → <code className="rounded bg-black/25 px-1 font-mono text-zinc-500">/oauth/{id}/callback</code>
             </p>
           </div>
         )}
         {oauthPhase === "busy" && (
-          <div className="border-t border-white/5 px-5 py-8 text-center font-mono text-sm text-slate-400">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />{" "}
-            Simulating redirect & token exchange…
+          <div className="border-t border-white/[0.06] px-4 py-8 text-center text-[13px] text-zinc-500">
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sky-400 border-t-transparent align-middle" />{" "}
+            Simulating redirect…
           </div>
         )}
         {oauthPhase === "done" && (
-          <div className="border-t border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
-            <p className="font-mono text-xs text-emerald-200/90">
-              Mock session stored. Next: background job pulls deltas → <code className="text-emerald-300">ingest_chunk(domain)</code>.
+          <div className="border-t border-emerald-500/20 bg-emerald-950/25 px-4 py-3">
+            <p className="text-[12px] leading-relaxed text-emerald-200/90">
+              Preview session on. Next: wire background sync to{" "}
+              <code className="rounded bg-black/20 px-1 font-mono text-[11px] text-emerald-300/90">ingest_chunk</code>.
             </p>
           </div>
         )}
@@ -472,7 +508,7 @@ function OauthChromeCard({
 }
 
 function fieldClass(disabled?: boolean) {
-  return `mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-cyan-400/35 ${
+  return `mt-1 w-full rounded-xl border border-white/[0.08] bg-zinc-950/50 px-3 py-2 font-mono text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20 ${
     disabled ? "cursor-not-allowed opacity-50" : ""
   }`;
 }
@@ -1079,19 +1115,26 @@ export function WorkspaceSurfacePanel({
   graphEdges,
   onOAuthPreviewComplete,
   onGmailGraphRefresh,
+  onGithubPublicCloneSuccess,
+  onGithubCloneSessionStart,
 }: Props) {
+  /** Public GitHub URL for shallow clone (`ingestion_registry::codebase::clone`). */
+  const [githubPublicRepoUrl, setGithubPublicRepoUrl] = useState("");
+  const [githubCloneBusy, setGithubCloneBusy] = useState(false);
+  const [githubCloneErr, setGithubCloneErr] = useState<string | null>(null);
+  const [githubCloneOk, setGithubCloneOk] = useState<string | null>(null);
+
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-[#050510]/97 p-6 backdrop-blur-md"
+      className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-zinc-950/96 p-5 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/88 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="surface-title"
     >
-      <header className="mx-auto mb-6 flex w-full max-w-3xl shrink-0 items-start justify-between gap-4">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">workspace</p>
-          <h2 id="surface-title" className="mt-1 text-xl font-semibold text-slate-100">
-            {surface === "documents" && "Documents · PDF ingestion"}
+      <header className="mx-auto mb-5 flex w-full max-w-3xl shrink-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 id="surface-title" className="text-[17px] font-semibold tracking-tight text-zinc-100">
+            {surface === "documents" && "Documents"}
             {surface === "gmail" && "Gmail"}
             {surface === "spotify" && "Spotify"}
             {surface === "github" && "GitHub"}
@@ -1099,25 +1142,30 @@ export function WorkspaceSurfacePanel({
             {surface === "whatsapp" && "WhatsApp"}
             {surface === "slack" && "Slack"}
             {surface === "notion" && "Notion"}
-            {surface === "web" && "Website crawl graph"}
+            {surface === "web" && "Website crawl"}
             {surface === "equities" && "Stocks & equities"}
             {surface === "futures" && "Futures"}
             {surface === "cryptocurrencies" && "Cryptocurrencies"}
             {surface === "fin_news" && "News wires"}
             {surface === "fin_market_data" && "Market data APIs"}
             {surface === "fin_research" && "Research & books"}
+            {surface === "des_bim" && "BIM / IFC"}
+            {surface === "des_arch_plans" && "Architectural plans"}
+            {surface === "des_structural" && "Structural analysis"}
+            {surface === "des_civil_site" && "Civil & site"}
+            {surface === "des_building_codes" && "Codes & loads"}
+            {surface === "des_physics_sim" && "Physics & simulation"}
           </h2>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">
-            This is the connect experience you ship later; layout and fields mirror what you will persist and sync from
-            the server.
+          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-zinc-500">
+            Configure how this source connects. Fields mirror what you will persist and sync from the server.
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-full border border-white/15 px-4 py-2 font-mono text-xs text-slate-300 transition hover:border-cyan-400/40 hover:text-white"
+          className="shrink-0 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-zinc-200 transition hover:bg-white/[0.08] active:scale-[0.98]"
         >
-          back to graph
+          Done
         </button>
       </header>
 
@@ -1125,69 +1173,66 @@ export function WorkspaceSurfacePanel({
         {surface === "documents" && (
           <div>
             <PreviewBanner />
-            <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-6">
-                <h3 className="text-sm font-medium text-emerald-100">Ingest pipeline (live today)</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  Multipart upload, mmap chunking, embeddings, and graph persistence. This block is what operators see
-                  before upload.
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="border-b border-white/[0.06] px-4 py-3">
+                <h3 className="text-[15px] font-semibold text-zinc-100">PDF ingestion</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">
+                  Multipart upload, chunking, embeddings, and graph persistence — live on kg-engine today.
                 </p>
-                <dl className="mt-5 space-y-3 font-mono text-[11px] text-slate-400">
-                  <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                    <dt>Endpoint</dt>
-                    <dd className="text-right text-cyan-200/80">POST {kgUrl}/ingest/pdf</dd>
-                  </div>
-                  <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                    <dt>Body</dt>
-                    <dd className="text-right">multipart field `file` (.pdf)</dd>
-                  </div>
-                  <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                    <dt>Graph</dt>
-                    <dd className="text-right text-cyan-200/80">GET {kgUrl}/graph</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt>Current graph</dt>
-                    <dd className="text-right text-slate-200">
-                      {graphNodes} nodes · {graphEdges} edges
-                    </dd>
-                  </div>
-                </dl>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <label
-                    htmlFor={pdfInputId}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-6 py-3 font-mono text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20"
-                  >
-                    Choose PDF…
-                  </label>
-                  <p className="flex min-w-[12rem] flex-1 items-center text-xs text-slate-500">
-                    Or use the <span className="mx-1 font-mono text-slate-400">+</span> shortcut in the sidebar for a
-                    quick upload without leaving the graph view.
-                  </p>
-                </div>
               </div>
-              <aside className="space-y-4 rounded-2xl border border-white/10 bg-[#0a0a14] p-5">
-                <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">future knobs</p>
-                <div className="space-y-3 text-xs text-slate-500">
-                  <label className="block">
-                    <span className="text-slate-400">Chunk target tokens</span>
-                    <input
-                      type="range"
-                      disabled
-                      className="mt-1 w-full opacity-40"
-                      defaultValue={50}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 opacity-50">
-                    <input type="checkbox" disabled defaultChecked />
-                    Deduplicate pages on re-upload
-                  </label>
-                  <label className="flex items-center gap-2 opacity-50">
-                    <input type="checkbox" disabled />
-                    OCR for scanned PDFs (later)
-                  </label>
+              <dl className="divide-y divide-white/[0.06] px-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
+                  <dt className="font-medium text-zinc-500">Endpoint</dt>
+                  <dd className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300">
+                    POST {kgUrl}/ingest/pdf
+                  </dd>
                 </div>
-              </aside>
+                <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
+                  <dt className="font-medium text-zinc-500">Body</dt>
+                  <dd className="text-right text-[12px] text-zinc-400">multipart field “file” (.pdf)</dd>
+                </div>
+                <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
+                  <dt className="font-medium text-zinc-500">Graph</dt>
+                  <dd className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300">GET {kgUrl}/graph</dd>
+                </div>
+                <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
+                  <dt className="font-medium text-zinc-500">Current graph</dt>
+                  <dd className="text-right tabular-nums text-zinc-200">
+                    {graphNodes} nodes · {graphEdges} edges
+                  </dd>
+                </div>
+              </dl>
+              <div className="flex flex-col gap-3 border-t border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center">
+                <label
+                  htmlFor={pdfInputId}
+                  className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-zinc-100 px-6 py-3 text-center text-[14px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99]"
+                >
+                  Choose PDF…
+                </label>
+                <p className="text-[12px] leading-relaxed text-zinc-600 sm:flex-1">
+                  Or use <span className="font-medium text-zinc-400">Add</span> in the sidebar for a quick upload.
+                </p>
+              </div>
             </div>
+            <details className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] open:pb-3">
+              <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-medium text-zinc-400 transition-colors hover:bg-white/[0.04] [&::-webkit-details-marker]:hidden">
+                Advanced options (coming soon)
+              </summary>
+              <div className="space-y-3 border-t border-white/[0.06] px-4 py-3 text-[12px] text-zinc-600">
+                <label className="block opacity-60">
+                  <span className="text-zinc-500">Chunk target tokens</span>
+                  <input type="range" disabled className="mt-1.5 w-full" defaultValue={50} />
+                </label>
+                <label className="flex items-center gap-2 opacity-60">
+                  <input type="checkbox" disabled defaultChecked />
+                  Deduplicate pages on re-upload
+                </label>
+                <label className="flex items-center gap-2 opacity-60">
+                  <input type="checkbox" disabled />
+                  OCR for scanned PDFs
+                </label>
+              </div>
+            </details>
             <RustFootnote
               lines={[
                 "Axum: Multipart extract → temp path → PDFChunkIterator → IngestionPipeline::ingest_chunk(..., \"pdf\", seq).",
@@ -1251,35 +1296,139 @@ export function WorkspaceSurfacePanel({
             <OauthChromeCard
               id="github"
               brand={
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#24292f] text-xs font-bold text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-[#24292f] text-[11px] font-bold text-white shadow-sm">
                   GH
                 </span>
               }
               title="GitHub"
               body={
-                <div className="space-y-4 text-sm text-slate-400">
-                  <div className="flex gap-4 text-xs">
-                    <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-lg border border-violet-400/30 bg-violet-500/10 p-3">
-                      <input type="radio" name="gh" defaultChecked readOnly className="accent-violet-400" />
+                <div className="space-y-4">
+                  <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-black/20">
+                    <div className="border-b border-white/[0.06] px-3 py-2.5">
+                      <p className="text-[13px] font-semibold text-zinc-200">Public repository</p>
+                      <p className="mt-1 text-[12px] leading-relaxed text-zinc-600">
+                        Paste a URL or <span className="font-mono text-zinc-400">owner/repo</span>. GitHub now uses the simple
+                        codebase flow: <span className="font-mono text-zinc-500">POST /ingest</span> and{" "}
+                        <span className="font-mono text-zinc-500">GET /parse</span>.
+                      </p>
+                    </div>
+                    <div className="space-y-3 p-3">
+                      <label className="block text-[12px] font-medium text-zinc-600">
+                        Repository URL
+                        <input
+                          type="text"
+                          inputMode="url"
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder="https://github.com/org/repo"
+                          value={githubPublicRepoUrl}
+                          onChange={(e) => {
+                            setGithubCloneErr(null);
+                            setGithubCloneOk(null);
+                            setGithubPublicRepoUrl(e.target.value);
+                          }}
+                          className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-zinc-950/50 px-3 py-2.5 font-mono text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
+                        />
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <button
+                          type="button"
+                          disabled={githubCloneBusy || !githubPublicRepoUrl.trim()}
+                          onClick={async () => {
+                            const url = githubPublicRepoUrl.trim();
+                            if (!url) return;
+                            const repoRef = parseGithubRepoInput(url);
+                            if (!repoRef) {
+                              setGithubCloneErr("Enter a valid GitHub URL or owner/repo.");
+                              return;
+                            }
+                            setGithubCloneBusy(true);
+                            setGithubCloneErr(null);
+                            setGithubCloneOk(null);
+                            try {
+                              const res = await fetch(`${kgUrl}/ingest`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ url, path: "" }),
+                              });
+                              const text = await res.text();
+                              if (!res.ok) {
+                                throw new Error(text || `HTTP ${res.status}`);
+                              }
+                              let data: { chunks: number; nodes: number; edges: number };
+                              try {
+                                data = JSON.parse(text) as { chunks: number; nodes: number; edges: number };
+                              } catch {
+                                throw new Error(text || "invalid JSON from server");
+                              }
+                              try {
+                                const prune = await fetch(`${kgUrl}/workspace/prune-codebase`, {
+                                  method: "POST",
+                                });
+                                if (!prune.ok) {
+                                  const t = await prune.text().catch(() => "");
+                                  console.warn("prune-codebase:", t || prune.status);
+                                }
+                              } catch (pe) {
+                                console.warn("prune-codebase failed", pe);
+                              }
+                              onGithubPublicCloneSuccess?.({
+                                owner: repoRef.owner,
+                                repo: repoRef.repo,
+                                local_path: `${repoRef.owner}/${repoRef.repo}`,
+                                was_cloned: true,
+                              });
+                              setGithubCloneOk(
+                                `${repoRef.owner}/${repoRef.repo} ingested (${data.chunks} chunks, ${data.nodes} nodes, ${data.edges} edges).`,
+                              );
+                              await onGithubCloneSessionStart?.();
+                            } catch (e: unknown) {
+                              const msg = e instanceof Error ? e.message : String(e);
+                              setGithubCloneErr(msg);
+                            } finally {
+                              setGithubCloneBusy(false);
+                            }
+                          }}
+                          className="rounded-xl bg-zinc-100 px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.99]"
+                        >
+                          {githubCloneBusy ? "Ingesting…" : "Ingest public repo"}
+                        </button>
+                        <span className="font-mono text-[11px] text-zinc-600">POST /ingest</span>
+                      </div>
+                      {githubCloneErr && (
+                        <p className="rounded-xl border border-red-500/25 bg-red-950/40 px-3 py-2 text-[12px] text-red-200/95">
+                          {githubCloneErr}
+                        </p>
+                      )}
+                      {githubCloneOk && (
+                        <p className="rounded-xl border border-emerald-500/20 bg-emerald-950/30 px-3 py-2 text-[12px] text-emerald-200/95">
+                          {githubCloneOk}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 text-[12px] text-zinc-300">
+                      <input type="radio" name="gh" defaultChecked readOnly className="accent-sky-500" />
                       GitHub App (recommended)
                     </label>
-                    <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-lg border border-white/10 p-3 opacity-60">
-                      <input type="radio" name="gh" readOnly className="accent-slate-500" />
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[12px] text-zinc-500 opacity-80">
+                      <input type="radio" name="gh" readOnly className="accent-zinc-500" />
                       Fine-grained PAT
                     </label>
                   </div>
-                  <label className="block text-xs">
-                    <span className="text-slate-500">Org / repos</span>
+                  <label className="block text-[12px] font-medium text-zinc-600">
+                    Org / repos
                     <input
                       type="text"
                       readOnly
                       defaultValue="acme-corp/api, acme-corp/kg-engine"
-                      className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-slate-300"
+                      className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-zinc-950/40 px-3 py-2.5 font-mono text-[12px] text-zinc-400"
                     />
                   </label>
-                  <p className="rounded-lg border border-white/5 bg-black/20 p-3 font-mono text-[10px] text-slate-500">
-                    Webhook URL (server prints on boot):{" "}
-                    <code className="text-violet-300/90">https://&lt;host&gt;/hooks/github</code>
+                  <p className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-600">
+                    Webhook URL (example):{" "}
+                    <code className="rounded bg-black/30 px-1 font-mono text-zinc-400">https://&lt;host&gt;/hooks/github</code>
                   </p>
                 </div>
               }
@@ -1287,8 +1436,8 @@ export function WorkspaceSurfacePanel({
             />
             <RustFootnote
               lines={[
-                "Verify X-Hub-Signature-256 in axum middleware; map payload → PR / push / issue nodes.",
-                "POST /ingest/github/sync?repo=… optional full scan using git2 or GitHub API tree.",
+                "GitHub UX now uses POST /ingest { url, path } for indexing, with optional module prefixes for scoped ingest.",
+                "Verify X-Hub-Signature-256 for apps; map payload → PR / push / issue nodes; PAT for private API tree later.",
               ]}
             />
           </>
@@ -1571,6 +1720,61 @@ export function WorkspaceSurfacePanel({
               lines={[
                 "POST /ingest/pdf with header X-Workspace-Kind: invest binds document to markets meta ledger slot.",
                 "Citations extracted as nodes; cross-edge to equities tickers when ISIN/CUSIP match.",
+              ]}
+            />
+          </>
+        )}
+
+        {DESIGN_CONNECTOR_IDS.includes(surface as (typeof DESIGN_CONNECTOR_IDS)[number]) && (
+          <>
+            <OauthChromeCard
+              id={surface as ConnectorId}
+              brand={
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-950/80 text-xs font-bold text-cyan-200">
+                  {surface === "des_bim"
+                    ? "IF"
+                    : surface === "des_arch_plans"
+                      ? "AR"
+                      : surface === "des_structural"
+                        ? "ST"
+                        : surface === "des_civil_site"
+                          ? "CV"
+                          : surface === "des_building_codes"
+                            ? "BC"
+                            : "Ph"}
+                </span>
+              }
+              title={
+                surface === "des_bim"
+                  ? "BIM / IFC federation"
+                  : surface === "des_arch_plans"
+                    ? "Architectural drawings"
+                    : surface === "des_structural"
+                      ? "Structural models"
+                      : surface === "des_civil_site"
+                        ? "Civil & geotech"
+                        : surface === "des_building_codes"
+                          ? "Codes & load combinations"
+                          : "Physics & simulation"
+              }
+              body={
+                <div className="space-y-4 text-sm text-slate-400">
+                  <p>
+                    Preview-only slice for the Design workspace: future kg-engine jobs would ingest IFC deltas, solver
+                    packs, boring logs, and adopted code editions as typed nodes so agents can prove geometry, loads, and
+                    physics stay consistent before construction.
+                  </p>
+                  <p className="font-mono text-[10px] text-slate-500">
+                    Enable preview to populate mock graph tabs; no files leave this browser in the mock path.
+                  </p>
+                </div>
+              }
+              onOAuthPreviewComplete={onOAuthPreviewComplete}
+            />
+            <RustFootnote
+              lines={[
+                "Sketch: POST /design/{bim|struct|civil|codes|physics}/sync with revision pins; union into DesignGraphId.",
+                "Agents consume fused GET /graph?workspace=design for validation chat — human sign-off on any field change.",
               ]}
             />
           </>

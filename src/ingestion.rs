@@ -86,6 +86,79 @@ impl IngestionPipeline {
         Ok((nodes_added, edges_added))
     }
 
+    /// Like [`Self::ingest_normalized_chunks`], but skips chunks whose `source_uri` already exists
+    /// on the graph (so repeated planet / sync does not duplicate nodes). Edges can still attach
+    /// to existing nodes via `pre_defined_edges` when the target URI is already present.
+    pub fn ingest_normalized_chunks_merge_uris(
+        &mut self,
+        chunks: &[NormalizedChunk],
+    ) -> Result<(usize, usize, usize), GraphError> {
+        let mut uri_to_id: std::collections::HashMap<String, NodeId> = std::collections::HashMap::new();
+        for (id, n) in &self.graph.nodes {
+            if let Some(uri) = n.metadata.get("source_uri").filter(|u| !u.is_empty()) {
+                uri_to_id.insert(uri.clone(), *id);
+            }
+        }
+
+        let mut skipped = 0usize;
+        let mut nodes_added = 0usize;
+
+        for chunk in chunks {
+            if chunk.text.trim().is_empty() {
+                continue;
+            }
+            if uri_to_id.contains_key(&chunk.source_uri) {
+                skipped += 1;
+                continue;
+            }
+            let mut meta = chunk.metadata.clone();
+            meta
+                .entry("source".to_string())
+                .or_insert_with(|| "email".to_string());
+            meta
+                .entry("page".to_string())
+                .or_insert_with(|| chunk.chunk_index.to_string());
+            meta.insert("source_uri".to_string(), chunk.source_uri.clone());
+
+            let doc = Box::new(TextChunk {
+                text: chunk.text.clone(),
+                metadata: meta,
+            });
+            let id = self.graph.add_node(doc)?;
+            uri_to_id.insert(chunk.source_uri.clone(), id);
+            nodes_added += 1;
+        }
+
+        let mut edges_added = 0usize;
+        for chunk in chunks {
+            let Some(&from_id) = uri_to_id.get(&chunk.source_uri) else {
+                continue;
+            };
+            for pe in &chunk.pre_defined_edges {
+                if let Some(&to_id) = uri_to_id.get(&pe.to_uri) {
+                    let dup = self
+                        .graph
+                        .adj_list
+                        .get(&from_id)
+                        .map(|edges| edges.iter().any(|e| e.to == to_id))
+                        .unwrap_or(false);
+                    if dup {
+                        continue;
+                    }
+                    self.graph.add_edge(
+                        from_id,
+                        to_id,
+                        pe.token_cost,
+                        pe.relationship_probability,
+                    )?;
+                    edges_added += 1;
+                }
+            }
+        }
+
+        Ok((nodes_added, edges_added, skipped))
+    }
+
     pub fn wire_edges(&mut self, threshold: f32) {
         let ids: Vec<NodeId> = self.graph.nodes.keys().copied().collect();
 

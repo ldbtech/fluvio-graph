@@ -235,6 +235,21 @@ impl Graph {
         true
     }
 
+    /// Deletes every node whose `metadata[key] == value`, and all incident edges. Returns how many nodes were removed.
+    pub fn remove_nodes_by_metadata(&mut self, key: &str, value: &str) -> usize {
+        let ids: Vec<NodeId> = self
+            .nodes
+            .values()
+            .filter(|n| n.metadata.get(key).map(|v| v == value).unwrap_or(false))
+            .map(|n| n.id)
+            .collect();
+        let count = ids.len();
+        for id in ids {
+            self.delete_node(id);
+        }
+        count
+    }
+
     /// Remove all nodes and edges (empty workspace).
     pub fn clear(&mut self) {
         self.nodes.clear();

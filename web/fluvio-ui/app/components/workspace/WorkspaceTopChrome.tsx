@@ -13,7 +13,13 @@ type Props = {
   documentGraphReady: boolean;
   personalPreviewCount: number;
   investPreviewCount: number;
+  designPreviewCount: number;
 };
+
+const segmentBase =
+  "rounded-full px-3.5 py-1.5 text-[13px] font-medium tracking-tight transition-colors duration-200 ease-out";
+const segmentIdle = "text-zinc-500 hover:text-zinc-300";
+const segmentActive = "bg-zinc-100 text-zinc-900 shadow-sm";
 
 export function WorkspaceTopChrome({
   mode,
@@ -23,79 +29,77 @@ export function WorkspaceTopChrome({
   documentGraphReady,
   personalPreviewCount,
   investPreviewCount,
+  designPreviewCount,
 }: Props) {
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center justify-between border-b border-cyan-400/15 bg-[#04040f]/95 px-4 backdrop-blur-md">
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-        <span className="font-mono text-xs font-semibold tracking-tight text-cyan-200/90">kg workspace</span>
-        <nav className="flex rounded-full border border-amber-400/15 bg-amber-500/[0.04] p-0.5 font-mono text-[10px]">
+    <header className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center justify-between border-b border-white/[0.06] bg-zinc-950/80 px-4 backdrop-blur-2xl supports-[backdrop-filter]:bg-zinc-950/70">
+      <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
+        <span className="truncate text-sm font-semibold tracking-tight text-zinc-100">Workspace</span>
+
+        <nav
+          className="flex rounded-full border border-white/[0.06] bg-zinc-900/80 p-0.5 shadow-inner"
+          aria-label="Workspace type"
+        >
           <button
             type="button"
             onClick={() => onWorkspaceKindChange("personal")}
-            className={`rounded-full px-2.5 py-1.5 transition sm:px-3 ${
-              workspaceKind === "personal"
-                ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_10px_rgba(34,211,238,0.12)]"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`${segmentBase} ${workspaceKind === "personal" ? segmentActive : segmentIdle}`}
           >
             Personal
           </button>
           <button
             type="button"
             onClick={() => onWorkspaceKindChange("invest")}
-            className={`rounded-full px-2.5 py-1.5 transition sm:px-3 ${
-              workspaceKind === "invest"
-                ? "bg-amber-500/25 text-amber-100 shadow-[0_0_10px_rgba(245,158,11,0.12)]"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`${segmentBase} ${workspaceKind === "invest" ? segmentActive : segmentIdle}`}
           >
             Investment
           </button>
+          <button
+            type="button"
+            onClick={() => onWorkspaceKindChange("design")}
+            className={`${segmentBase} ${workspaceKind === "design" ? segmentActive : segmentIdle}`}
+          >
+            Design
+          </button>
         </nav>
+
         <Link
           href="/qa"
-          className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.06] px-3 py-1.5 font-mono text-[10px] text-emerald-200/90 transition hover:border-emerald-400/35 hover:bg-emerald-500/12"
+          className="hidden rounded-full border border-white/[0.08] bg-zinc-900/60 px-3 py-1.5 text-[12px] font-medium text-zinc-400 transition hover:border-white/[0.12] hover:bg-zinc-800/80 hover:text-zinc-200 sm:inline-flex"
         >
-          QA infrastructure
+          QA
         </Link>
-        <nav className="flex rounded-full border border-white/10 bg-white/[0.03] p-0.5 font-mono text-[11px]">
+
+        <nav
+          className="flex rounded-full border border-white/[0.06] bg-zinc-900/80 p-0.5 shadow-inner"
+          aria-label="Main mode"
+        >
           <button
             type="button"
             onClick={() => onModeChange("sources")}
-            className={`rounded-full px-3 py-1.5 transition ${
-              mode === "sources"
-                ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`${segmentBase} ${mode === "sources" ? segmentActive : segmentIdle}`}
           >
             Sources
           </button>
           <button
             type="button"
             onClick={() => onModeChange("brain")}
-            className={`rounded-full px-3 py-1.5 transition ${
-              mode === "brain"
-                ? "bg-violet-500/20 text-violet-100 shadow-[0_0_12px_rgba(139,92,246,0.12)]"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`${segmentBase} ${mode === "brain" ? segmentActive : segmentIdle}`}
           >
-            Workspace brain
+            Brain
           </button>
         </nav>
       </div>
-      <div className="hidden flex-col items-end gap-0.5 font-mono text-[10px] text-slate-500 lg:flex">
+
+      <div className="hidden flex-col items-end gap-0.5 text-[11px] font-medium text-zinc-500 lg:flex">
         <span>
-          PDF graph:{" "}
-          <span className={documentGraphReady ? "text-emerald-400/90" : "text-slate-600"}>
+          PDF{" "}
+          <span className={documentGraphReady ? "text-emerald-400/90" : "text-zinc-600"}>
             {documentGraphReady ? "ready" : "empty"}
           </span>
         </span>
-        <span className="text-violet-300/60">
-          previews · personal{" "}
-          <span className="text-violet-200">{personalPreviewCount}</span>
-          <span className="mx-1 text-slate-600">·</span>
-          invest{" "}
-          <span className="text-amber-200/90">{investPreviewCount}</span>
+        <span className="tabular-nums text-zinc-600">
+          Previews · {personalPreviewCount} personal · {investPreviewCount} invest · {designPreviewCount} design
         </span>
       </div>
     </header>

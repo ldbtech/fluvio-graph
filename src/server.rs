@@ -15,7 +15,8 @@ use crate::{
     graph::{EmbeddingContext, Graph},
     ingestion::IngestionPipeline,
     ingestion_registry::{
-        connector::FluvioConnector,
+        codebase::CodebaseConnector,
+        connector::{ConnectorError, FluvioConnector},
         email::{
             auth::{exchange_code, get_auth_url},
             connector::GmailConnector,
@@ -27,11 +28,14 @@ use crate::{
     query::KnowledgeGraphQuery,
 };
 
+use crate::routes::codebase::{get_codebase_parse, get_codebase_tree, post_codebase_ingest};
+
 /// Workspace graphs live under `fluvio_graphs/workspace/` (`unified.json` plus filtered snapshots).
 const WORKSPACE_GRAPHS_DIR: &str = "fluvio_graphs/workspace";
 const WORKSPACE_UNIFIED: &str = "fluvio_graphs/workspace/unified.json";
 const WORKSPACE_PDF: &str = "fluvio_graphs/workspace/pdf.json";
 const WORKSPACE_EMAIL: &str = "fluvio_graphs/workspace/email.json";
+const WORKSPACE_CODEBASE: &str = "fluvio_graphs/workspace/codebase.json";
 const LEGACY_GRAPH_PATH: &str = "fluvio_graph.json";
 const WORKSPACE_PROJECTS_DIR: &str = "fluvio_graphs/projects";
 
@@ -67,6 +71,9 @@ fn persist_workspace_snapshots(graph: &Graph) -> anyhow::Result<()> {
             .map(|s| s == "email" || s == "gmail")
             .unwrap_or(false)
     })?;
+    graph.save_filtered(WORKSPACE_CODEBASE, |n| {
+        n.metadata.get("source").map(|s| s == "codebase").unwrap_or(false)
+    })?;
     Ok(())
 }
 
@@ -96,6 +103,7 @@ pub struct AppState {
     pub oauth_csrf: Arc<Mutex<Option<String>>>,
     /// Gmail sync progress for `GET /sync/gmail/progress` while `POST /sync/gmail` runs in the background.
     pub gmail_progress: Arc<GmailSyncProgress>,
+    pub presist: fn(&Graph) -> anyhow::Result<()>,
 }
 
 pub async fn serve(api_key: String) -> anyhow::Result<()> {
@@ -118,6 +126,7 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         api_key,
         oauth_csrf: Arc::new(Mutex::new(None)),
         gmail_progress,
+        presist: persist_workspace_snapshots,
     };
 
     let app = Router::new()
@@ -132,23 +141,24 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/connect/gmail", get(connect_gmail_start))
         .route("/sync/gmail/progress", get(sync_gmail_progress))
         .route("/sync/gmail", post(sync_gmail))
+        
+        //// Codebase routes ////
+        .route("/ingest", post(post_codebase_ingest))
+        .route("/parse", get(get_codebase_parse))
+        .route("/tree", get(get_codebase_tree))
+       
         .route("/workspace/projects", get(workspace_list_projects))
         .route("/workspace/archive", post(workspace_archive))
         .route("/workspace/reset", post(workspace_reset))
         .route("/workspace/load", post(workspace_load))
         .route("/workspace/delete", post(workspace_delete))
+        .route("/workspace/prune-codebase", post(workspace_prune_codebase))
         .layer(cors)
         .with_state(state);
 
     let listner = tokio::net::TcpListener::bind("0.0.0.0:8001").await?;
 
     println!("KG-GRAPH Listening on http://localhost:8001");
-    println!("  Gmail OAuth: GET /connect/gmail (JSON) or ?redirect=1 (302); ?force_consent=1 always shows consent");
-    println!("  Gmail callback: GET /connect/gmail/callback");
-    println!("  Gmail sync: POST /sync/gmail (202) + GET /sync/gmail/progress");
-    println!("  GET /graph — capped sample; GET /graph/meta + /graph/nodes + POST /graph/edges_subset for UI paging");
-    println!("  Workspace projects: GET /workspace/projects; POST /workspace/archive|reset|load|delete (JSON body {{\"id\":\"...\"}} where needed)");
-
     axum::serve(listner, app).await?;
 
     Ok(())
@@ -365,6 +375,259 @@ async fn sync_gmail(
             "hint": "Poll until running is false; then read result or error on the same JSON."
         })),
     ))
+}
+
+// ---- POST /sync/codebase/clone
+#[derive(Deserialize)]
+struct CodebaseCloneBody {
+    url: String,
+}
+
+#[derive(Serialize)]
+struct CodebaseCloneResponse {
+    owner: String,
+    repo: String,
+    local_path: String,
+    was_cloned: bool,
+}
+
+fn codebase_connector_err_status(e: &ConnectorError) -> StatusCode {
+    match e {
+        ConnectorError::Parse(_) => StatusCode::BAD_REQUEST,
+        ConnectorError::Auth(_) => StatusCode::UNAUTHORIZED,
+        ConnectorError::NotConfigured(_) => StatusCode::SERVICE_UNAVAILABLE,
+        ConnectorError::Api(_) => StatusCode::BAD_GATEWAY,
+        ConnectorError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+/// Shallow-clone or pull a **public** GitHub repo into `~/.fluvio/repos/<owner>/<repo>/`.
+async fn sync_codebase_clone(
+    Json(body): Json<CodebaseCloneBody>,
+) -> Result<Json<CodebaseCloneResponse>, (StatusCode, String)> {
+    let url = body.url.trim().to_string();
+    if url.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
+    }
+
+    let join = tokio::task::spawn_blocking(move || CodebaseConnector::clone_public_url(&url));
+    let done = join
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    match done {
+        Ok(result) => Ok(Json(CodebaseCloneResponse {
+            owner: result.owner,
+            repo: result.repo,
+            local_path: result.local_path.to_string_lossy().into_owned(),
+            was_cloned: result.was_cloned,
+        })),
+        Err(e) => Err((codebase_connector_err_status(&e), e.to_string())),
+    }
+}
+
+// ---- POST /sync/codebase  (ingest cloned repo into the knowledge graph)
+
+#[derive(Deserialize)]
+struct CodebaseIngestBody {
+    url: String,
+}
+
+#[derive(Serialize)]
+struct CodebaseIngestResponse {
+    chunks: usize,
+    nodes_added: usize,
+    structured_edges: usize,
+    chunks_skipped_existing: usize,
+    graph_nodes: usize,
+    graph_edges: usize,
+}
+
+#[derive(Deserialize)]
+struct CodebasePlanetIngestBody {
+    url: String,
+    path_prefix: String,
+}
+
+#[derive(Serialize)]
+struct CodebasePlanetIngestResponse {
+    path_prefix: String,
+    chunks_in_scope: usize,
+    chunks_skipped_existing: usize,
+    nodes_added: usize,
+    structured_edges: usize,
+    graph_nodes: usize,
+    graph_edges: usize,
+}
+
+/// Parses a **already cloned** repo under `~/.fluvio/repos/…`, embeds chunks into the workspace graph,
+/// wires similarity edges, and persists snapshots (including `codebase.json`).
+async fn sync_codebase_ingest(
+    State(state): State<AppState>,
+    Json(body): Json<CodebaseIngestBody>,
+) -> Result<Json<CodebaseIngestResponse>, (StatusCode, String)> {
+    let url = body.url.trim().to_string();
+    if url.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
+    }
+
+    let join = tokio::task::spawn_blocking(move || {
+        let connector = CodebaseConnector::new();
+        FluvioConnector::extract(&connector, url.as_str())
+    });
+    let extracted = join
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chunks = match extracted {
+        Ok(c) => c,
+        Err(e) => return Err((codebase_connector_err_status(&e), e.to_string())),
+    };
+
+    let chunk_count = chunks.len();
+
+    let mut pipeline = state
+        .pipeline
+        .lock()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (nodes_added, structured_edges, chunks_skipped_existing) = pipeline
+        .ingest_normalized_chunks_merge_uris(&chunks)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    pipeline.wire_edges(0.35);
+    let graph_nodes = pipeline.graph.nodes.len();
+    let graph_edges: usize = pipeline.graph.adj_list.values().map(|e| e.len()).sum();
+    persist_workspace_snapshots(&pipeline.graph).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            e.to_string(),
+        )
+    })?;
+
+    Ok(Json(CodebaseIngestResponse {
+        chunks: chunk_count,
+        nodes_added,
+        structured_edges,
+        chunks_skipped_existing,
+        graph_nodes,
+        graph_edges,
+    }))
+}
+
+/// Scoped codebase → knowledge graph for one module (“planet”): parses files under `path_prefix` only.
+async fn sync_codebase_planet_ingest(
+    State(state): State<AppState>,
+    Json(body): Json<CodebasePlanetIngestBody>,
+) -> Result<Json<CodebasePlanetIngestResponse>, (StatusCode, String)> {
+    let url = body.url.trim().to_string();
+    let path_prefix = body.path_prefix.trim().to_string();
+    if url.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
+    }
+    if path_prefix.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "path_prefix is required (repo-relative module path, e.g. src/api)".to_string(),
+        ));
+    }
+
+    let prefix_clone = path_prefix.clone();
+    let join = tokio::task::spawn_blocking(move || {
+        let connector = CodebaseConnector::new();
+        connector.extract_under_prefix(url.as_str(), prefix_clone.as_str())
+    });
+    let extracted = join
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let chunks = match extracted {
+        Ok(c) => c,
+        Err(e) => return Err((codebase_connector_err_status(&e), e.to_string())),
+    };
+
+    let chunks_in_scope = chunks.len();
+
+    let mut pipeline = state
+        .pipeline
+        .lock()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (nodes_added, structured_edges, chunks_skipped_existing) = pipeline
+        .ingest_normalized_chunks_merge_uris(&chunks)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    pipeline.wire_edges(0.35);
+    let graph_nodes = pipeline.graph.nodes.len();
+    let graph_edges: usize = pipeline.graph.adj_list.values().map(|e| e.len()).sum();
+    persist_workspace_snapshots(&pipeline.graph).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            e.to_string(),
+        )
+    })?;
+
+    Ok(Json(CodebasePlanetIngestResponse {
+        path_prefix,
+        chunks_in_scope,
+        chunks_skipped_existing,
+        nodes_added,
+        structured_edges,
+        graph_nodes,
+        graph_edges,
+    }))
+}
+
+// ---- GET /sync/codebase/files
+#[derive(Deserialize)]
+struct CodebaseFilesQuery {
+    url: Option<String>,
+    owner: Option<String>,
+    repo: Option<String>,
+}
+
+#[derive(Serialize)]
+struct CodebaseFilesResponse {
+    paths: Vec<String>,
+    truncated: bool,
+}
+
+fn codebase_resolve_listing_url(q: &CodebaseFilesQuery) -> Result<String, (StatusCode, String)> {
+    if let Some(u) = q.url.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+        return Ok(u.to_string());
+    }
+    let o = q.owner.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
+    let r = q.repo.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
+    match (o, r) {
+        (Some(o), Some(r)) => Ok(format!("{o}/{r}")),
+        _ => Err((
+            StatusCode::BAD_REQUEST,
+            "pass url=… or owner=…&repo=… (GitHub coordinates)".to_string(),
+        )),
+    }
+}
+
+/// Lists files under an existing clone (`~/.fluvio/repos/{owner}/{repo}/`), skipping `.git/`.
+async fn get_codebase_files(
+    Query(q): Query<CodebaseFilesQuery>,
+) -> Result<Json<CodebaseFilesResponse>, (StatusCode, String)> {
+    let url = codebase_resolve_listing_url(&q)?;
+    let join = tokio::task::spawn_blocking(move || {
+        crate::ingestion_registry::codebase::list_cloned_file_paths(&url)
+    });
+    let done = join
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    match done {
+        Ok(r) => Ok(Json(CodebaseFilesResponse {
+            paths: r.paths,
+            truncated: r.truncated,
+        })),
+        Err(e) => {
+            let status = match &e {
+                crate::ingestion_registry::codebase::CloneError::NotCloned(_) => StatusCode::NOT_FOUND,
+                crate::ingestion_registry::codebase::CloneError::InvalidUrl(_) => StatusCode::BAD_REQUEST,
+                _ => StatusCode::INTERNAL_SERVER_ERROR,
+            };
+            Err((status, e.to_string()))
+        }
+    }
 }
 
 // ---- POST /ingest/pdf
@@ -945,6 +1208,7 @@ async fn workspace_archive(
         (WORKSPACE_UNIFIED, "unified.json"),
         (WORKSPACE_PDF, "pdf.json"),
         (WORKSPACE_EMAIL, "email.json"),
+        (WORKSPACE_CODEBASE, "codebase.json"),
     ] {
         if Path::new(src).exists() {
             let to = format!("{dest}/{fname}");
@@ -989,6 +1253,20 @@ async fn workspace_load(
     let nodes = p.graph.nodes.len();
     let edges: usize = p.graph.adj_list.values().map(|e| e.len()).sum();
     Ok(Json(serde_json::json!({ "ok": true, "id": id, "nodes": nodes, "edges": edges })))
+}
+
+/// Removes every graph node with `metadata["source"] == "codebase"` (planet / full-repo ingest) so a new clone
+/// does not leave the previous repo in `/chat` retrieval.
+async fn workspace_prune_codebase(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut p = state
+        .pipeline
+        .lock()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let removed = p.graph.remove_nodes_by_metadata("source", "codebase");
+    persist_workspace_snapshots(&p.graph).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "ok": true, "removed_nodes": removed })))
 }
 
 async fn workspace_delete(

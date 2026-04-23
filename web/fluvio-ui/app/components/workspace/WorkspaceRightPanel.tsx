@@ -47,6 +47,30 @@ const FUSION_AGENTS: MockAgent[] = [
   },
 ];
 
+const DESIGN_AGENTS: MockAgent[] = [
+  {
+    id: "load-weaver",
+    name: "Load combination weaver",
+    description:
+      "Maps code clauses to tributary areas and member demand sets; flags mismatches between arch intent and adopted ASCE/IBC edition (mock).",
+    icon: "⏉",
+  },
+  {
+    id: "physics-sentinel",
+    name: "Physics sentinel",
+    description:
+      "Runs drift, acceleration, and wind comfort gates; opens tickets when solver outputs diverge from BIM assumptions (mock).",
+    icon: "⌭",
+  },
+  {
+    id: "clash-arbiter",
+    name: "Clash arbiter",
+    description:
+      "Prioritizes MEP vs structural clashes by constructability and code minimums; proposes reroutes before field RFIs (mock).",
+    icon: "⎍",
+  },
+];
+
 const MARKETS_AGENTS: MockAgent[] = [
   {
     id: "tape-librarian",
@@ -107,7 +131,7 @@ type Props = {
   workspaceKind: WorkspaceKind;
   /** When true, panel is a fixed right column in the brain layout (not floating). */
   dock?: boolean;
-  /** Changes reset chat history (switching graph tabs). */
+  /** Changes reset chat history (brain tab, or GitHub `owner/repo` when docked on GitHub). */
   domainKey: string;
   chatSource: "live" | "mock";
   brainTab: BrainTab;
@@ -228,92 +252,106 @@ export function WorkspaceRightPanel({
 
   const panelInner = (
     <div
-      className={`flex min-h-0 flex-1 flex-col overflow-hidden bg-[#060616]/95 backdrop-blur-xl ${
+      className={`flex min-h-0 flex-1 flex-col overflow-hidden border-white/[0.08] bg-zinc-950/90 backdrop-blur-2xl ${
         dock
-          ? "h-full"
-          : "max-h-[min(560px,calc(100vh-5rem))] w-[min(100vw-1.5rem,380px)] rounded-2xl border border-cyan-400/20 shadow-[0_0_48px_rgba(0,0,0,0.45)]"
+          ? "h-full border-l"
+          : "max-h-[min(560px,calc(100vh-5rem))] w-[min(100vw-1.5rem,380px)] rounded-2xl border shadow-2xl shadow-black/50"
       }`}
       onClick={(e) => e.stopPropagation()}
     >
-          <div className="flex border-b border-white/5">
+          <div className="flex border-b border-white/[0.06] p-1">
             {(["chat", "agents"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
-                className={`flex-1 py-2.5 font-mono text-xs uppercase tracking-wider transition ${
+                className={`flex-1 rounded-lg py-2 text-[13px] font-semibold tracking-tight transition-colors duration-200 ${
                   tab === t
-                    ? "border-b-2 border-cyan-400 text-cyan-200"
-                    : "text-slate-500 hover:text-slate-300"
+                    ? "bg-zinc-100 text-zinc-900"
+                    : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200"
                 }`}
               >
-                {t}
+                {t === "chat" ? "Chat" : "Agents"}
               </button>
             ))}
           </div>
 
           {tab === "chat" && (
             <>
-              <div className="border-b border-cyan-400/10 bg-cyan-400/5 px-3 py-2">
-                <p className="font-mono text-[10px] text-cyan-200/80">
+              <div className="border-b border-white/[0.06] bg-zinc-900/40 px-3 py-2.5">
+                <p className="text-[12px] font-medium leading-snug text-zinc-400">
                   {brainTab === "unified" && (
                     <>
-                      Unified brain · mock fusion chat · <span className="text-violet-300">{nodeCount}</span> nodes
+                      Unified · mock fusion · <span className="tabular-nums text-zinc-200">{nodeCount}</span> nodes
                     </>
                   )}
                   {brainTab === "meta" && (
                     <>
-                      Meta-graph · control-plane mock · <span className="text-violet-300">{nodeCount}</span> nodes
+                      Meta · control plane · <span className="tabular-nums text-zinc-200">{nodeCount}</span> nodes
                     </>
                   )}
-                  {brainTab !== "unified" && brainTab !== "meta" && chatSource === "live" && !graphEmpty && (
+                  {brainTab === "github" && (
                     <>
-                      Live graph chat · <span className="text-violet-300">{nodeCount}</span> nodes ·{" "}
-                      <span className="text-slate-500">PDF brain</span>
+                      GitHub · <span className="tabular-nums text-zinc-200">{nodeCount}</span> nodes ·{" "}
+                      <span className="text-zinc-600">preview</span>
                     </>
                   )}
-                  {brainTab !== "unified" && brainTab !== "meta" && !(chatSource === "live" && !graphEmpty) && graphEmpty && (
+                  {brainTab !== "unified" && brainTab !== "meta" && brainTab !== "github" && chatSource === "live" && !graphEmpty && (
                     <>
-                      No nodes — mock assistant · <span className="text-violet-300">{brainTab}</span>
+                      Live graph · <span className="tabular-nums text-zinc-200">{nodeCount}</span> nodes ·{" "}
+                      <span className="text-zinc-600">PDF</span>
                     </>
                   )}
-                  {brainTab !== "unified" && brainTab !== "meta" && !(chatSource === "live" && !graphEmpty) && !graphEmpty && (
+                  {brainTab !== "unified" &&
+                    brainTab !== "meta" &&
+                    brainTab !== "github" &&
+                    !(chatSource === "live" && !graphEmpty) &&
+                    graphEmpty && (
                     <>
-                      Preview chat · <span className="text-violet-300">{nodeCount}</span> nodes ·{" "}
-                      <span className="text-slate-500">{brainTab}</span>
+                      No graph yet · <span className="text-zinc-300">{brainTab}</span>
+                    </>
+                  )}
+                  {brainTab !== "unified" &&
+                    brainTab !== "meta" &&
+                    brainTab !== "github" &&
+                    !(chatSource === "live" && !graphEmpty) &&
+                    !graphEmpty && (
+                    <>
+                      Preview · <span className="tabular-nums text-zinc-200">{nodeCount}</span> nodes ·{" "}
+                      <span className="text-zinc-600">{brainTab}</span>
                     </>
                   )}
                 </p>
               </div>
               <div ref={messagesRef} className="min-h-[200px] flex-1 space-y-3 overflow-y-auto p-3">
                 {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center gap-2 py-10 text-center opacity-50">
-                    <span className="text-3xl">⬢</span>
-                    <p className="px-4 font-mono text-xs text-slate-400">
-                      Ask the graph to explain a claim, compare sections, or delegate a follow-up.
+                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                    <span className="text-2xl text-zinc-600">◇</span>
+                    <p className="max-w-[240px] px-2 text-[13px] leading-relaxed text-zinc-500">
+                      Ask about the graph, compare claims, or queue a follow-up.
                     </p>
                   </div>
                 )}
                 {messages.map((m, i) => (
                   <div
                     key={i}
-                    className={`rounded-xl border px-3 py-2.5 font-mono text-xs leading-relaxed break-words ${
+                    className={`rounded-2xl border px-3.5 py-2.5 text-[13px] leading-relaxed break-words ${
                       m.role === "user"
-                        ? "ml-6 border-cyan-400/15 bg-cyan-400/10 text-cyan-100"
-                        : "mr-4 border-white/10 bg-white/[0.04] text-slate-200"
+                        ? "ml-5 border-sky-500/20 bg-sky-500/10 text-zinc-100"
+                        : "mr-3 border-white/[0.06] bg-zinc-900/80 text-zinc-300"
                     }`}
                   >
                     {m.content}
                   </div>
                 ))}
                 {loading && (
-                  <div className="mr-4 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 font-mono text-xs text-slate-400">
-                    <span className="animate-pulse">thinking</span>
-                    <span className="animate-bounce">...</span>
+                  <div className="mr-3 rounded-2xl border border-white/[0.06] bg-zinc-900/60 px-3.5 py-2.5 text-[13px] text-zinc-500">
+                    <span className="animate-pulse">Thinking</span>
+                    <span className="animate-bounce">…</span>
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 border-t border-white/5 p-3">
+              <div className="flex gap-2 border-t border-white/[0.06] p-3">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -325,166 +363,179 @@ export function WorkspaceRightPanel({
                   }}
                   placeholder={
                     brainTab === "unified"
-                      ? "Ask across all subgraphs (mock)…"
+                      ? "Message unified graph…"
                       : brainTab === "meta"
-                        ? "Ask the control plane (mock)…"
-                        : chatSource === "live"
-                          ? "Ask your PDF graph…"
-                          : `Task or question for ${brainTab}…`
+                        ? "Message control plane…"
+                        : brainTab === "github"
+                          ? "Ask about the repo graph…"
+                          : chatSource === "live"
+                            ? "Message PDF graph…"
+                            : `Message ${brainTab}…`
                   }
-                  className="flex-1 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 font-mono text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-cyan-400/35"
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3 py-2.5 text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/40 focus:ring-1 focus:ring-sky-500/20"
                 />
                 <button
                   type="button"
                   onClick={() => void sendMessage()}
                   disabled={loading || !input.trim()}
-                  className="rounded-xl border border-cyan-400/30 px-3 py-2 font-mono text-xs font-bold text-cyan-950 disabled:opacity-25"
-                  style={{
-                    background:
-                      loading || !input.trim()
-                        ? "transparent"
-                        : "linear-gradient(135deg,#5dfff8,#9b85ff)",
-                    color: loading || !input.trim() ? "#64748b" : "#0a0a12",
-                  }}
+                  className="shrink-0 rounded-xl bg-zinc-100 px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  →
+                  Send
                 </button>
               </div>
             </>
           )}
 
           {tab === "agents" && (
-            <div className="flex min-h-[320px] flex-1 flex-col gap-3 overflow-y-auto p-3">
-              <p className="font-mono text-[10px] leading-relaxed text-slate-500">
-                Autonomous workers (mock): they spin up, log fake heartbeats, and sit ready for real
-                orchestration later.
+            <div className="flex min-h-[320px] flex-1 flex-col gap-4 overflow-y-auto p-3">
+              <p className="text-[12px] leading-relaxed text-zinc-500">
+                Mock agents for layout and flows. Real orchestration hooks in later.
               </p>
               <div className="space-y-2">
-                <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">source agents</p>
+                <p className="px-0.5 text-[11px] font-medium text-zinc-500">Source</p>
                 {DEPLOYABLE.map((def) => (
                   <div
                     key={def.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-2.5"
+                    className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
                   >
-                    <span className="text-lg text-cyan-200/80">{def.icon}</span>
+                    <span className="text-lg text-zinc-400">{def.icon}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-200">{def.name}</p>
-                      <p className="text-[11px] text-slate-500">{def.description}</p>
+                      <p className="text-sm font-medium text-zinc-100">{def.name}</p>
+                      <p className="text-[12px] text-zinc-500">{def.description}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => deploy(def)}
-                      className="shrink-0 rounded-lg border border-violet-400/30 bg-violet-500/15 px-2.5 py-1 font-mono text-[10px] text-violet-100 hover:bg-violet-500/25"
+                      className="shrink-0 rounded-lg bg-zinc-100 px-3 py-1.5 text-[11px] font-semibold text-zinc-900 transition hover:bg-white"
                     >
-                      deploy
+                      Deploy
                     </button>
                   </div>
                 ))}
               </div>
               {dock && (
-                <div className="space-y-2 border-t border-violet-500/15 pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-violet-400/70">
-                    fusion mesh · infra (mock)
-                  </p>
-                  <p className="font-mono text-[10px] leading-relaxed text-slate-600">
-                    Spin these when you want the UI to stand in for axum workers that own cross-domain sync, rebuilds,
-                    and policy.
+                <div className="space-y-2 border-t border-white/[0.06] pt-4">
+                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Fusion · mock</p>
+                  <p className="text-[12px] leading-relaxed text-zinc-600">
+                    Cross-domain sync and policy workers (placeholder UI).
                   </p>
                   {FUSION_AGENTS.map((def) => (
                     <div
                       key={def.id}
-                      className="flex items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-2.5"
+                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
                     >
-                      <span className="text-lg text-violet-200/90">{def.icon}</span>
+                      <span className="text-lg text-zinc-400">{def.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-violet-100">{def.name}</p>
-                        <p className="text-[11px] text-slate-500">{def.description}</p>
+                        <p className="text-sm font-medium text-zinc-100">{def.name}</p>
+                        <p className="text-[12px] text-zinc-500">{def.description}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => deploy(def)}
-                        className="shrink-0 rounded-lg border border-fuchsia-400/35 bg-fuchsia-500/15 px-2.5 py-1 font-mono text-[10px] text-fuchsia-100 hover:bg-fuchsia-500/25"
+                        className="shrink-0 rounded-lg border border-white/[0.1] bg-zinc-800 px-3 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-zinc-700"
                       >
-                        spin up
+                        Start
                       </button>
                     </div>
                   ))}
                 </div>
               )}
               {dock && workspaceKind === "personal" && (
-                <div className="space-y-2 border-t border-amber-500/20 pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-amber-400/80">
-                    research & remediation (mock)
-                  </p>
-                  <p className="font-mono text-[10px] leading-relaxed text-slate-600">
-                    Pair with <span className="text-amber-600/90">Website</span> + PDF learnings: scout the open web,
-                    diff your graph for issues, then queue fixes — all to be backed by axum workers + tool policies.
+                <div className="space-y-2 border-t border-white/[0.06] pt-4">
+                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Research · mock</p>
+                  <p className="text-[12px] leading-relaxed text-zinc-600">
+                    Web scout and remediation flows (placeholder).
                   </p>
                   {RESEARCH_AGENTS.map((def) => (
                     <div
                       key={def.id}
-                      className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-2.5"
+                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
                     >
-                      <span className="text-lg text-amber-200/90">{def.icon}</span>
+                      <span className="text-lg text-zinc-400">{def.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-amber-50">{def.name}</p>
-                        <p className="text-[11px] text-slate-500">{def.description}</p>
+                        <p className="text-sm font-medium text-zinc-100">{def.name}</p>
+                        <p className="text-[12px] text-zinc-500">{def.description}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => deploy(def)}
-                        className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2.5 py-1 font-mono text-[10px] text-amber-50 hover:bg-amber-500/30"
+                        className="shrink-0 rounded-lg border border-white/[0.1] bg-zinc-800 px-3 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-zinc-700"
                       >
-                        spin up
+                        Start
                       </button>
                     </div>
                   ))}
                 </div>
               )}
               {dock && workspaceKind === "invest" && (
-                <div className="space-y-2 border-t border-amber-500/20 pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-amber-400/80">
-                    markets desk (mock)
-                  </p>
-                  <p className="font-mono text-[10px] leading-relaxed text-slate-600">
-                    Spin workers that would own symbology, roll windows, and exposure caps before any vendor pull hits
-                    the fusion graph.
+                <div className="space-y-2 border-t border-white/[0.06] pt-4">
+                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Markets · mock</p>
+                  <p className="text-[12px] leading-relaxed text-zinc-600">
+                    Desk agents for symbology, rolls, and risk (placeholder).
                   </p>
                   {MARKETS_AGENTS.map((def) => (
                     <div
                       key={def.id}
-                      className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-2.5"
+                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
                     >
-                      <span className="text-lg text-amber-200/90">{def.icon}</span>
+                      <span className="text-lg text-zinc-400">{def.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-amber-50">{def.name}</p>
-                        <p className="text-[11px] text-slate-500">{def.description}</p>
+                        <p className="text-sm font-medium text-zinc-100">{def.name}</p>
+                        <p className="text-[12px] text-zinc-500">{def.description}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => deploy(def)}
-                        className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2.5 py-1 font-mono text-[10px] text-amber-50 hover:bg-amber-500/30"
+                        className="shrink-0 rounded-lg border border-white/[0.1] bg-zinc-800 px-3 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-zinc-700"
                       >
-                        spin up
+                        Start
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {dock && workspaceKind === "design" && (
+                <div className="space-y-2 border-t border-white/[0.06] pt-4">
+                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Design validation · mock</p>
+                  <p className="text-[12px] leading-relaxed text-zinc-600">
+                    Agents that cross-link architecture, civil, codes, and physics so automated checks stay grounded in
+                    graph provenance (placeholder).
+                  </p>
+                  {DESIGN_AGENTS.map((def) => (
+                    <div
+                      key={def.id}
+                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
+                    >
+                      <span className="text-lg text-zinc-400">{def.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-zinc-100">{def.name}</p>
+                        <p className="text-[12px] text-zinc-500">{def.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deploy(def)}
+                        className="shrink-0 rounded-lg border border-white/[0.1] bg-zinc-800 px-3 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-zinc-700"
+                      >
+                        Start
                       </button>
                     </div>
                   ))}
                 </div>
               )}
               {running.length > 0 && (
-                <div className="space-y-2 border-t border-white/5 pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">running</p>
+                <div className="space-y-2 border-t border-white/[0.06] pt-4">
+                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Running</p>
                   {running.map((a) => (
                     <div
                       key={`${a.def.id}-${a.started}`}
-                      className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-2.5"
+                      className="rounded-2xl border border-emerald-500/20 bg-emerald-950/30 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-emerald-100">{a.def.name}</span>
-                        <span className="font-mono text-[10px] text-emerald-300/80">
-                          {a.status === "spawning" && "spawning…"}
-                          {a.status === "running" && "● autonomous"}
-                          {a.status === "paused" && "○ paused"}
+                        <span className="text-sm font-medium text-emerald-100">{a.def.name}</span>
+                        <span className="text-[11px] font-medium text-emerald-400/90">
+                          {a.status === "spawning" && "Starting…"}
+                          {a.status === "running" && "Active"}
+                          {a.status === "paused" && "Paused"}
                         </span>
                       </div>
                       <div className="mt-2 flex gap-2">
@@ -492,18 +543,18 @@ export function WorkspaceRightPanel({
                           <button
                             type="button"
                             onClick={() => pause(a.started)}
-                            className="rounded-md border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-300 hover:bg-white/5"
+                            className="rounded-lg border border-white/[0.1] px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:bg-white/[0.05]"
                           >
-                            pause
+                            Pause
                           </button>
                         )}
                         {a.status === "paused" && (
                           <button
                             type="button"
                             onClick={() => resume(a.started)}
-                            className="rounded-md border border-emerald-400/30 px-2 py-1 font-mono text-[10px] text-emerald-200 hover:bg-emerald-500/10"
+                            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-[11px] font-semibold text-zinc-900 transition hover:bg-white"
                           >
-                            resume
+                            Resume
                           </button>
                         )}
                       </div>
@@ -518,7 +569,7 @@ export function WorkspaceRightPanel({
 
   if (dock) {
     return (
-      <div className="flex h-full min-h-0 w-[min(100%,380px)] shrink-0 flex-col border-l border-cyan-400/15 bg-[#050510]/80">
+      <div className="flex h-full min-h-0 w-[min(100%,380px)] shrink-0 flex-col border-l border-white/[0.06] bg-zinc-950/50">
         <div className="flex min-h-0 flex-1 flex-col px-1 pt-2">
           {panelInner}
         </div>
@@ -532,9 +583,9 @@ export function WorkspaceRightPanel({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="rounded-full border border-cyan-400/25 bg-[#0a0a1f]/90 px-4 py-2 font-mono text-xs text-cyan-100 shadow-[0_0_24px_rgba(0,255,242,0.12)] backdrop-blur-md transition hover:border-cyan-300/50"
+          className="rounded-full border border-white/[0.1] bg-zinc-900/95 px-4 py-2 text-[13px] font-semibold text-zinc-100 shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-zinc-800"
         >
-          {open ? "hide panel" : "workspace"}
+          {open ? "Close" : "Panel"}
         </button>
       </div>
 

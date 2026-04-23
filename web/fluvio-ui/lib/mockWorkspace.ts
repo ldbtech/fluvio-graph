@@ -23,6 +23,15 @@ export function mockAssistantReply(
         return "[markets unified] Joins equities, futures, crypto, news, vendor bars, and research PDF nodes — POST /graph/fusion/markets later.";
       return `[markets unified] Multi-vendor retrieval is mocked — planner would query each feed API in parallel with rate limits.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
     }
+    if (workspaceKind === "design") {
+      if (q.includes("physics") || q.includes("load") || q.includes("struct"))
+        return "[design unified] Fusion joins BIM, structural envelopes, civil site facts, code clauses, and solver outputs so agents can answer “does this geometry violate constraints?” before steel is ordered (mock).";
+      if (q.includes("agent") || q.includes("deploy"))
+        return "[design unified] Orchestrator would route BIM deltas, analysis revisions, and code checks in parallel — deploy validation workers from Agents (mock).";
+      if (q.includes("graph") || q.includes("node"))
+        return "[design unified] Materialized join across architecture + civil slices; Rust would expose POST /graph/fusion/design with version pins per model revision.";
+      return `[design unified] Cross-discipline retrieval is mocked — planner would fan out to IFC, FEM, geotech, and code subgraphs with provenance on every edge.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+    }
     if (q.includes("agent") || q.includes("deploy"))
       return "[unified fusion] Orchestrator agents fan out to each subgraph; deploy from the Agents tab to simulate mesh workers.";
     if (q.includes("graph") || q.includes("node"))
@@ -48,6 +57,13 @@ export function mockAssistantReply(
         return "[markets meta] Capsules mirror API keys, quota, and last successful sync per feed — hook to real metrics in Rust.";
       return `[markets meta] Control-plane for feeds + optional research PDF slot — no live ticks in this mock.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
     }
+    if (workspaceKind === "design") {
+      if (q.includes("agent") || q.includes("mesh"))
+        return "[design meta] Mesh registers solvers, clash engines, and code parsers; policy gates who may mutate structural nodes.";
+      if (q.includes("health") || q.includes("status"))
+        return "[design meta] Capsules track IFC federation checksums, solver convergence, and amendment packs — wire to CI + simulation runners in Rust.";
+      return `[design meta] Control-plane for BIM, loads, and physics contracts — no live IFC in this mock.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+    }
     if (q.includes("agent") || q.includes("mesh"))
       return "[meta-graph] The agent mesh node is where autoscale workers register; policies decide which subgraphs they may touch.";
     if (q.includes("health") || q.includes("status"))
@@ -72,6 +88,25 @@ export function mockAssistantReply(
   }
   if (workspaceKind === "invest" && ctx === "fin_research") {
     return `[research preview] Books + memos share the same PDF engine as Personal; bind graph_id for cross-links to tickers.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+
+  if (workspaceKind === "design" && ctx === "des_bim") {
+    return `[BIM preview] IFC spaces, clashes, and materials as graph nodes — Rust would stream federation deltas from your authoring tool.\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+  if (workspaceKind === "design" && ctx === "des_arch_plans") {
+    return `[arch plans preview] Sheets and room programs become queryable intent — link envelope targets to structural and energy subgraphs (mock).\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+  if (workspaceKind === "design" && ctx === "des_structural") {
+    return `[structural preview] Members, load envelopes, and drift checks as first-class nodes — FEM exports would attach provenance edges (mock).\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+  if (workspaceKind === "design" && ctx === "des_civil_site") {
+    return `[civil preview] Grading, utilities, and borings as site constraints feeding foundations and lateral earth pressure nodes (mock).\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+  if (workspaceKind === "design" && ctx === "des_building_codes") {
+    return `[codes preview] Clause graph with amendments — agents would diff your model assumptions vs adopted code edition (mock).\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
+  }
+  if (workspaceKind === "design" && ctx === "des_physics_sim") {
+    return `[physics preview] Wind, thermal, and dynamics gates — pass/fail nodes link back to structural and architecture revisions (mock).\n\nYou asked: “${question.slice(0, 200)}${question.length > 200 ? "…" : ""}”`;
   }
 
   const prefix =
@@ -122,6 +157,18 @@ export function mockConnectorNarrative(id: ConnectorId): string {
       return "Market data: vendor A/B bars and depth fused with conflict resolution and provenance on every edge.";
     case "fin_research":
       return "Research: desk PDFs and books ingest like documents; citations link to live tickers in the markets brain.";
+    case "des_bim":
+      return "BIM / IFC: federated models, clashes, and grids become nodes so agents can trace a change from sheet to steel order.";
+    case "des_arch_plans":
+      return "Architectural plans: room programs, envelopes, and accessibility paths as intent nodes tied to structural and code slices.";
+    case "des_structural":
+      return "Structural: analysis models, member schedules, and connection details as a graph that must stay consistent with physics checks.";
+    case "des_civil_site":
+      return "Civil & site: grading, utilities, geotech borings, and easements as constraints feeding foundations and storm design.";
+    case "des_building_codes":
+      return "Codes & loads: adopted editions, load combinations, and local amendments as typed nodes linked to every load path.";
+    case "des_physics_sim":
+      return "Physics & simulation: CFD, thermal bridges, dynamics, and settlement sensitivity as validation gates on the design graph.";
     default:
       return "";
   }

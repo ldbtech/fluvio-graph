@@ -1,6 +1,6 @@
 import type { ConnectorId, ConnectorStatus, GraphEdge, GraphNode, WorkspaceKind } from "./types";
 import { filterGraphBySource, filterLiveEmailGraph } from "./graphFilters";
-import { INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "./workspaceKinds";
+import { DESIGN_CONNECTOR_IDS, INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "./workspaceKinds";
 
 /** Small deterministic graphs so each connector “brain” looks different in the UI. */
 export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: GraphEdge[] } {
@@ -241,6 +241,102 @@ export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: 
       ];
       return { nodes, edges };
     }
+    case "des_bim": {
+      const nodes = [
+        mk("ifc", "IFC federation: Tower A · LOD350", "1"),
+        mk("lvl", "Level L12 · slab edge profile", "2"),
+        mk("clh", "Clash: MEP duct vs beam flange (mock)", "3"),
+        mk("gv", "Gridline intersection G-4 / 12", "4"),
+        mk("mat", "Material catalog: concrete C40/50", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[0].id, to: nodes[1].id, token: 8, probability: 0.84 },
+        { from: nodes[2].id, to: nodes[1].id, token: 6, probability: 0.76 },
+        { from: nodes[3].id, to: nodes[1].id, token: 4, probability: 0.68 },
+        { from: nodes[4].id, to: nodes[0].id, token: 5, probability: 0.72 },
+      ];
+      return { nodes, edges };
+    }
+    case "des_arch_plans": {
+      const nodes = [
+        mk("sh", "Sheet A-101: floor plan L12", "1"),
+        mk("rm", "Room program: core labs cluster", "2"),
+        mk("env", "Envelope U-value target wall-N", "3"),
+        mk("acc", "Accessibility path · stair B", "4"),
+        mk("can", "Canopy datum vs finish floor", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[0].id, to: nodes[1].id, token: 7, probability: 0.8 },
+        { from: nodes[0].id, to: nodes[2].id, token: 5, probability: 0.7 },
+        { from: nodes[1].id, to: nodes[3].id, token: 4, probability: 0.64 },
+        { from: nodes[0].id, to: nodes[4].id, token: 3, probability: 0.58 },
+      ];
+      return { nodes, edges };
+    }
+    case "des_structural": {
+      const nodes = [
+        mk("mdl", "ETABS model: lateral system core", "1"),
+        mk("bm", "Beam B-1204 · W24x62", "2"),
+        mk("col", "Column C-08 · axial + moment envelope", "3"),
+        mk("conn", "Connection: moment frame knee (mock)", "4"),
+        mk("drft", "Drift check: 0.68% interstory (wind)", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[1].id, to: nodes[0].id, token: 9, probability: 0.86 },
+        { from: nodes[2].id, to: nodes[0].id, token: 8, probability: 0.83 },
+        { from: nodes[3].id, to: nodes[1].id, token: 5, probability: 0.71 },
+        { from: nodes[0].id, to: nodes[4].id, token: 6, probability: 0.75 },
+      ];
+      return { nodes, edges };
+    }
+    case "des_civil_site": {
+      const nodes = [
+        mk("pad", "Pad grade: east plaza finish ±0.15m", "1"),
+        mk("util", "Storm line crossing column line 4", "2"),
+        mk("geo", "Boring B-12: SPT N=18 @ -6m", "3"),
+        mk("sw", "SWPPP control: silt fence run 140m", "4"),
+        mk("eas", "Easement: utility corridor north edge", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[1].id, to: nodes[0].id, token: 6, probability: 0.77 },
+        { from: nodes[2].id, to: nodes[0].id, token: 5, probability: 0.7 },
+        { from: nodes[3].id, to: nodes[0].id, token: 4, probability: 0.62 },
+        { from: nodes[4].id, to: nodes[1].id, token: 3, probability: 0.55 },
+      ];
+      return { nodes, edges };
+    }
+    case "des_building_codes": {
+      const nodes = [
+        mk("ibc", "IBC 2021 Ch.16 · wind procedure", "1"),
+        mk("asce", "ASCE 7-22: risk category II", "2"),
+        mk("snow", "Ground snow pg = 1.2 kPa (mock)", "3"),
+        mk("fire", "Fire separation: occupancy B → A-2", "4"),
+        mk("loc", "Local amendment: parapet height", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[0].id, to: nodes[1].id, token: 7, probability: 0.82 },
+        { from: nodes[1].id, to: nodes[2].id, token: 5, probability: 0.69 },
+        { from: nodes[0].id, to: nodes[3].id, token: 4, probability: 0.61 },
+        { from: nodes[4].id, to: nodes[0].id, token: 3, probability: 0.54 },
+      ];
+      return { nodes, edges };
+    }
+    case "des_physics_sim": {
+      const nodes = [
+        mk("cfd", "CFD: pedestrian wind comfort · corner vortex", "1"),
+        mk("th", "Thermal bridge: curtain wall mullion", "2"),
+        mk("dyn", "Modal mass participation > 75% (mock)", "3"),
+        mk("sett", "Settlement sensitivity: pad vs piles", "4"),
+        mk("pass", "Pass/fail gate: drift + accel combined", "5"),
+      ];
+      const edges: GraphEdge[] = [
+        { from: nodes[0].id, to: nodes[4].id, token: 6, probability: 0.74 },
+        { from: nodes[1].id, to: nodes[4].id, token: 5, probability: 0.68 },
+        { from: nodes[2].id, to: nodes[4].id, token: 5, probability: 0.71 },
+        { from: nodes[3].id, to: nodes[4].id, token: 4, probability: 0.63 },
+      ];
+      return { nodes, edges };
+    }
     default:
       return { nodes: [], edges: [] };
   }
@@ -260,14 +356,17 @@ export function getUnifiedGraph(
     emailLive.nodes.length > 0 || Boolean(opts?.gmailOAuthConnected);
 
   const hubId = "fusion:workspace-hub";
-  const connectorLoop = kind === "invest" ? INVEST_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
+  const connectorLoop =
+    kind === "invest" ? INVEST_CONNECTOR_IDS : kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
   const nodes: GraphNode[] = [
     {
       id: hubId,
       label:
         kind === "invest"
           ? "Markets fusion hub · multi-vendor + research (mock)"
-          : "Fusion hub · cross-domain join layer (mock)",
+          : kind === "design"
+            ? "Design fusion hub · architecture + civil + physics checks (mock)"
+            : "Fusion hub · cross-domain join layer (mock)",
       page: "Ω",
       source: "unified",
     },
@@ -353,6 +452,20 @@ export function getUnifiedGraph(
     }
   }
 
+  if (kind === "design") {
+    const bim = nodes.find((n) => n.id === "des_bim:ifc");
+    const arch = nodes.find((n) => n.id === "des_arch_plans:sh");
+    const struct = nodes.find((n) => n.id === "des_structural:mdl");
+    const civil = nodes.find((n) => n.id === "des_civil_site:pad");
+    const codes = nodes.find((n) => n.id === "des_building_codes:asce");
+    const phys = nodes.find((n) => n.id === "des_physics_sim:pass");
+    if (bim && arch) edges.push({ from: arch.id, to: bim.id, token: 4, probability: 0.58 });
+    if (struct && bim) edges.push({ from: struct.id, to: bim.id, token: 5, probability: 0.66 });
+    if (codes && struct) edges.push({ from: codes.id, to: struct.id, token: 4, probability: 0.62 });
+    if (civil && struct) edges.push({ from: civil.id, to: struct.id, token: 3, probability: 0.52 });
+    if (phys && struct) edges.push({ from: phys.id, to: struct.id, token: 4, probability: 0.6 });
+  }
+
   if (nodes.length === 1) {
     for (const id of connectorLoop) {
       const ghostId = `fusion:await-${id}`;
@@ -382,14 +495,17 @@ export function getMetaGraph(
       label:
         kind === "invest"
           ? "Markets meta · routing & entitlements (mock)"
-          : "Meta-graph · orchestrator & policy (mock)",
+          : kind === "design"
+            ? "Design meta · codes, loads, and solver contracts (mock)"
+            : "Meta-graph · orchestrator & policy (mock)",
       page: "M",
       source: "meta",
     },
   ];
   const edges: GraphEdge[] = [];
 
-  const domainOrder = kind === "invest" ? INVEST_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
+  const domainOrder =
+    kind === "invest" ? INVEST_CONNECTOR_IDS : kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
 
   if (kind === "personal") {
     const pdfId = "meta:domain:pdf";
@@ -433,7 +549,7 @@ export function getMetaGraph(
       token: 2,
       probability: 0.33,
     });
-  } else {
+  } else if (kind === "invest") {
     const ledgerId = "meta:domain:ledger";
     nodes.push({
       id: ledgerId,
@@ -475,6 +591,62 @@ export function getMetaGraph(
         to: "meta:domain:fin_research",
         token: 2,
         probability: 0.48,
+      });
+    }
+  } else if (kind === "design") {
+    const specsId = "meta:domain:spec_pdfs";
+    nodes.push({
+      id: specsId,
+      label: documentGraphReady
+        ? "Spec PDFs · shared engine slot (optional)"
+        : "Spec PDFs slot (empty — ingest calc books in Personal)",
+      page: "1",
+      source: "meta",
+    });
+    edges.push({ from: cp, to: specsId, token: 4, probability: documentGraphReady ? 0.78 : 0.36 });
+
+    for (const id of domainOrder) {
+      const on = connectorStatus[id] === "mock_on";
+      const nid = `meta:domain:${id}`;
+      nodes.push({
+        id: nid,
+        label: `${id} · ${on ? "preview graph on" : "disconnected"}`,
+        page: "2",
+        source: "meta",
+      });
+      edges.push({ from: cp, to: nid, token: 3, probability: on ? 0.87 : 0.37 });
+    }
+
+    edges.push({
+      from: "meta:domain:des_building_codes",
+      to: "meta:domain:des_structural",
+      token: 3,
+      probability: 0.5,
+    });
+    edges.push({
+      from: "meta:domain:des_arch_plans",
+      to: "meta:domain:des_bim",
+      token: 2,
+      probability: 0.44,
+    });
+    edges.push({
+      from: "meta:domain:des_civil_site",
+      to: "meta:domain:des_structural",
+      token: 2,
+      probability: 0.42,
+    });
+    edges.push({
+      from: "meta:domain:des_physics_sim",
+      to: "meta:domain:des_structural",
+      token: 3,
+      probability: 0.48,
+    });
+    if (documentGraphReady) {
+      edges.push({
+        from: specsId,
+        to: "meta:domain:des_building_codes",
+        token: 2,
+        probability: 0.45,
       });
     }
   }
