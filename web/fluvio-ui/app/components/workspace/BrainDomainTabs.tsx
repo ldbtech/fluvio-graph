@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { BrainTab, ConnectorId, ConnectorStatus, WorkspaceKind } from "@/lib/types";
-import { DESIGN_CONNECTOR_IDS, INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "@/lib/workspaceKinds";
+import { DESIGN_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "@/lib/workspaceKinds";
 
 const PERSONAL_TABS: { id: BrainTab; short: string }[] = [
   { id: "documents", short: "PDF" },
@@ -11,9 +11,7 @@ const PERSONAL_TABS: { id: BrainTab; short: string }[] = [
     short:
       id === "gmail"
         ? "Gmail"
-        : id === "spotify"
-          ? "Spotify"
-          : id === "github"
+        : id === "github"
             ? "GitHub"
             : id === "calendar"
               ? "Cal"
@@ -23,27 +21,7 @@ const PERSONAL_TABS: { id: BrainTab; short: string }[] = [
                   ? "Slack"
                   : id === "notion"
                     ? "Notion"
-                    : "Web",
-  })),
-  { id: "unified", short: "Unified" },
-  { id: "meta", short: "Meta" },
-];
-
-const INVEST_TABS: { id: BrainTab; short: string }[] = [
-  ...INVEST_CONNECTOR_IDS.map((id) => ({
-    id: id as BrainTab,
-    short:
-      id === "equities"
-        ? "Stocks"
-        : id === "futures"
-          ? "Fut."
-          : id === "cryptocurrencies"
-            ? "Crypto"
-            : id === "fin_news"
-              ? "News"
-              : id === "fin_market_data"
-                ? "Data"
-                : "Books",
+                    : String(id),
   })),
   { id: "unified", short: "Unified" },
   { id: "meta", short: "Meta" },
@@ -52,18 +30,7 @@ const INVEST_TABS: { id: BrainTab; short: string }[] = [
 const DESIGN_TABS: { id: BrainTab; short: string }[] = [
   ...DESIGN_CONNECTOR_IDS.map((id) => ({
     id: id as BrainTab,
-    short:
-      id === "des_bim"
-        ? "BIM"
-        : id === "des_arch_plans"
-          ? "Arch"
-          : id === "des_structural"
-            ? "Struct"
-            : id === "des_civil_site"
-              ? "Civil"
-              : id === "des_building_codes"
-                ? "Codes"
-                : "Physics",
+    short: "Architecture",
   })),
   { id: "unified", short: "Unified" },
   { id: "meta", short: "Meta" },
@@ -89,7 +56,6 @@ export function BrainDomainTabs({
   connectorStatus,
 }: Props) {
   const tabs = useMemo(() => {
-    if (workspaceKind === "invest") return INVEST_TABS;
     if (workspaceKind === "design") return DESIGN_TABS;
     return PERSONAL_TABS;
   }, [workspaceKind]);
@@ -104,7 +70,7 @@ export function BrainDomainTabs({
   return (
     <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/[0.06] bg-zinc-950/60 px-3 py-2.5 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <span className="hidden shrink-0 pr-1 text-[11px] font-medium uppercase tracking-wide text-zinc-600 sm:inline">
-        {workspaceKind === "invest" ? "Markets" : workspaceKind === "design" ? "Design" : "Graphs"}
+        {workspaceKind === "design" ? "Design" : "Graphs"}
       </span>
       {tabs.map(({ id, short }) => {
         const isReady = ready(id);

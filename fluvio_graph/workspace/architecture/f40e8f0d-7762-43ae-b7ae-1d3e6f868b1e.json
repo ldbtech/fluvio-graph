@@ -1,0 +1,185 @@
+{
+  "brief": "design for me a house with 4 rooms , one bathroom, one parking lot in the front and kitchen big enough and living room too .",
+  "design_id": "f40e8f0d-7762-43ae-b7ae-1d3e6f868b1e",
+  "design_style": {
+    "aesthetic": "modern",
+    "priority": "spacious kitchen and living room",
+    "total_area": null,
+    "stories": 1
+  },
+  "rooms": [
+    {
+      "id": "front_parking",
+      "name": "Front Parking",
+      "area_sqm": 30.0,
+      "zone": "outdoor",
+      "natural_light": "high",
+      "privacy": "public",
+      "notes": null
+    },
+    {
+      "id": "entry_foyer",
+      "name": "Entry Foyer",
+      "area_sqm": 8.0,
+      "zone": "public",
+      "natural_light": "medium",
+      "privacy": "public",
+      "notes": null
+    },
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "area_sqm": 35.0,
+      "zone": "public",
+      "natural_light": "high",
+      "privacy": "public",
+      "notes": "spacious as requested"
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "area_sqm": 25.0,
+      "zone": "public",
+      "natural_light": "medium",
+      "privacy": "public",
+      "notes": "big enough as requested"
+    },
+    {
+      "id": "bedroom_1",
+      "name": "Bedroom 1",
+      "area_sqm": 18.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": null
+    },
+    {
+      "id": "bedroom_2",
+      "name": "Bedroom 2",
+      "area_sqm": 16.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": null
+    },
+    {
+      "id": "bedroom_3",
+      "name": "Bedroom 3",
+      "area_sqm": 16.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": null
+    },
+    {
+      "id": "bedroom_4",
+      "name": "Bedroom 4",
+      "area_sqm": 20.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": "master bedroom"
+    },
+    {
+      "id": "bathroom",
+      "name": "Bathroom",
+      "area_sqm": 12.0,
+      "zone": "service",
+      "natural_light": "low",
+      "privacy": "private",
+      "notes": null
+    }
+  ],
+  "relationships": [
+    {
+      "from_id": "front_parking",
+      "to_id": "entry_foyer",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "entry_foyer",
+      "to_id": "living_room",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "living_room",
+      "to_id": "kitchen",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "entry_foyer",
+      "to_id": "bedroom_1",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_1",
+      "to_id": "bathroom",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_2",
+      "to_id": "bathroom",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_3",
+      "to_id": "bathroom",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_4",
+      "to_id": "bathroom",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_4",
+      "to_id": "front_parking",
+      "kind": "separated_from",
+      "notes": "master bedroom away from street noise"
+    },
+    {
+      "from_id": "bathroom",
+      "to_id": "entry_foyer",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_1",
+      "to_id": "bedroom_2",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_2",
+      "to_id": "bedroom_3",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "living_room",
+      "to_id": "bedroom_1",
+      "kind": "separated_from",
+      "notes": "privacy separation"
+    },
+    {
+      "from_id": "kitchen",
+      "to_id": "entry_foyer",
+      "kind": "visible_from",
+      "notes": null
+    },
+    {
+      "from_id": "living_room",
+      "to_id": "front_parking",
+      "kind": "oriented_toward",
+      "notes": "front orientation"
+    }
+  ]
+}

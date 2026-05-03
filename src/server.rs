@@ -1,22 +1,29 @@
 use axum::{
     Json, Router,
-    extract::{Multipart, Query, State},
+    extract::{DefaultBodyLimit, Multipart, Query, State},
     http::Method,
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
+use crate::routes::rules::AgentStore;
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 use tower_http::cors::{Any, CorsLayer};
 use crate::{
-    graph::{EmbeddingContext, Graph},
+    graph::{
+        fluvio_graph::FluvioGraph,
+        persist_workspace::{load_workspace_graph, save_domain_graph_filtered},
+        EmbeddingContext,
+    },
+    graph::enums::Domain,
+    graph::structs::{DomainGraph, GraphId},
     ingestion::IngestionPipeline,
     ingestion_registry::{
-        codebase::CodebaseConnector,
-        connector::{ConnectorError, FluvioConnector},
+        connector::FluvioConnector,
         email::{
             auth::{exchange_code, get_auth_url},
             connector::GmailConnector,
@@ -28,7 +35,28 @@ use crate::{
     query::KnowledgeGraphQuery,
 };
 
-use crate::routes::codebase::{get_codebase_parse, get_codebase_tree, post_codebase_ingest};
+use crate::routes::rules::{
+    post_rules_link, post_security_deploy,
+    get_security_status, get_security_result,
+};
+use crate::routes::codebase::{
+    get_codebase_parse, get_codebase_tree, post_codebase_clone, post_codebase_ingest, post_codebase_resolve,
+};
+use crate::ingestion_registry::architecture::SpaceProgram;
+use crate::routes::architecture::{post_architecture_generate, post_architecture_modify, post_architecture_chat};
+
+// Tool Spawner
+use crate::agents::tool_spawner::{ToolSpawner, ToolDomain, JobStore};
+use crate::routes::tools::{
+    post_tools_detect, post_tools_spawn,
+    get_tools_job, delete_tools_job, post_tools_approve,
+};
+
+// Video routes
+use crate::routes::video::{
+    post_ingest_video, get_video,
+    get_video_scenes, get_video_status,
+};
 
 /// Workspace graphs live under `fluvio_graphs/workspace/` (`unified.json` plus filtered snapshots).
 const WORKSPACE_GRAPHS_DIR: &str = "fluvio_graphs/workspace";
@@ -36,7 +64,6 @@ const WORKSPACE_UNIFIED: &str = "fluvio_graphs/workspace/unified.json";
 const WORKSPACE_PDF: &str = "fluvio_graphs/workspace/pdf.json";
 const WORKSPACE_EMAIL: &str = "fluvio_graphs/workspace/email.json";
 const WORKSPACE_CODEBASE: &str = "fluvio_graphs/workspace/codebase.json";
-const LEGACY_GRAPH_PATH: &str = "fluvio_graph.json";
 const WORKSPACE_PROJECTS_DIR: &str = "fluvio_graphs/projects";
 
 fn sanitize_project_id(raw: &str) -> Result<String, (StatusCode, String)> {
@@ -59,39 +86,50 @@ fn sanitize_project_id(raw: &str) -> Result<String, (StatusCode, String)> {
     Ok(s.to_string())
 }
 
-fn persist_workspace_snapshots(graph: &Graph) -> anyhow::Result<()> {
+fn persist_workspace_snapshots(graph: &DomainGraph) -> anyhow::Result<()> {
     std::fs::create_dir_all(WORKSPACE_GRAPHS_DIR)?;
-    graph.save(WORKSPACE_UNIFIED)?;
-    graph.save_filtered(WORKSPACE_PDF, |n| {
+    graph
+        .save(WORKSPACE_UNIFIED)
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    save_domain_graph_filtered(graph, WORKSPACE_PDF, |n| {
         n.metadata.get("source").map(|s| s == "pdf").unwrap_or(false)
-    })?;
-    graph.save_filtered(WORKSPACE_EMAIL, |n| {
+    })
+    .map_err(|e| anyhow::anyhow!("{}", e))?;
+    save_domain_graph_filtered(graph, WORKSPACE_EMAIL, |n| {
         n.metadata
             .get("source")
             .map(|s| s == "email" || s == "gmail")
             .unwrap_or(false)
-    })?;
-    graph.save_filtered(WORKSPACE_CODEBASE, |n| {
+    })
+    .map_err(|e| anyhow::anyhow!("{}", e))?;
+    save_domain_graph_filtered(graph, WORKSPACE_CODEBASE, |n| {
         n.metadata.get("source").map(|s| s == "codebase").unwrap_or(false)
-    })?;
+    })
+    .map_err(|e| anyhow::anyhow!("{}", e))?;
     Ok(())
 }
 
-fn load_server_graph(graph: &mut Graph) -> anyhow::Result<()> {
-    if std::path::Path::new(WORKSPACE_UNIFIED).exists() {
+fn load_server_graph(graph: &mut DomainGraph) -> anyhow::Result<()> {
+    // Start empty by default: UI chooses a workspace explicitly via /workspace/load.
+    // Set KG_AUTOLOAD_WORKSPACE=true to restore legacy boot behavior.
+    let auto_load = std::env::var("KG_AUTOLOAD_WORKSPACE")
+        .ok()
+        .map(|v| {
+            let s = v.trim().to_ascii_lowercase();
+            s == "1" || s == "true" || s == "yes" || s == "on"
+        })
+        .unwrap_or(false);
+
+    if auto_load && std::path::Path::new(WORKSPACE_UNIFIED).exists() {
         println!("Loading existing graph from {WORKSPACE_UNIFIED}");
-        graph.load(WORKSPACE_UNIFIED)?;
+        load_workspace_graph(WORKSPACE_UNIFIED, graph).map_err(|e| anyhow::anyhow!("{}", e))?;
         return Ok(());
     }
-    if std::path::Path::new(LEGACY_GRAPH_PATH).exists() {
-        println!(
-            "Loading existing graph from {LEGACY_GRAPH_PATH} (migrating snapshots to {WORKSPACE_GRAPHS_DIR}/)"
-        );
-        graph.load(LEGACY_GRAPH_PATH)?;
-        persist_workspace_snapshots(graph)?;
-        return Ok(());
-    }
-    println!("No workspace graph yet; new data will be saved under {WORKSPACE_GRAPHS_DIR}/");
+
+    println!(
+        "Starting with an empty workspace graph; use /workspace/load from UI to open a specific workspace"
+    );
+    println!("Workspace snapshots are stored under {WORKSPACE_GRAPHS_DIR}/");
     Ok(())
 }
 
@@ -103,16 +141,22 @@ pub struct AppState {
     pub oauth_csrf: Arc<Mutex<Option<String>>>,
     /// Gmail sync progress for `GET /sync/gmail/progress` while `POST /sync/gmail` runs in the background.
     pub gmail_progress: Arc<GmailSyncProgress>,
-    pub presist: fn(&Graph) -> anyhow::Result<()>,
+    pub presist: fn(&DomainGraph) -> anyhow::Result<()>,
+    pub agent_store: AgentStore,
+    pub architecture_designs: Arc<Mutex<HashMap<String, SpaceProgram>>>,
+
+    // Tool Spawner
+    pub tool_spawner:          Arc<ToolSpawner>,
+    pub job_store:             JobStore,
 }
 
 pub async fn serve(api_key: String) -> anyhow::Result<()> {
     let embed_ctx = Arc::new(Mutex::new(EmbeddingContext::new()?));
-    let mut graph = Graph::new(embed_ctx);
+    let mut graph = DomainGraph::new(GraphId::new("workspace"), Domain::Custom("workspace".into()));
 
     load_server_graph(&mut graph)?;
 
-    let pipeline = Arc::new(Mutex::new(IngestionPipeline::new(graph)));
+    let pipeline = Arc::new(Mutex::new(IngestionPipeline::new(graph, embed_ctx.clone())));
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -121,12 +165,31 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
 
     let gmail_progress = Arc::new(GmailSyncProgress::new_idle());
 
+    // Build tool spawnert with architecture domain
+    let mut spawner = ToolSpawner::new(api_key.clone());
+    spawner.add_domain(
+        ToolDomain::typescript(
+            "architecture",
+            "fluvio-tools/src/tools",
+            "specs/architecture",
+        ).unwrap_or_else(|e| {
+            tracing::warn!("ToolDomain failed: {e}");
+            // fallback empty domain — won't crash server
+            ToolDomain::typescript("architecture", "/tmp", "/tmp").unwrap()
+        })
+    );
+
     let state = AppState {
         pipeline,
         api_key,
         oauth_csrf: Arc::new(Mutex::new(None)),
         gmail_progress,
         presist: persist_workspace_snapshots,
+        agent_store:  Arc::new(Mutex::new(HashMap::new())),
+        architecture_designs: Arc::new(Mutex::new(HashMap::new())),
+
+        tool_spawner:         Arc::new(spawner),
+        job_store:            Arc::new(Mutex::new(HashMap::new())),
     };
 
     let app = Router::new()
@@ -144,8 +207,12 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         
         //// Codebase routes ////
         .route("/ingest", post(post_codebase_ingest))
+        // Shallow clone / pull — both paths (legacy docs used `/sync/codebase/clone`).
+        .route("/codebase/clone", post(post_codebase_clone))
+        .route("/sync/codebase/clone", post(post_codebase_clone))
         .route("/parse", get(get_codebase_parse))
         .route("/tree", get(get_codebase_tree))
+        .route("/codebase/resolve", post(post_codebase_resolve))
        
         .route("/workspace/projects", get(workspace_list_projects))
         .route("/workspace/archive", post(workspace_archive))
@@ -153,6 +220,29 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/workspace/load", post(workspace_load))
         .route("/workspace/delete", post(workspace_delete))
         .route("/workspace/prune-codebase", post(workspace_prune_codebase))
+
+        .route("/rules/link",                 post(post_rules_link))
+        .route("/agents/security/deploy",     post(post_security_deploy))
+        .route("/agents/security/{id}/status", get(get_security_status))
+        .route("/agents/security/{id}/result", get(get_security_result))
+        
+        .route("/architecture/generate", post(post_architecture_generate))
+        .route("/architecture/modify", post(post_architecture_modify))
+        .route("/architecture/chat", post(post_architecture_chat))
+
+        // In the Router: Tool spawner.
+        .route("/tools/detect",      post(post_tools_detect))
+        .route("/tools/spawn",       post(post_tools_spawn))
+        .route("/tools/jobs/{id}",   get(get_tools_job).delete(delete_tools_job))
+        .route("/tools/approve",     post(post_tools_approve))
+
+        // In Router:
+        .route("/ingest/video",          post(post_ingest_video))
+        .route("/video/{id}",            get(get_video))
+        .route("/video/{id}/scenes",     get(get_video_scenes))
+        .route("/video/{id}/status",     get(get_video_status))
+
+        .layer(DefaultBodyLimit::max(256 * 1024 * 1024))
         .layer(cors)
         .with_state(state);
 
@@ -346,7 +436,7 @@ async fn sync_gmail(
                     pipeline.wire_edges(0.35);
                     let graph_nodes = pipeline.graph.nodes.len();
                     let graph_edges: usize =
-                        pipeline.graph.adj_list.values().map(|e| e.len()).sum();
+                        pipeline.graph.adj.values().map(|e| e.len()).sum();
                     persist_workspace_snapshots(&pipeline.graph).map_err(|e| e.to_string())?;
                     Ok::<GmailSyncResultSummary, String>(GmailSyncResultSummary {
                         chunks: chunk_count,
@@ -377,264 +467,28 @@ async fn sync_gmail(
     ))
 }
 
-// ---- POST /sync/codebase/clone
-#[derive(Deserialize)]
-struct CodebaseCloneBody {
-    url: String,
-}
-
-#[derive(Serialize)]
-struct CodebaseCloneResponse {
-    owner: String,
-    repo: String,
-    local_path: String,
-    was_cloned: bool,
-}
-
-fn codebase_connector_err_status(e: &ConnectorError) -> StatusCode {
-    match e {
-        ConnectorError::Parse(_) => StatusCode::BAD_REQUEST,
-        ConnectorError::Auth(_) => StatusCode::UNAUTHORIZED,
-        ConnectorError::NotConfigured(_) => StatusCode::SERVICE_UNAVAILABLE,
-        ConnectorError::Api(_) => StatusCode::BAD_GATEWAY,
-        ConnectorError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-}
-
-/// Shallow-clone or pull a **public** GitHub repo into `~/.fluvio/repos/<owner>/<repo>/`.
-async fn sync_codebase_clone(
-    Json(body): Json<CodebaseCloneBody>,
-) -> Result<Json<CodebaseCloneResponse>, (StatusCode, String)> {
-    let url = body.url.trim().to_string();
-    if url.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
-    }
-
-    let join = tokio::task::spawn_blocking(move || CodebaseConnector::clone_public_url(&url));
-    let done = join
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    match done {
-        Ok(result) => Ok(Json(CodebaseCloneResponse {
-            owner: result.owner,
-            repo: result.repo,
-            local_path: result.local_path.to_string_lossy().into_owned(),
-            was_cloned: result.was_cloned,
-        })),
-        Err(e) => Err((codebase_connector_err_status(&e), e.to_string())),
-    }
-}
-
-// ---- POST /sync/codebase  (ingest cloned repo into the knowledge graph)
-
-#[derive(Deserialize)]
-struct CodebaseIngestBody {
-    url: String,
-}
-
-#[derive(Serialize)]
-struct CodebaseIngestResponse {
-    chunks: usize,
-    nodes_added: usize,
-    structured_edges: usize,
-    chunks_skipped_existing: usize,
-    graph_nodes: usize,
-    graph_edges: usize,
-}
-
-#[derive(Deserialize)]
-struct CodebasePlanetIngestBody {
-    url: String,
-    path_prefix: String,
-}
-
-#[derive(Serialize)]
-struct CodebasePlanetIngestResponse {
-    path_prefix: String,
-    chunks_in_scope: usize,
-    chunks_skipped_existing: usize,
-    nodes_added: usize,
-    structured_edges: usize,
-    graph_nodes: usize,
-    graph_edges: usize,
-}
-
-/// Parses a **already cloned** repo under `~/.fluvio/repos/…`, embeds chunks into the workspace graph,
-/// wires similarity edges, and persists snapshots (including `codebase.json`).
-async fn sync_codebase_ingest(
-    State(state): State<AppState>,
-    Json(body): Json<CodebaseIngestBody>,
-) -> Result<Json<CodebaseIngestResponse>, (StatusCode, String)> {
-    let url = body.url.trim().to_string();
-    if url.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
-    }
-
-    let join = tokio::task::spawn_blocking(move || {
-        let connector = CodebaseConnector::new();
-        FluvioConnector::extract(&connector, url.as_str())
-    });
-    let extracted = join
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let chunks = match extracted {
-        Ok(c) => c,
-        Err(e) => return Err((codebase_connector_err_status(&e), e.to_string())),
-    };
-
-    let chunk_count = chunks.len();
-
-    let mut pipeline = state
-        .pipeline
-        .lock()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (nodes_added, structured_edges, chunks_skipped_existing) = pipeline
-        .ingest_normalized_chunks_merge_uris(&chunks)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    pipeline.wire_edges(0.35);
-    let graph_nodes = pipeline.graph.nodes.len();
-    let graph_edges: usize = pipeline.graph.adj_list.values().map(|e| e.len()).sum();
-    persist_workspace_snapshots(&pipeline.graph).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            e.to_string(),
-        )
-    })?;
-
-    Ok(Json(CodebaseIngestResponse {
-        chunks: chunk_count,
-        nodes_added,
-        structured_edges,
-        chunks_skipped_existing,
-        graph_nodes,
-        graph_edges,
-    }))
-}
-
-/// Scoped codebase → knowledge graph for one module (“planet”): parses files under `path_prefix` only.
-async fn sync_codebase_planet_ingest(
-    State(state): State<AppState>,
-    Json(body): Json<CodebasePlanetIngestBody>,
-) -> Result<Json<CodebasePlanetIngestResponse>, (StatusCode, String)> {
-    let url = body.url.trim().to_string();
-    let path_prefix = body.path_prefix.trim().to_string();
-    if url.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "url is empty or whitespace".to_string()));
-    }
-    if path_prefix.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "path_prefix is required (repo-relative module path, e.g. src/api)".to_string(),
-        ));
-    }
-
-    let prefix_clone = path_prefix.clone();
-    let join = tokio::task::spawn_blocking(move || {
-        let connector = CodebaseConnector::new();
-        connector.extract_under_prefix(url.as_str(), prefix_clone.as_str())
-    });
-    let extracted = join
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let chunks = match extracted {
-        Ok(c) => c,
-        Err(e) => return Err((codebase_connector_err_status(&e), e.to_string())),
-    };
-
-    let chunks_in_scope = chunks.len();
-
-    let mut pipeline = state
-        .pipeline
-        .lock()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (nodes_added, structured_edges, chunks_skipped_existing) = pipeline
-        .ingest_normalized_chunks_merge_uris(&chunks)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    pipeline.wire_edges(0.35);
-    let graph_nodes = pipeline.graph.nodes.len();
-    let graph_edges: usize = pipeline.graph.adj_list.values().map(|e| e.len()).sum();
-    persist_workspace_snapshots(&pipeline.graph).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            e.to_string(),
-        )
-    })?;
-
-    Ok(Json(CodebasePlanetIngestResponse {
-        path_prefix,
-        chunks_in_scope,
-        chunks_skipped_existing,
-        nodes_added,
-        structured_edges,
-        graph_nodes,
-        graph_edges,
-    }))
-}
-
-// ---- GET /sync/codebase/files
-#[derive(Deserialize)]
-struct CodebaseFilesQuery {
-    url: Option<String>,
-    owner: Option<String>,
-    repo: Option<String>,
-}
-
-#[derive(Serialize)]
-struct CodebaseFilesResponse {
-    paths: Vec<String>,
-    truncated: bool,
-}
-
-fn codebase_resolve_listing_url(q: &CodebaseFilesQuery) -> Result<String, (StatusCode, String)> {
-    if let Some(u) = q.url.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
-        return Ok(u.to_string());
-    }
-    let o = q.owner.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    let r = q.repo.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    match (o, r) {
-        (Some(o), Some(r)) => Ok(format!("{o}/{r}")),
-        _ => Err((
-            StatusCode::BAD_REQUEST,
-            "pass url=… or owner=…&repo=… (GitHub coordinates)".to_string(),
-        )),
-    }
-}
-
-/// Lists files under an existing clone (`~/.fluvio/repos/{owner}/{repo}/`), skipping `.git/`.
-async fn get_codebase_files(
-    Query(q): Query<CodebaseFilesQuery>,
-) -> Result<Json<CodebaseFilesResponse>, (StatusCode, String)> {
-    let url = codebase_resolve_listing_url(&q)?;
-    let join = tokio::task::spawn_blocking(move || {
-        crate::ingestion_registry::codebase::list_cloned_file_paths(&url)
-    });
-    let done = join
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    match done {
-        Ok(r) => Ok(Json(CodebaseFilesResponse {
-            paths: r.paths,
-            truncated: r.truncated,
-        })),
-        Err(e) => {
-            let status = match &e {
-                crate::ingestion_registry::codebase::CloneError::NotCloned(_) => StatusCode::NOT_FOUND,
-                crate::ingestion_registry::codebase::CloneError::InvalidUrl(_) => StatusCode::BAD_REQUEST,
-                _ => StatusCode::INTERNAL_SERVER_ERROR,
-            };
-            Err((status, e.to_string()))
-        }
-    }
-}
-
 // ---- POST /ingest/pdf
 #[derive(serde::Serialize)]
 struct IngestResponse {
     nodes: usize,
     edges: usize,
+}
+
+/// BGESmall and similar models cap input length; huge PDF pages would fail embed or waste RAM.
+const MAX_PDF_CHUNK_CHARS: usize = 24_000;
+
+fn clamp_pdf_chunk_text(s: &str) -> String {
+    if s.len() <= MAX_PDF_CHUNK_CHARS {
+        return s.to_string();
+    }
+    s.chars().take(MAX_PDF_CHUNK_CHARS).collect()
+}
+
+struct TempUploadPdf(std::path::PathBuf);
+impl Drop for TempUploadPdf {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
 }
 
 async fn ingest_pdf(
@@ -650,31 +504,69 @@ async fn ingest_pdf(
             "no file".to_string(),
         ))?;
 
+    let filename = field
+        .file_name()
+        .map(Path::new)
+        .and_then(|p| p.file_name())
+        .and_then(|s| s.to_str())
+        .map(str::to_owned)
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "upload.pdf".to_string());
+    let document_id = Uuid::new_v4().to_string();
+
     let bytes = field
         .bytes()
         .await
         .map_err(|e| (axum::http::StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    let tmp_path = "/tmp/fluvio_upload.pdf";
-    std::fs::write(tmp_path, &bytes)
+    let tmp_path = std::path::PathBuf::from(format!("/tmp/fluvio_upload_{document_id}.pdf"));
+    std::fs::write(&tmp_path, &bytes)
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let _tmp_cleanup = TempUploadPdf(tmp_path.clone());
 
-    // Chunk + embed
-    let chunks = PDFChunkIterator::new(tmp_path, 1)
-        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .collect::<Result<Vec<_>, _>>()
+    let tmp_str = tmp_path.to_str().ok_or((
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        "temp path is not valid UTF-8".to_string(),
+    ))?;
+
+    let pdf_iter = PDFChunkIterator::new(tmp_str, 1)
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut pipeline = state.pipeline.lock().unwrap();
+    let mut new_node_ids = Vec::new();
+    let mut page_seq: usize = 0;
 
-    for (i, chunk) in chunks.iter().enumerate() {
-        if chunk.trim().is_empty() {
+    for chunk_res in pdf_iter {
+        let raw = chunk_res.map_err(|e| {
+            (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                e.to_string(),
+            )
+        })?;
+        page_seq += 1;
+        if raw.trim().is_empty() {
             continue;
         }
-        let _ = pipeline.ingest_chunk(chunk, "pdf", i + 1);
+        let chunk = clamp_pdf_chunk_text(&raw);
+        let id = pipeline
+            .ingest_chunk(
+                &chunk,
+                "pdf",
+                page_seq,
+                Some((document_id.as_str(), filename.as_str())),
+            )
+            .map_err(|e| {
+                (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    e.to_string(),
+                )
+            })?;
+        new_node_ids.push(id);
     }
 
-    pipeline.wire_edges(0.35);
+    if !new_node_ids.is_empty() {
+        pipeline.wire_edges_for_nodes(&new_node_ids, 0.35);
+    }
     persist_workspace_snapshots(&pipeline.graph).map_err(|e| {
         (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -682,7 +574,7 @@ async fn ingest_pdf(
         )
     })?;
 
-    let total_edges: usize = pipeline.graph.adj_list.values().map(|e| e.len()).sum();
+    let total_edges: usize = pipeline.graph.adj.values().map(|e| e.len()).sum();
 
     Ok(Json(IngestResponse {
         nodes: pipeline.graph.nodes.len(),
@@ -780,11 +672,13 @@ struct GraphEdge {
     to: String,
     token: i32,
     probability: f64,
+    /// Relationship kind when present (`imports`, `contains`, `semantic_neighbor`, …).
+    label: String,
 }
 
-fn graph_totals_and_sources(graph: &Graph) -> (usize, usize, HashMap<String, usize>) {
+fn graph_totals_and_sources(graph: &DomainGraph) -> (usize, usize, HashMap<String, usize>) {
     let total_nodes = graph.nodes.len();
-    let total_edges: usize = graph.adj_list.values().map(|e| e.len()).sum();
+    let total_edges: usize = graph.adj.values().map(|e| e.len()).sum();
     let mut source_counts = HashMap::new();
     for n in graph.nodes.values() {
         let s = n
@@ -868,7 +762,7 @@ async fn get_graph_nodes_page(
         }));
     }
     let mut ids: Vec<_> = graph.nodes.keys().copied().collect();
-    ids.sort_by_key(|u| u.to_string());
+    ids.sort_by_key(|k| k.to_string());
     let end = (offset + limit).min(total_nodes);
     let slice = &ids[offset..end];
     let nodes: Vec<GraphNode> = slice
@@ -917,7 +811,7 @@ async fn post_graph_edges_subset(
     let graph = &pipeline.graph;
     let mut edges: Vec<GraphEdge> = Vec::new();
     let mut truncated = false;
-    'outer: for e in graph.adj_list.values().flatten() {
+    'outer: for e in graph.adj.values().flatten() {
         let a = e.from.to_string();
         let b = e.to.to_string();
         if !id_set.contains(&a) || !id_set.contains(&b) {
@@ -928,6 +822,7 @@ async fn post_graph_edges_subset(
             to: b,
             token: e.token,
             probability: e.relationship_probability,
+            label: e.label.clone(),
         });
         if edges.len() >= edge_cap {
             truncated = true;
@@ -1005,7 +900,7 @@ async fn get_graph(
 
     let edges: Vec<GraphEdge> = pipeline
         .graph
-        .adj_list
+        .adj
         .values()
         .flatten()
         .filter(|e| {
@@ -1018,6 +913,7 @@ async fn get_graph(
             to: e.to.to_string(),
             token: e.token,
             probability: e.relationship_probability,
+            label: e.label.clone(),
         })
         .collect();
 
@@ -1040,6 +936,8 @@ async fn get_graph(
 struct ChatRequest {
     question: String,
     history: Vec<HistoryMessage>,
+    /// Optional repo-relative path prefix (e.g. `src/llm`) to bias retrieval after a “planet” focus in the UI.
+    focus_path: Option<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
@@ -1071,16 +969,29 @@ async fn chat(
     let (_query_vec, context, sources) = {
         let pipeline = state.pipeline.lock().unwrap();
 
-        let query_vec = pipeline
-            .graph
-            .embed_ctx
-            .lock()
-            .unwrap()
-            .embed(&req.question)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let query_vec = {
+            let mut ctx = pipeline.embed_ctx.lock().map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "embedding context lock poisoned".to_string(),
+                )
+            })?;
+            ctx.embed(&req.question).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    e.to_string(),
+                )
+            })?
+        };
 
         let kg = KnowledgeGraphQuery::new(&pipeline.graph);
-        let (results, context) = kg.search_with_relational_context(&query_vec, 6, 5);
+        let focus = req
+            .focus_path
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let (results, context) =
+            kg.search_with_relational_context(&query_vec, 6, 5, focus);
 
         if results.is_empty() {
             return Ok(Json(ChatResponse {
@@ -1116,8 +1027,10 @@ async fn chat(
 
     let system = format!(
         "You are a helpful assistant answering questions using the user's knowledge graph.\n\
-         The context lists semantically retrieved seed nodes and their outgoing edges, including relationship_probability and token_cost on each edge.\n\
+         The context lists semantically retrieved seed nodes and their outgoing edges (`label`, relationship_probability, token_cost).\n\
          Answer using ONLY this graph context. Be concise.\n\
+         When the user asks how to improve their project, codebase, architecture, or product, prioritize concrete findings from the node texts and relationships (files, symbols, imports, call patterns).\n\
+         Reserve detailed commentary on graph mechanics (token_cost, edge deduplication, schema design) for questions that explicitly ask about the knowledge graph, retrieval, or tooling.\n\
          If the answer is not supported by the context, say \"I don't see that in the knowledge graph context.\"\n\n\
          KNOWLEDGE GRAPH CONTEXT:\n{context}"
     );
@@ -1246,12 +1159,10 @@ async fn workspace_load(
         .pipeline
         .lock()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    p.graph
-        .load(&src)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    load_workspace_graph(&src, &mut p.graph).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     persist_workspace_snapshots(&p.graph).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let nodes = p.graph.nodes.len();
-    let edges: usize = p.graph.adj_list.values().map(|e| e.len()).sum();
+    let edges: usize = p.graph.adj.values().map(|e| e.len()).sum();
     Ok(Json(serde_json::json!({ "ok": true, "id": id, "nodes": nodes, "edges": edges })))
 }
 

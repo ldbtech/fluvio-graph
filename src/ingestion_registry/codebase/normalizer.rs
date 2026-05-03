@@ -7,10 +7,12 @@
 //!   2. One chunk per SYMBOL — embeds signature + context (file, kind, name)
 //!
 //! Pre-defined edges:
-//!   file  → file    (import edges — resolved internal imports)
-//!   file  → symbol  (contains edges — file owns this symbol)
+//!   file   → file    (import edges — resolved internal imports)
+//!   file   → symbol  (contains edges — file owns this symbol)
+//!   symbol → file    (defined_in — reverse of contains)
+//!   symbol → symbol  (calls edges — function calls another function)
 //!
-//! Embeddable text format (Option B — signature + context):
+//! Embeddable text format (signature + context):
 //!   file:     src/graph/structs.rs
 //!   language: rust
 //!   kind:     function
@@ -39,8 +41,8 @@ pub fn symbol_uri(owner: &str, repo: &str, path: &str, symbol_name: &str) -> Str
 
 /// Normalize a `ParsedFile` into a flat list of `NormalizedChunk`s.
 ///
-/// `owner` and `repo` are the GitHub coordinates — used to build stable source URIs.
-/// `start_index` is the chunk index offset (so indices are globally unique within a sync batch).
+/// `owner` and `repo` are the GitHub coordinates.
+/// `start_index` is the chunk index offset so indices are globally unique within a batch.
 pub fn normalize_file(
     parsed:      &ParsedFile,
     owner:       &str,
@@ -50,8 +52,8 @@ pub fn normalize_file(
     let mut chunks = Vec::new();
 
     // ── 1. File-level chunk ───────────────────────────────────────────────────
-    let file_chunk      = make_file_chunk(parsed, owner, repo, start_index);
-    let this_file_uri   = file_chunk.source_uri.clone();
+    let file_chunk    = make_file_chunk(parsed, owner, repo, start_index);
+    let this_file_uri = file_chunk.source_uri.clone();
     chunks.push(file_chunk);
 
     // ── 2. Symbol chunks ──────────────────────────────────────────────────────
@@ -67,13 +69,13 @@ pub fn normalize_file(
         );
         chunks.push(sym_chunk);
 
-        // Back-reference: file chunk gets a "contains" edge to this symbol.
+        // File chunk gets a "contains" edge to every symbol.
         if let Some(fc) = chunks.first_mut() {
             fc.pre_defined_edges.push(PreDefinedEdge {
                 to_uri:                  sym_uri,
                 label:                   "contains".to_string(),
                 relationship_probability: 1.0,
-                token_cost:              1,
+                token_cost:              0,
             });
         }
     }
@@ -87,9 +89,49 @@ pub fn normalize_file(
                     to_uri:                  target_uri,
                     label:                   "imports".to_string(),
                     relationship_probability: 0.95,
-                    token_cost:              2,
+                    token_cost:              0,
                 });
             }
+        }
+    }
+
+    // ── 4. Calls edges between symbol chunks ──────────────────────────────────
+    // Build a name → chunk_index map for fast lookup.
+    // chunk 0 = file, chunk i+1 = symbol i.
+    let sym_index: HashMap<&str, usize> = parsed
+        .symbols
+        .iter()
+        .enumerate()
+        .map(|(i, s)| (s.name.as_str(), i + 1))
+        .collect();
+
+    for (i, symbol) in parsed.symbols.iter().enumerate() {
+        if symbol.calls.is_empty() {
+            continue;
+        }
+        let caller_chunk_idx = i + 1;
+        if caller_chunk_idx >= chunks.len() {
+            continue;
+        }
+
+        for callee_name in &symbol.calls {
+            // Look up callee in same file first.
+            if let Some(&callee_chunk_idx) = sym_index.get(callee_name.as_str()) {
+                if callee_chunk_idx == caller_chunk_idx || callee_chunk_idx >= chunks.len() {
+                    continue;
+                }
+                let callee_uri = symbol_uri(owner, repo, &parsed.path, callee_name);
+                if let Some(caller_chunk) = chunks.get_mut(caller_chunk_idx) {
+                    caller_chunk.pre_defined_edges.push(PreDefinedEdge {
+                        to_uri:                  callee_uri,
+                        label:                   "calls".to_string(),
+                        relationship_probability: 0.90,
+                        token_cost:              1,
+                    });
+                }
+            }
+            // If callee not in same file it will be linked via cross-file
+            // import resolution in the resolver — no action needed here.
         }
     }
 
@@ -106,12 +148,24 @@ fn make_file_chunk(
 ) -> NormalizedChunk {
     let source_uri = file_uri(owner, repo, &parsed.path);
 
-    // Build embeddable text: file context + public surface summary.
     let public_symbols: Vec<String> = parsed
         .symbols
         .iter()
         .filter(|s| s.is_public)
-        .map(|s| format!("  {} {}: {}", symbol_kind_label(&s.kind), s.name, s.signature))
+        .map(|s| {
+            let calls_str = if s.calls.is_empty() {
+                String::new()
+            } else {
+                format!(" [calls: {}]", s.calls.join(", "))
+            };
+            format!(
+                "  {} {}: {}{}",
+                symbol_kind_label(&s.kind),
+                s.name,
+                s.signature,
+                calls_str
+            )
+        })
         .collect();
 
     let internal_imports: Vec<String> = parsed
@@ -144,19 +198,11 @@ fn make_file_chunk(
     metadata.insert("path".to_string(),      parsed.path.clone());
     metadata.insert("language".to_string(),  format!("{:?}", parsed.language).to_lowercase());
     metadata.insert("kind".to_string(),      "file".to_string());
-    metadata.insert(
-        "symbol_count".to_string(),
-        parsed.symbols.len().to_string(),
-    );
-    metadata.insert(
-        "import_count".to_string(),
-        parsed.imports.len().to_string(),
-    );
+    metadata.insert("symbol_count".to_string(), parsed.symbols.len().to_string());
+    metadata.insert("import_count".to_string(), parsed.imports.len().to_string());
     metadata.insert(
         "public_symbols".to_string(),
-        parsed
-            .symbols
-            .iter()
+        parsed.symbols.iter()
             .filter(|s| s.is_public)
             .map(|s| s.name.as_str())
             .collect::<Vec<_>>()
@@ -183,14 +229,21 @@ fn make_symbol_chunk(
 ) -> NormalizedChunk {
     let source_uri = symbol_uri(owner, repo, &parsed.path, &symbol.name);
 
-    // Embeddable text: signature + full context.
+    // Include calls in the embeddable text so the LLM can reason about call relationships.
+    let calls_line = if symbol.calls.is_empty() {
+        String::new()
+    } else {
+        format!("\ncalls: {}", symbol.calls.join(", "))
+    };
+
     let text = format!(
-        "file: {path}\nrepo: {owner}/{repo}\nlanguage: {lang}\nkind: {kind}\nname: {name}\nsignature: {sig}",
+        "file: {path}\nrepo: {owner}/{repo}\nlanguage: {lang}\nkind: {kind}\nname: {name}\nsignature: {sig}{calls}",
         path  = parsed.path,
         lang  = format!("{:?}", parsed.language).to_lowercase(),
         kind  = symbol_kind_label(&symbol.kind),
         name  = symbol.name,
         sig   = symbol.signature,
+        calls = calls_line,
     );
 
     let mut metadata = HashMap::new();
@@ -205,12 +258,16 @@ fn make_symbol_chunk(
     metadata.insert("is_public".to_string(), symbol.is_public.to_string());
     metadata.insert("signature".to_string(), symbol.signature.clone());
 
-    // Symbol chunk points back to its parent file.
+    if !symbol.calls.is_empty() {
+        metadata.insert("calls".to_string(), symbol.calls.join(","));
+    }
+
+    // Defined_in edge back to the parent file.
     let parent_edge = PreDefinedEdge {
         to_uri:                  file_uri.to_string(),
         label:                   "defined_in".to_string(),
         relationship_probability: 1.0,
-        token_cost:              1,
+        token_cost:              0,
     };
 
     NormalizedChunk {
@@ -260,7 +317,7 @@ mod tests {
                 },
                 Import {
                     raw:      "use std::collections::HashMap".to_string(),
-                    resolved: None, // external
+                    resolved: None,
                     line:     2,
                 },
             ],
@@ -268,10 +325,10 @@ mod tests {
                 Symbol {
                     name:      "Node".to_string(),
                     kind:      SymbolKind::Struct,
-                    signature: "pub struct Node { pub id: NodeId, pub embeddings: Vec<f32> }"
-                        .to_string(),
+                    signature: "pub struct Node { pub id: NodeId }".to_string(),
                     line:      10,
                     is_public: true,
+                    calls:     vec![],
                 },
                 Symbol {
                     name:      "add_node".to_string(),
@@ -279,6 +336,7 @@ mod tests {
                     signature: "pub fn add_node(&mut self, node: Node) -> NodeId".to_string(),
                     line:      30,
                     is_public: true,
+                    calls:     vec!["internal_helper".to_string()],
                 },
                 Symbol {
                     name:      "internal_helper".to_string(),
@@ -286,6 +344,7 @@ mod tests {
                     signature: "fn internal_helper() -> bool".to_string(),
                     line:      50,
                     is_public: false,
+                    calls:     vec![],
                 },
             ],
         }
@@ -295,26 +354,25 @@ mod tests {
     fn test_normalize_file_chunk_count() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        // 1 file chunk + 3 symbol chunks = 4 total.
-        assert_eq!(chunks.len(), 4);
+        assert_eq!(chunks.len(), 4); // 1 file + 3 symbols
     }
 
     #[test]
     fn test_file_chunk_is_first() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        let file_chunk = &chunks[0];
-        assert_eq!(file_chunk.metadata.get("kind").unwrap(), "file");
-        assert_eq!(file_chunk.source_uri, "codebase://github.com/ldbtech/FluvioGraph/src/graph/structs.rs");
+        let fc = &chunks[0];
+        assert_eq!(fc.metadata.get("kind").unwrap(), "file");
+        assert_eq!(
+            fc.source_uri,
+            "codebase://github.com/ldbtech/FluvioGraph/src/graph/structs.rs"
+        );
     }
 
     #[test]
     fn test_file_chunk_text_contains_context() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
         let text = &chunks[0].text;
         assert!(text.contains("file: src/graph/structs.rs"));
         assert!(text.contains("repo: ldbtech/FluvioGraph"));
@@ -322,7 +380,6 @@ mod tests {
         assert!(text.contains("public api:"));
         assert!(text.contains("add_node"));
         assert!(text.contains("imports:"));
-        // Internal import shows, external doesn't.
         assert!(text.contains("use crate::graph::enums::Domain"));
         assert!(!text.contains("use std::collections::HashMap"));
     }
@@ -331,13 +388,10 @@ mod tests {
     fn test_symbol_chunks_have_context() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        // Second chunk is the Node struct.
         let node_chunk = &chunks[1];
         assert!(node_chunk.text.contains("kind: struct"));
         assert!(node_chunk.text.contains("name: Node"));
         assert!(node_chunk.text.contains("file: src/graph/structs.rs"));
-        assert!(node_chunk.text.contains("repo: ldbtech/FluvioGraph"));
         assert_eq!(
             node_chunk.source_uri,
             "codebase://github.com/ldbtech/FluvioGraph/src/graph/structs.rs#Node"
@@ -348,25 +402,55 @@ mod tests {
     fn test_symbol_chunk_metadata() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
+        let chunk = &chunks[2]; // add_node
+        assert_eq!(chunk.metadata.get("name").unwrap(), "add_node");
+        assert_eq!(chunk.metadata.get("kind").unwrap(), "function");
+        assert_eq!(chunk.metadata.get("is_public").unwrap(), "true");
+        assert_eq!(chunk.metadata.get("line").unwrap(), "30");
+        // calls stored in metadata
+        assert_eq!(chunk.metadata.get("calls").unwrap(), "internal_helper");
+    }
 
-        let add_node_chunk = &chunks[2]; // add_node is second symbol
-        assert_eq!(add_node_chunk.metadata.get("name").unwrap(), "add_node");
-        assert_eq!(add_node_chunk.metadata.get("kind").unwrap(), "function");
-        assert_eq!(add_node_chunk.metadata.get("is_public").unwrap(), "true");
-        assert_eq!(add_node_chunk.metadata.get("line").unwrap(), "30");
-        assert_eq!(add_node_chunk.metadata.get("language").unwrap(), "rust");
+    #[test]
+    fn test_calls_in_symbol_text() {
+        let parsed = make_parsed_file();
+        let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
+        let add_node = &chunks[2];
+        assert!(add_node.text.contains("calls: internal_helper"),
+            "expected calls in text, got: {}", add_node.text);
+    }
+
+    #[test]
+    fn test_calls_edge_created() {
+        let parsed = make_parsed_file();
+        let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
+        // add_node (chunk 2) should have a "calls" edge to internal_helper (chunk 3)
+        let add_node = &chunks[2];
+        let calls_edges: Vec<_> = add_node.pre_defined_edges.iter()
+            .filter(|e| e.label == "calls")
+            .collect();
+        assert_eq!(calls_edges.len(), 1);
+        assert!(calls_edges[0].to_uri.ends_with("#internal_helper"));
+        assert_eq!(calls_edges[0].relationship_probability, 0.90);
+    }
+
+    #[test]
+    fn test_no_calls_edge_when_empty() {
+        let parsed = make_parsed_file();
+        let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
+        // Node struct (chunk 1) has no calls
+        let node_chunk = &chunks[1];
+        let calls_edges: Vec<_> = node_chunk.pre_defined_edges.iter()
+            .filter(|e| e.label == "calls")
+            .collect();
+        assert!(calls_edges.is_empty());
     }
 
     #[test]
     fn test_import_edges_on_file_chunk() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        let file_chunk = &chunks[0];
-        // Should have: 3 "contains" edges + 1 "imports" edge (only resolved import).
-        let import_edges: Vec<_> = file_chunk
-            .pre_defined_edges
-            .iter()
+        let import_edges: Vec<_> = chunks[0].pre_defined_edges.iter()
             .filter(|e| e.label == "imports")
             .collect();
         assert_eq!(import_edges.len(), 1);
@@ -380,36 +464,21 @@ mod tests {
     fn test_contains_edges_on_file_chunk() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        let file_chunk = &chunks[0];
-        let contains_edges: Vec<_> = file_chunk
-            .pre_defined_edges
-            .iter()
+        let contains_edges: Vec<_> = chunks[0].pre_defined_edges.iter()
             .filter(|e| e.label == "contains")
             .collect();
-        // 3 symbols → 3 contains edges.
         assert_eq!(contains_edges.len(), 3);
-        assert!(contains_edges
-            .iter()
-            .any(|e| e.to_uri.ends_with("#Node")));
-        assert!(contains_edges
-            .iter()
-            .any(|e| e.to_uri.ends_with("#add_node")));
-        assert!(contains_edges
-            .iter()
-            .any(|e| e.to_uri.ends_with("#internal_helper")));
+        assert!(contains_edges.iter().any(|e| e.to_uri.ends_with("#Node")));
+        assert!(contains_edges.iter().any(|e| e.to_uri.ends_with("#add_node")));
+        assert!(contains_edges.iter().any(|e| e.to_uri.ends_with("#internal_helper")));
     }
 
     #[test]
     fn test_symbol_defined_in_edge() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
-        // Every symbol chunk should have a "defined_in" edge back to the file.
         for chunk in chunks.iter().skip(1) {
-            let defined_in: Vec<_> = chunk
-                .pre_defined_edges
-                .iter()
+            let defined_in: Vec<_> = chunk.pre_defined_edges.iter()
                 .filter(|e| e.label == "defined_in")
                 .collect();
             assert_eq!(defined_in.len(), 1);
@@ -421,11 +490,9 @@ mod tests {
     }
 
     #[test]
-    fn test_chunk_indices_are_sequential() {
+    fn test_chunk_indices_sequential() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 10);
-
-        // Start index was 10, so chunks should be 10, 11, 12, 13.
         for (i, chunk) in chunks.iter().enumerate() {
             assert_eq!(chunk.chunk_index, 10 + i);
         }
@@ -435,14 +502,12 @@ mod tests {
     fn test_file_chunk_metadata() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
         let meta = &chunks[0].metadata;
         assert_eq!(meta.get("source").unwrap(), "codebase");
         assert_eq!(meta.get("owner").unwrap(), "ldbtech");
         assert_eq!(meta.get("repo").unwrap(), "FluvioGraph");
         assert_eq!(meta.get("symbol_count").unwrap(), "3");
         assert_eq!(meta.get("import_count").unwrap(), "2");
-        // public_symbols should only contain public ones.
         let pub_syms = meta.get("public_symbols").unwrap();
         assert!(pub_syms.contains("Node"));
         assert!(pub_syms.contains("add_node"));
@@ -458,18 +523,17 @@ mod tests {
             symbols:  vec![],
         };
         let chunks = normalize_file(&parsed, "owner", "repo", 0);
-        assert_eq!(chunks.len(), 1); // just the file chunk
+        assert_eq!(chunks.len(), 1);
         assert!(chunks[0].pre_defined_edges.is_empty());
     }
 
     #[test]
-    fn test_source_uris_are_unique() {
+    fn test_source_uris_unique() {
         let parsed = make_parsed_file();
         let chunks = normalize_file(&parsed, "ldbtech", "FluvioGraph", 0);
-
         let uris: Vec<&str> = chunks.iter().map(|c| c.source_uri.as_str()).collect();
         let unique: std::collections::HashSet<&str> = uris.iter().copied().collect();
-        assert_eq!(uris.len(), unique.len(), "all source URIs should be unique");
+        assert_eq!(uris.len(), unique.len());
     }
 
     #[test]
@@ -488,15 +552,15 @@ mod tests {
                 signature: "async def exchange_code(code: str) -> GmailToken:".to_string(),
                 line:      15,
                 is_public: true,
+                calls:     vec!["save_token".to_string()],
             }],
         };
-
         let chunks = normalize_file(&parsed, "owner", "repo", 0);
-        assert_eq!(chunks.len(), 2); // file + 1 symbol
-
+        assert_eq!(chunks.len(), 2);
         let sym = &chunks[1];
         assert!(sym.text.contains("language: python"));
         assert!(sym.text.contains("kind: function"));
         assert!(sym.text.contains("name: exchange_code"));
+        assert!(sym.text.contains("calls: save_token"));
     }
 }

@@ -4,3 +4,4 @@ pub mod server;
 pub mod query;
 pub mod ingestion_registry;
 pub mod routes;
+pub mod agents;

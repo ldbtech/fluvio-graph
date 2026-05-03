@@ -110,4 +110,4 @@ Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [
 - **Gmail OAuth** — Confirm `~/.fluvio/config.json` exists and redirect URIs match your Google Cloud OAuth client.
 - **First embedding run is slow** — Model download; watch the console for fastembed progress.
 
-Contributions and issues are welcome on GitHub.
+This codebase is **private / not open source** for now: deep ingest and graph-backed reasoning can be misused against third-party repositories or documents without authorization. The product landing reflects the same stance.

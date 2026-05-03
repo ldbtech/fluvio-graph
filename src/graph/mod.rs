@@ -6,6 +6,7 @@ pub mod fluvio_graph;
 pub mod enums;
 pub mod structs;
 pub mod graph_registry;
+pub mod persist_workspace;
 
 pub use embeddings::EmbeddingContext;
 

@@ -2,5 +2,6 @@
 
 pub mod document;
 pub mod pdf;
+pub mod rule_linker;
 
 pub use document::{Document, TextChunk};

@@ -120,7 +120,7 @@ export default function QaInfrastructurePage() {
   const nodeBrief = detail ? bundle.nodeQa[detail.node.id] : undefined;
 
   return (
-    <main className="relative min-h-screen bg-zinc-950 pt-12 text-zinc-200">
+    <main className="ui-main relative min-h-screen pt-12">
       <QaTopChrome />
 
       <div className="flex h-[calc(100vh-3rem)] min-h-0 w-full">

@@ -14,7 +14,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::tree::Language;
+pub use super::tree::Language;
 
 // ── Errors ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +55,24 @@ pub struct Symbol {
     /// Line number (1-based).
     pub line:      usize,
     pub is_public: bool,
+
+    /// name of functions this symbols calls within the same repo 
+    /// populated by "enrich_with_calls" aftet the first parse pass
+    #[serde(default)]
+    pub calls: Vec<String>,
+}
+
+impl Default for Symbol {
+    fn default() -> Self {
+        Self {
+            name:      String::new(),
+            kind:      SymbolKind::Function,
+            signature: String::new(),
+            line:      0,
+            is_public: false,
+            calls:     vec![],
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -209,6 +227,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -222,6 +241,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -235,6 +255,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -247,6 +268,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public: false, // impls don't have visibility
+                calls:     vec![],
             });
             continue;
         }
@@ -260,6 +282,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -273,6 +296,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -286,6 +310,7 @@ fn parse_rust(
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
         }
     }
@@ -295,6 +320,7 @@ fn parse_rust(
 
 /// Try to resolve a Rust `use` path to a relative file path in the repo.
 /// `use crate::graph::structs` → `src/graph/structs.rs` (if it exists)
+/// `use crate::graph::Graph` → `src/graph.rs` or `src/graph/mod.rs` (type suffix stripped)
 /// `use std::collections::HashMap` → None (external)
 fn resolve_rust_import(path: &str, repo_root: &Path) -> Option<String> {
     // Strip leading `crate::`, `super::`, `self::`.
@@ -309,20 +335,26 @@ fn resolve_rust_import(path: &str, repo_root: &Path) -> Option<String> {
         .or_else(|| stripped.strip_prefix("super::"))
         .or_else(|| stripped.strip_prefix("self::"))?;
 
-    // Convert `graph::structs` → `src/graph/structs`
-    let rel = without_prefix.replace("::", "/");
+    let segments: Vec<&str> = without_prefix.split("::").filter(|s| !s.is_empty()).collect();
+    if segments.is_empty() {
+        return None;
+    }
 
-    // Try src/{rel}.rs first, then {rel}.rs, then src/{rel}/mod.rs.
-    let candidates = [
-        format!("src/{rel}.rs"),
-        format!("{rel}.rs"),
-        format!("src/{rel}/mod.rs"),
-        format!("{rel}/mod.rs"),
-    ];
-
-    for candidate in &candidates {
-        if repo_root.join(candidate).exists() {
-            return Some(candidate.clone());
+    // Longest module-prefix first: `crate::graph::Graph` is the `graph` module plus the type
+    // `Graph`, so `graph/Graph.rs` misses but `graph` → `src/graph.rs` hits. Plain
+    // `crate::graph::structs` still resolves on the first try as `graph/structs`.
+    for len in (1..=segments.len()).rev() {
+        let rel = segments[..len].join("/");
+        let candidates = [
+            format!("src/{rel}.rs"),
+            format!("{rel}.rs"),
+            format!("src/{rel}/mod.rs"),
+            format!("{rel}/mod.rs"),
+        ];
+        for candidate in &candidates {
+            if repo_root.join(candidate).exists() {
+                return Some(candidate.clone());
+            }
         }
     }
 
@@ -394,6 +426,7 @@ fn parse_python(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseError> 
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public: !cap["name"].starts_with('_'),
+                calls:     vec![],
             });
             continue;
         }
@@ -407,6 +440,7 @@ fn parse_python(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseError> 
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -418,6 +452,7 @@ fn parse_python(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseError> 
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public: true,
+                calls:     vec![],
             });
         }
     }
@@ -543,6 +578,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -555,6 +591,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -567,6 +604,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -579,6 +617,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -591,6 +630,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
             continue;
         }
@@ -603,6 +643,7 @@ fn parse_typescript(source: &str) -> Result<(Vec<Import>, Vec<Symbol>), ParseErr
                 signature: trimmed.chars().take(120).collect(),
                 line:      line_no,
                 is_public,
+                calls:     vec![],
             });
         }
     }
@@ -636,6 +677,71 @@ fn resolve_ts_import(path: &str) -> Option<String> {
 
     // Try common extensions.
     Some(format!("{clean}.ts"))
+}
+
+// ── Two-pass call detection ───────────────────────────────────────────────────
+
+pub fn detect_calls(
+    source:      &str,
+    symbols:     &[Symbol],
+    known_names: &[String],
+) -> std::collections::HashMap<String, Vec<String>> {
+    let mut result: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    let name_set: std::collections::HashSet<&str> =
+        known_names.iter().map(|s| s.as_str()).collect();
+    let lines: Vec<&str> = source.lines().collect();
+    let total_lines = lines.len();
+    let fn_symbols: Vec<&Symbol> = symbols
+        .iter()
+        .filter(|s| matches!(s.kind,
+            SymbolKind::Function | SymbolKind::Method | SymbolKind::Impl))
+        .collect();
+    for (i, sym) in fn_symbols.iter().enumerate() {
+        let body_start = sym.line.saturating_sub(1);
+        let body_end = fn_symbols.get(i + 1)
+            .map(|n| n.line - 1)
+            .unwrap_or(total_lines);
+        let body = lines
+            .get(body_start..body_end.min(total_lines))
+            .unwrap_or(&[])
+            .join("\n");
+        let mut callees: Vec<String> = Vec::new();
+        for &name in &name_set {
+            if name == sym.name.as_str() { continue; }
+            let pattern = format!(r"(^|[^a-zA-Z0-9_]){}\s*\(", regex::escape(name));
+            if let Ok(re) = Regex::new(&pattern) {
+                if re.is_match(&body) {
+                    callees.push(name.to_string());
+                }
+            }
+        }
+        callees.sort();
+        callees.dedup();
+        if !callees.is_empty() {
+            result.insert(sym.name.clone(), callees);
+        }
+    }
+    result
+}
+
+pub fn enrich_with_calls(
+    parsed:      &mut ParsedFile,
+    source:      &str,
+    extra_names: &[String],
+) {
+    let mut known: Vec<String> = parsed.symbols.iter()
+        .map(|s| s.name.clone())
+        .collect();
+    known.extend_from_slice(extra_names);
+    known.sort();
+    known.dedup();
+    let call_map = detect_calls(source, &parsed.symbols, &known);
+    for sym in &mut parsed.symbols {
+        if let Some(callees) = call_map.get(&sym.name) {
+            sym.calls = callees.clone();
+        }
+    }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -736,6 +842,10 @@ pub static DEFAULT_MODEL: &str = "claude";
 
         let resolved = resolve_rust_import("crate::graph::structs", &tmp);
         assert_eq!(resolved, Some("src/graph/structs.rs".to_string()));
+
+        fs::write(tmp.join("src/graph.rs"), "").unwrap();
+        let type_import = resolve_rust_import("crate::graph::Graph", &tmp);
+        assert_eq!(type_import, Some("src/graph.rs".to_string()));
 
         let external = resolve_rust_import("std::collections::HashMap", &tmp);
         assert!(external.is_none());
@@ -863,11 +973,11 @@ export const MAX_NODES = 700;
             symbols:  vec![
                 Symbol {
                     name: "public_fn".to_string(), kind: SymbolKind::Function,
-                    signature: "pub fn public_fn()".to_string(), line: 1, is_public: true,
+                    signature: "pub fn public_fn()".to_string(), line: 1, is_public: true, calls: vec![],
                 },
                 Symbol {
                     name: "private_fn".to_string(), kind: SymbolKind::Function,
-                    signature: "fn private_fn()".to_string(), line: 2, is_public: false,
+                    signature: "fn private_fn()".to_string(), line: 2, is_public: false, calls: vec![],
                 },
             ],
         };
@@ -928,5 +1038,111 @@ impl Registry {
         assert!(result.symbols.iter().any(|s| s.name == "Registry" && s.kind == SymbolKind::Impl));
 
         let _ = fs::remove_dir_all(&tmp);
+    }
+
+    // ── parse_file integration — existing test above ──────────────────────────
+    // (keep all existing tests, add below)
+
+    // ── Call detection tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_detect_direct_call() {
+        let tmp = std::env::temp_dir().join("fluvio_call_direct.rs");
+        let source = r#"
+pub fn helper() -> bool { true }
+pub fn caller() { let x = helper(); }
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        enrich_with_calls(&mut parsed, source, &[]);
+        let caller = parsed.symbols.iter().find(|s| s.name == "caller").unwrap();
+        assert!(caller.calls.contains(&"helper".to_string()),
+            "expected 'helper' in calls, got {:?}", caller.calls);
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_no_self_call() {
+        let tmp = std::env::temp_dir().join("fluvio_call_self.rs");
+        let source = r#"
+pub fn recursive() { recursive(); }
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        enrich_with_calls(&mut parsed, source, &[]);
+        let sym = parsed.symbols.iter().find(|s| s.name == "recursive").unwrap();
+        assert!(!sym.calls.contains(&"recursive".to_string()));
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_cross_file_call_via_extra_names() {
+        let tmp = std::env::temp_dir().join("fluvio_call_cross.rs");
+        let source = r#"
+pub fn my_handler() { authenticate_user(); process_request(); }
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        let extra = vec!["authenticate_user".to_string(), "process_request".to_string()];
+        enrich_with_calls(&mut parsed, source, &extra);
+        let handler = parsed.symbols.iter().find(|s| s.name == "my_handler").unwrap();
+        assert!(handler.calls.contains(&"authenticate_user".to_string()));
+        assert!(handler.calls.contains(&"process_request".to_string()));
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_unknown_not_detected() {
+        let tmp = std::env::temp_dir().join("fluvio_call_unknown.rs");
+        let source = r#"
+pub fn my_fn() { some_unknown_external_crate_fn(); }
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        enrich_with_calls(&mut parsed, source, &[]);
+        let sym = parsed.symbols.iter().find(|s| s.name == "my_fn").unwrap();
+        assert!(sym.calls.is_empty());
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_multiple_callees() {
+        let tmp = std::env::temp_dir().join("fluvio_call_multi.rs");
+        let source = r#"
+fn validate(x: &str) -> bool { true }
+fn sanitize(x: &str) -> String { x.to_string() }
+fn store(x: &str) {}
+pub fn handle_input(raw: &str) {
+    if validate(raw) { let c = sanitize(raw); store(&c); }
+}
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        enrich_with_calls(&mut parsed, source, &[]);
+        let h = parsed.symbols.iter().find(|s| s.name == "handle_input").unwrap();
+        assert!(h.calls.contains(&"validate".to_string()));
+        assert!(h.calls.contains(&"sanitize".to_string()));
+        assert!(h.calls.contains(&"store".to_string()));
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_calls_empty_when_none() {
+        let tmp = std::env::temp_dir().join("fluvio_call_empty.rs");
+        let source = r#"
+pub fn no_calls() -> i32 { 42 }
+"#;
+        std::fs::write(&tmp, source).unwrap();
+        let root = std::env::temp_dir();
+        let mut parsed = parse_file(&tmp, &root, &Language::Rust).unwrap();
+        enrich_with_calls(&mut parsed, source, &[]);
+        let sym = parsed.symbols.iter().find(|s| s.name == "no_calls").unwrap();
+        assert!(sym.calls.is_empty());
+        let _ = std::fs::remove_file(&tmp);
     }
 }

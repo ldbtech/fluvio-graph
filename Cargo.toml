@@ -29,4 +29,15 @@ base64 = "0.22"           # Gmail body is base64 encoded
 html2text = "0.6"         # strip HTML from email bodies
 chrono = { version = "0.4.31", features = ["serde"] }
 regex = "1"
+tracing = "0.1"
+async-trait = "0.1.89"
+tokio-util = "0.7.18"
+ffmpeg-next = "7.0"
+image = { version = "0.25.10", default-features = false, features = ["jpeg"] }
 
+[dev-dependencies]
+tempfile = "3.27.0"
+
+# Video ingestion dependencies
+ffmpeg-next = "7.0"
+clip = "0.1.1"

@@ -9,15 +9,15 @@
 //!   4. Normalizes via normalizer.rs — produces NormalizedChunk with pre-defined edges
 //!   5. Returns the full Vec<NormalizedChunk> to the pipeline
 //!
-//! Clone is intentionally separate (POST /sync/codebase/clone) so the user
-//! controls when network I/O happens. extract() is pure local disk work.
+//! Clone is intentionally separate (`POST /codebase/clone` on kg-engine) so the user
+//! controls when network I/O happens. `extract_*` is local disk work after clone.
 
 use crate::graph::enums::Domain;
 use crate::ingestion_registry::connector::{ConnectorError, FluvioConnector, NormalizedChunk};
 
 use super::clone::{clone_or_pull, is_cloned, repo_path, CloneError, CloneResult, RepoRef};
 use super::normalizer::normalize_file;
-use super::parser::{parse_file, ParseError};
+use super::parser::{parse_file, ParseError, enrich_with_calls};
 use super::tree::{build_tree_from_path, flatten_files, Language, NodeKind};
 
 // ── Error mapping ─────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ impl CodebaseConnector {
 
         if !is_cloned(&r) {
             return Err(ConnectorError::NotConfigured(format!(
-                "repo not cloned — run POST /sync/codebase/clone first: {}",
+                "repo not cloned — run POST /codebase/clone (or POST /sync/codebase/clone) first: {}",
                 r.key()
             )));
         }
@@ -114,9 +114,11 @@ impl CodebaseConnector {
                 "file is not a parseable source file: {rel_path}"
             )));
         }
-
-        let parsed = parse_file(&abs_path, &root, &language)
-            .map_err(map_parse_error)?;
+        let mut parsed = parse_file(&abs_path, &root, &language)
+                     .map_err(map_parse_error)?;
+        if let Ok(source) = std::fs::read_to_string(&abs_path) {
+            enrich_with_calls(&mut parsed, &source, &[]);
+        }
 
         let chunks = normalize_file(&parsed, &r.owner, &r.repo, 0);
         Ok(chunks)
@@ -174,7 +176,7 @@ impl CodebaseConnector {
                 continue;
             }
 
-            let parsed = match parse_file(&abs_path, &root, &language) {
+            let mut parsed = match parse_file(&abs_path, &root, &language) {
                 Ok(p) => p,
                 Err(e) => {
                     eprintln!("[codebase] skipping {rel_path}: {e}");
@@ -182,6 +184,9 @@ impl CodebaseConnector {
                     continue;
                 }
             };
+            if let Ok(source) = std::fs::read_to_string(&abs_path) {
+                enrich_with_calls(&mut parsed, &source, &[]);
+            }
 
             let file_chunks = normalize_file(&parsed, &r.owner, &r.repo, chunk_index);
             chunk_index += file_chunks.len();
@@ -275,14 +280,25 @@ impl FluvioConnector for CodebaseConnector {
             }
 
             // Parse the file — skip on error (log but don't fail the whole batch).
-            let parsed = match parse_file(&abs_path, &root, &language) {
+            /*let parsed = match parse_file(&abs_path, &root, &language) {
                 Ok(p)  => p,
                 Err(e) => {
                     eprintln!("[codebase] skipping {rel_path}: {e}");
                     skipped += 1;
                     continue;
                 }
+            };*/
+            let mut parsed = match parse_file(&abs_path, &root, &language) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("[codebase] skipping {rel_path}: {e}");
+                    skipped += 1;
+                    continue;
+                }
             };
+            if let Ok(source) = std::fs::read_to_string(&abs_path) {
+                enrich_with_calls(&mut parsed, &source, &[]);
+            }
 
             // Normalize to chunks.
             let file_chunks = normalize_file(&parsed, &r.owner, &r.repo, chunk_index);

@@ -1,4 +1,8 @@
 {
+  "id": "workspace",
+  "domain": {
+    "Custom": "workspace"
+  },
   "nodes": {},
-  "adj_list": {}
+  "adj": {}
 }

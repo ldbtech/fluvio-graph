@@ -14,13 +14,21 @@ export interface GraphEdge {
   to: string;
   token: number;
   probability: number;
+  /** Edge relationship from kg-engine (`imports`, `contains`, `semantic_neighbor`, …). */
+  label?: string;
   source?: GraphNode;
   target?: GraphNode;
 }
 
 export interface SelectedNode {
   node: GraphNode;
-  neighbors: { node: GraphNode; token: number; probability: number }[];
+  neighbors: {
+    node: GraphNode;
+    token: number;
+    probability: number;
+    /** FluvioGraph edge label when present (`imports`, `contains`, …). */
+    label?: string;
+  }[];
 }
 
 export interface ChatMessage {
@@ -31,13 +39,11 @@ export interface ChatMessage {
 /** OAuth / integration sources (sidebar + full-screen connect previews). */
 export type ConnectorId =
   | "gmail"
-  | "spotify"
   | "github"
   | "calendar"
   | "whatsapp"
   | "slack"
   | "notion"
-  | "web"
   | "equities"
   | "futures"
   | "cryptocurrencies"
@@ -51,8 +57,8 @@ export type ConnectorId =
   | "des_building_codes"
   | "des_physics_sim";
 
-/** Personal, markets, or architecture / civil design workspace. */
-export type WorkspaceKind = "personal" | "invest" | "design";
+/** Personal integrations or architecture / design workspace. */
+export type WorkspaceKind = "personal" | "design";
 
 /** Main canvas mode: graph home vs connector-specific setup (production-shaped UI). */
 export type WorkspaceSurface = "documents" | ConnectorId;
@@ -89,6 +95,33 @@ export type CodebaseIngestResult = {
   chunks: number;
   nodes: number;
   edges: number;
+};
+
+/** `POST /codebase/resolve` — import slice + canvas payload. */
+export type CodebaseResolveGraphNode = {
+  id: string;
+  label: string;
+  page: string;
+  source: string;
+};
+
+export type CodebaseResolveGraphEdge = {
+  from: string;
+  to: string;
+  token: number;
+  probability: number;
+  label: string;
+};
+
+export type CodebaseResolveResult = {
+  chunks: number;
+  resolved_paths: string[];
+  unresolved_imports: string[];
+  max_depth_reached: number;
+  nodes: number;
+  edges: number;
+  graph_nodes: CodebaseResolveGraphNode[];
+  graph_edges: CodebaseResolveGraphEdge[];
 };
 
 /** Legacy scoped ingest response (deprecated with simplified `/ingest`). */

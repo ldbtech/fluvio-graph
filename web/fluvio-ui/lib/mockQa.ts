@@ -42,11 +42,11 @@ export const QA_GRAPHS: QaGraphBundle[] = [
     })(),
   },
   {
-    id: "spotify-focus",
-    title: "Spotify · Focus session",
-    subtitle: "Audio + playlist graph",
+    id: "calendar-week",
+    title: "Calendar · Week view",
+    subtitle: "Events + attendees",
     ...(() => {
-      const { nodes, edges } = getMockGraph("spotify");
+      const { nodes, edges } = getMockGraph("calendar");
       return { nodes, edges, nodeQa: attachQa({ nodes, edges }) };
     })(),
   },
@@ -100,15 +100,15 @@ export const QA_AGENTS: QaAgent[] = [
     trace: ["Subscribed to 4 active graphs"],
   },
   {
-    id: "ag-spotify-1",
-    graphId: "spotify-focus",
-    name: "Session-Analyst",
-    role: "Session ↔ track attribution",
+    id: "ag-calendar-1",
+    graphId: "calendar-week",
+    name: "Schedule-Linker",
+    role: "Events ↔ attendee clusters",
     status: "running",
-    environment: ["Listening history API", "session window 52m"],
-    currentTask: "Confirm playlist membership edge direction",
+    environment: ["Google Calendar API", "workspace TZ"],
+    currentTask: "Reconcile recurring standup vs. room booking edges",
     progress: 0.78,
-    trace: ["Built session node ss1", "Cross-checked valence cluster af1"],
+    trace: ["Linked ev1 → attendee cluster", "Checked room Orion capacity"],
   },
 ];
 

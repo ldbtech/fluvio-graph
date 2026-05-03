@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useReducer } from "react";
 import * as d3 from "d3";
 import type { QaItemStatus } from "@/lib/qaTypes";
 import { qaEdgeKey } from "@/lib/qaTypes";
@@ -17,15 +17,30 @@ type Props = {
 };
 
 export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEdgeStatus }: Props) {
+  /** Bumps when the SVG layout box changes so we re-center in real viewport coords (not window size). */
+  const [layoutRev, bumpLayout] = useReducer((n: number) => n + 1, 0);
+
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => bumpLayout());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [svgRef]);
+
   useEffect(() => {
     if (!svgRef.current) return;
-    if (nodes.length === 0) return;
+    if (nodes.length === 0) {
+      d3.select(svgRef.current).selectAll("*").remove();
+      return;
+    }
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const W = svgRef.current.clientWidth || window.innerWidth;
-    const H = svgRef.current.clientHeight || window.innerHeight;
+    const rect = svgRef.current.getBoundingClientRect();
+    const W = Math.max(8, rect.width || svgRef.current.clientWidth, 320);
+    const H = Math.max(8, rect.height || svgRef.current.clientHeight, 240);
 
     const defs = svg.append("defs");
     const gf = defs.append("filter").attr("id", "glow");
@@ -69,21 +84,19 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
     );
 
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    type LinkDatum = GraphEdge & {
+      source: GraphNode;
+      target: GraphNode;
+    };
+
     const links = edges
       .map((e) => {
         const source = nodeMap.get(e.from);
         const target = nodeMap.get(e.to);
         if (!source || !target) return null;
-        return { ...e, source, target };
+        return { ...e, source, target } as LinkDatum;
       })
-      .filter((l): l is NonNullable<typeof l> => l !== null) as {
-      source: GraphNode;
-      target: GraphNode;
-      from: string;
-      to: string;
-      token: number;
-      probability: number;
-    }[];
+      .filter((l): l is LinkDatum => l !== null);
 
     const n = nodes.length;
     const charge = n > 400 ? -90 : n > 150 ? -160 : -250;
@@ -94,7 +107,7 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
         d3
           .forceLink(links)
           .id((d: d3.SimulationNodeDatum) => (d as GraphNode).id)
-          .distance((d) => 60 + (1 - (d as { probability: number }).probability) * 100),
+          .distance((d) => 60 + (1 - (d as LinkDatum).probability) * 100),
       )
       .force("charge", d3.forceManyBody().strength(charge))
       .force("center", d3.forceCenter(W / 2, H / 2))
@@ -105,16 +118,45 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
     const maxTicks = n > 500 ? 220 : 420;
     let tickCount = 0;
 
-    const edgeStroke = (d: (typeof links)[0]) => {
+    const edgeStroke = (d: LinkDatum) => {
       const st = qaEdgeStatus?.[qaEdgeKey(d.from, d.to)];
       if (st === "approved") return "#34d399";
       if (st === "rejected") return "#f87171";
+      const lab = (d.label ?? "").toLowerCase();
+      if (lab === "imports") return "#22d3ee";
+      if (lab === "contains") return "#c084fc";
+      if (lab === "legacy") return "#78716c";
+      if (lab === "tree") return "#64748b";
+      if (lab === "semantic_neighbor") {
+        return d.probability > 0.7 ? "#38bdf8" : d.probability > 0.5 ? "#a78bfa" : "#52525b";
+      }
+      if (lab) return "#94a3b8";
       return d.probability > 0.7 ? "#38bdf8" : d.probability > 0.5 ? "#a78bfa" : "#52525b";
     };
 
-    const link = g
-      .append("g")
-      .selectAll<SVGLineElement, (typeof links)[0]>("line")
+    const edgeTitle = (d: LinkDatum) => {
+      const lab = d.label?.trim() || "edge";
+      return `${lab} · p=${d.probability.toFixed(3)} · tok=${d.token}`;
+    };
+
+    const showEdgeMidLabel = (d: LinkDatum) => {
+      const lab = (d.label ?? "").toLowerCase();
+      if (!lab || lab === "semantic_neighbor") return false;
+      if (nodes.length > 120 && lab === "legacy") return false;
+      return true;
+    };
+
+    const edgeMidText = (d: LinkDatum) => {
+      const raw = (d.label ?? "").trim();
+      if (!raw) return "";
+      if (raw.length > 14) return `${raw.slice(0, 12)}…`;
+      return raw;
+    };
+
+    const linkLayer = g.append("g").attr("class", "links");
+
+    const link = linkLayer
+      .selectAll<SVGLineElement, LinkDatum>("line")
       .data(links)
       .join("line")
       .attr("class", (d) =>
@@ -135,6 +177,24 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
       .attr("filter", (d) =>
         qaEdgeStatus?.[qaEdgeKey(d.from, d.to)] === "rejected" ? "none" : "url(#edgeGlow)",
       );
+
+    link.each(function (d) {
+      d3.select(this).append("title").text(edgeTitle(d));
+    });
+
+    const linkLabels = g
+      .append("g")
+      .attr("class", "edge-labels")
+      .selectAll<SVGTextElement, LinkDatum>("text")
+      .data(links.filter(showEdgeMidLabel))
+      .join("text")
+      .attr("fill", "#a1a1aa")
+      .attr("font-size", "9px")
+      .attr("font-family", "ui-monospace, monospace")
+      .attr("text-anchor", "middle")
+      .attr("pointer-events", "none")
+      .attr("opacity", 0.88)
+      .text((d) => edgeMidText(d));
 
     const node = g
       .append("g")
@@ -164,7 +224,12 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
         ev.stopPropagation();
         const neighbors = links
           .filter((l) => l.source.id === d.id)
-          .map((l) => ({ node: l.target, token: l.token, probability: l.probability }));
+          .map((l) => ({
+            node: l.target,
+            token: l.token,
+            probability: l.probability,
+            label: l.label,
+          }));
         onSelect({ node: d, neighbors });
       });
 
@@ -230,6 +295,9 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
         .attr("y1", (d) => d.source.y ?? 0)
         .attr("x2", (d) => d.target.x ?? 0)
         .attr("y2", (d) => d.target.y ?? 0);
+      linkLabels
+        .attr("x", (d) => ((d.source.x ?? 0) + (d.target.x ?? 0)) / 2)
+        .attr("y", (d) => ((d.source.y ?? 0) + (d.target.y ?? 0)) / 2 - 3);
       node.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
       tickCount += 1;
       if (tickCount >= maxTicks) {
@@ -240,7 +308,7 @@ export function GraphCanvas({ svgRef, nodes, edges, onSelect, qaNodeStatus, qaEd
     return () => {
       sim.stop();
     };
-  }, [svgRef, nodes, edges, onSelect, qaNodeStatus, qaEdgeStatus]);
+  }, [svgRef, nodes, edges, onSelect, qaNodeStatus, qaEdgeStatus, layoutRev]);
 
   return <svg ref={svgRef} className="absolute inset-0 h-full w-full" />;
 }

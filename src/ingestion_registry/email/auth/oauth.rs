@@ -115,7 +115,7 @@ pub struct TokenResponse {
     access_token:       String,
     refresh_token:      Option<String>, // Optional for first-time exchange, not on refresh
     expires_in:         i64,            // seconds until expiration
-    scope:              String,
+    _scope:              String,
 }
 
 // -- Google API Client ----------------------------------------------------------------

@@ -28,7 +28,13 @@ export function moduleSubtreeToGraph(
       source: "github",
     });
     if (parentId !== null) {
-      edges.push({ from: parentId, to: id, token: 1, probability: 0.92 });
+      edges.push({
+        from: parentId,
+        to: id,
+        token: 1,
+        probability: 0.92,
+        label: "tree",
+      });
     }
     for (const c of n.children) {
       if (nodes.length >= maxNodes) break;

@@ -21,61 +21,43 @@ export function BrainFusionLoadingMock({
     return () => window.clearInterval(t);
   }, []);
 
-  const markets = workspaceKind === "invest";
   const design = workspaceKind === "design";
 
   const title =
     variant === "unified"
-      ? markets
-        ? "Fusing vendor feeds into markets workspace…"
-        : design
-          ? "Fusing BIM, loads, and solver outputs into design workspace…"
-          : "Fusing subgraphs into workspace view…"
-      : markets
-        ? "Recomputing markets meta-graph…"
-        : design
-          ? "Recomputing design meta-graph (codes + contracts)…"
-          : "Recomputing meta-graph layout…";
+      ? design
+        ? "Fusing BIM, loads, and solver outputs into design workspace…"
+        : "Fusing subgraphs into workspace view…"
+      : design
+        ? "Recomputing design meta-graph (codes + contracts)…"
+        : "Recomputing meta-graph layout…";
 
   const steps =
     variant === "unified"
-      ? markets
+      ? design
         ? [
-            "Normalize tickers across venues",
-            "Reconcile vendor clock skew",
-            "Join news → price events (mock)",
-            "Publish fusion snapshot for desk chat",
+            "Pin IFC federation revision IDs",
+            "Join code clauses to load combinations",
+            "Reconcile structural vs physics envelopes",
+            "Publish fusion snapshot for design chat",
           ]
-        : design
-          ? [
-              "Pin IFC federation revision IDs",
-              "Join code clauses to load combinations",
-              "Reconcile structural vs physics envelopes",
-              "Publish fusion snapshot for design chat",
-            ]
-          : [
-              "Resolve entity IDs across domains",
-              "Align embedding spaces (mock L2)",
-              "Materialize cross-edges in fusion layer",
-              "Hand off to query router",
-            ]
-      : markets
+        : [
+            "Resolve entity IDs across domains",
+            "Align embedding spaces (mock L2)",
+            "Materialize cross-edges in fusion layer",
+            "Hand off to query router",
+          ]
+      : design
         ? [
-            "Refresh API entitlement capsules",
-            "Redraw data-vendor fan-out",
+            "Refresh solver + code capsule health",
+            "Redraw BIM → structural fan-out",
             "Reconcile agent mesh slots",
           ]
-        : design
-          ? [
-              "Refresh solver + code capsule health",
-              "Redraw BIM → structural fan-out",
-              "Reconcile agent mesh slots",
-            ]
-          : [
-              "Refresh domain capsule health",
-              "Redraw orchestrator fan-out",
-              "Reconcile agent mesh slots",
-            ];
+        : [
+            "Refresh domain capsule health",
+            "Redraw orchestrator fan-out",
+            "Reconcile agent mesh slots",
+          ];
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#04040f]/92 px-6 backdrop-blur-md">
@@ -108,12 +90,7 @@ export function BrainFusionLoadingMock({
           ))}
         </ul>
         <p className="mt-4 font-mono text-[10px] leading-relaxed text-slate-600">
-          {markets ? (
-            <>
-              Rust job sketch: keyed <code className="text-amber-700/80">MarketGraphId</code> per workspace, ingest
-              bars/news as typed vertices, then materialize a fusion layer for cross-vendor queries (mock UI only).
-            </>
-          ) : design ? (
+          {design ? (
             <>
               Rust job sketch: keyed <code className="text-violet-200/90">DesignGraphId</code> per project, ingest IFC
               + solver artifacts as typed vertices, then materialize a fusion layer so agents can prove loads and physics

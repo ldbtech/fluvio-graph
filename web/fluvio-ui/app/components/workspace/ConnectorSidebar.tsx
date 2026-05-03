@@ -12,12 +12,6 @@ const PERSONAL_CONNECTORS: ConnectorDef[] = [
     accent: "#ea4335",
   },
   {
-    id: "spotify",
-    name: "Spotify",
-    blurb: "Listening graph",
-    accent: "#1db954",
-  },
-  {
     id: "github",
     name: "GitHub",
     blurb: "Repos & code",
@@ -47,89 +41,14 @@ const PERSONAL_CONNECTORS: ConnectorDef[] = [
     blurb: "Docs graph",
     accent: "#ffffff",
   },
-  {
-    id: "web",
-    name: "Website",
-    blurb: "Crawl + PDF learnings",
-    accent: "#f59e0b",
-  },
-];
-
-const INVEST_CONNECTORS: ConnectorDef[] = [
-  {
-    id: "equities",
-    name: "Stocks & equities",
-    blurb: "Tape, fundamentals, events",
-    accent: "#22c55e",
-  },
-  {
-    id: "futures",
-    name: "Futures",
-    blurb: "Curves, rolls, margin",
-    accent: "#38bdf8",
-  },
-  {
-    id: "cryptocurrencies",
-    name: "Crypto",
-    blurb: "Pairs, flows, venue risk",
-    accent: "#f472b6",
-  },
-  {
-    id: "fin_news",
-    name: "News wires",
-    blurb: "Multi-vendor headlines",
-    accent: "#fb923c",
-  },
-  {
-    id: "fin_market_data",
-    name: "Market data APIs",
-    blurb: "Bars, depth, alt data",
-    accent: "#a78bfa",
-  },
-  {
-    id: "fin_research",
-    name: "Research & books",
-    blurb: "PDFs + desk notes",
-    accent: "#fcd34d",
-  },
 ];
 
 const DESIGN_CONNECTORS: ConnectorDef[] = [
   {
-    id: "des_bim",
-    name: "BIM / IFC",
-    blurb: "Model federation & clash context",
-    accent: "#38bdf8",
-  },
-  {
     id: "des_arch_plans",
-    name: "Architectural plans",
-    blurb: "Sheets, rooms, envelopes",
+    name: "Architecture",
+    blurb: "Generate + live design edits",
     accent: "#c084fc",
-  },
-  {
-    id: "des_structural",
-    name: "Structural analysis",
-    blurb: "FEM, members, load paths",
-    accent: "#f472b6",
-  },
-  {
-    id: "des_civil_site",
-    name: "Civil & site",
-    blurb: "Grading, utilities, geotech",
-    accent: "#34d399",
-  },
-  {
-    id: "des_building_codes",
-    name: "Codes & loads",
-    blurb: "IBC, ASCE, local amendments",
-    accent: "#fbbf24",
-  },
-  {
-    id: "des_physics_sim",
-    name: "Physics & simulation",
-    blurb: "Checks that geometry survives reality",
-    accent: "#fb7185",
   },
 ];
 
@@ -189,12 +108,7 @@ export function ConnectorSidebar({
   onWorkspaceGraphChanged,
 }: Props) {
   const docActive = activeSurface === "documents";
-  const connectors =
-    workspaceKind === "invest"
-      ? INVEST_CONNECTORS
-      : workspaceKind === "design"
-        ? DESIGN_CONNECTORS
-        : PERSONAL_CONNECTORS;
+  const connectors = workspaceKind === "design" ? DESIGN_CONNECTORS : PERSONAL_CONNECTORS;
   const projectsDisclosureId = useId();
 
   return (
@@ -204,18 +118,12 @@ export function ConnectorSidebar({
     >
       <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
         <h1 className="text-[17px] font-semibold leading-snug tracking-tight text-zinc-100">
-          {workspaceKind === "invest"
-            ? "Markets desk"
-            : workspaceKind === "design"
-              ? "Design studio"
-              : "Sources"}
+          {workspaceKind === "design" ? "Design studio" : "Sources"}
         </h1>
         <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">
-          {workspaceKind === "invest"
-            ? "Preview feeds for equities, futures, crypto, and research."
-            : workspaceKind === "design"
-              ? "Architecture and civil slices for a knowledge graph that ties intent to loads, codes, and simulation."
-              : "Add documents, then connect integrations. Open Workspace to explore the graph."}
+          {workspaceKind === "design"
+            ? "Architecture design generation and live scene updates."
+            : "Add documents, then connect integrations. Open Workspace to explore the graph."}
         </p>
       </div>
 
@@ -270,31 +178,13 @@ export function ConnectorSidebar({
           </GroupedSection>
         )}
 
-        {workspaceKind === "invest" && (
-          <section className="px-3 pt-5">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-3">
-              <p className="text-[12px] leading-relaxed text-zinc-500">
-                Upload PDFs from the <span className="font-medium text-zinc-300">Personal</span> workspace. Connectors
-                here stay preview-only for graph tabs.
-              </p>
-              <button
-                type="button"
-                onClick={() => onWorkspaceKindChange("personal")}
-                className="mt-3 w-full rounded-xl bg-zinc-100 py-2.5 text-[14px] font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.99]"
-              >
-                Open Personal
-              </button>
-            </div>
-          </section>
-        )}
-
         {workspaceKind === "design" && (
           <section className="px-3 pt-5">
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-3">
               <p className="text-[12px] leading-relaxed text-zinc-500">
                 Spec PDFs and calc books can still live in{" "}
                 <span className="font-medium text-zinc-300">Personal</span>; here we mock BIM, loads, and solver packs
-                as separate graph slices until Rust ingestion lands.
+                as architecture context while live design generation is powered by Rust endpoints.
               </p>
               <button
                 type="button"
@@ -308,15 +198,11 @@ export function ConnectorSidebar({
         )}
 
         <GroupedSection
-          title={
-            workspaceKind === "invest" ? "Data feeds" : workspaceKind === "design" ? "Design sources" : "Integrations"
-          }
+          title={workspaceKind === "design" ? "Design sources" : "Integrations"}
           description={
             workspaceKind === "personal"
               ? "Choose a source to configure in the panel."
-              : workspaceKind === "design"
-                ? "Enable previews, then open Brain to see each slice and unified validation context."
-                : undefined
+              : "Enable previews, then open Brain to see each slice and unified validation context."
           }
         >
           <ul className="divide-y divide-white/[0.06]">

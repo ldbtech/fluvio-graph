@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { CodebaseCloneResult, ConnectorId, WorkspaceSurface } from "@/lib/types";
+import { postCodebaseClone } from "@/lib/fetchCodebaseClone";
 import { DESIGN_CONNECTOR_IDS } from "@/lib/workspaceKinds";
 
 type OAuthPhase = "form" | "busy" | "done";
@@ -990,122 +991,6 @@ function WhatsappPreviewCard({ onOAuthPreviewComplete }: { onOAuthPreviewComplet
   );
 }
 
-function WebGraphSetupCard({ onOAuthPreviewComplete }: { onOAuthPreviewComplete: (id: ConnectorId) => void }) {
-  const [phase, setPhase] = useState<OAuthPhase>("form");
-
-  const run = () => {
-    if (phase !== "form") return;
-    setPhase("busy");
-    window.setTimeout(() => {
-      setPhase("done");
-      onOAuthPreviewComplete("web");
-    }, 1100);
-  };
-
-  return (
-    <div className="mx-auto max-w-lg">
-      <PreviewBanner />
-      <div className="overflow-hidden rounded-2xl border border-amber-500/25 bg-[#0c0c18] shadow-[0_24px_80px_rgba(245,158,11,0.08)]">
-        <div className="border-b border-white/5 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/15 font-mono text-xs font-bold text-amber-200">
-              WEB
-            </span>
-            <div>
-              <p className="text-xs font-medium text-amber-200/80">Crawl graph</p>
-              <p className="text-lg font-semibold tracking-tight text-slate-100">Website → graph + PDF learnings</p>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-4 px-5 py-5 text-sm text-slate-400">
-          <p>
-            Paste a site root; workers fetch HTML, scripts, routes, and headers into one graph. Attach cybersecurity PDFs
-            (or any manuals) into the <span className="font-mono text-amber-200/90">same graph_id</span> so findings
-            can link literature to live surface area — e.g. hunt CSRF/XSS gaps against your real endpoints.
-          </p>
-          <label className="block text-xs">
-            <span className="text-slate-500">Site URL</span>
-            <input
-              type="url"
-              readOnly
-              defaultValue="https://myproduct.example/login"
-              className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-slate-300"
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs opacity-80">
-              <span className="text-slate-500">Max depth</span>
-              <input type="range" disabled className="mt-1 w-full" defaultValue={40} />
-            </label>
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 p-3 text-xs opacity-80">
-              <input type="checkbox" disabled defaultChecked />
-              Same-origin only (recommended)
-            </label>
-          </div>
-          <div>
-            <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-slate-500">PDFs merged into this crawl</p>
-            <div className="flex flex-wrap gap-2">
-              {["owasp-csrf-sheet.pdf", "corp-baseline-v3.pdf", "threat-model-notes.pdf"].map((name) => (
-                <span
-                  key={name}
-                  className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] text-emerald-200/90"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-            <p className="mt-2 font-mono text-[10px] text-slate-600">
-              Production: POST PDFs with <code className="text-cyan-700/80">graph_id=crawl:&lt;site&gt;</code> so chunks
-              sit beside DOM/route nodes for joint retrieval.
-            </p>
-          </div>
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-100/85">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-amber-400/80">agents (later)</span>
-            <p className="mt-1">
-              Spin a <strong className="text-amber-100">web scout</strong> for internet context, an{" "}
-              <strong className="text-amber-100">error radar</strong> for contradictions / risky patterns, and a{" "}
-              <strong className="text-amber-100">remediation runner</strong> for draft fixes — all behind approvals in
-              Rust.
-            </p>
-          </div>
-        </div>
-        {phase === "form" && (
-          <div className="border-t border-white/5 px-5 py-4">
-            <button
-              type="button"
-              onClick={run}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-95"
-            >
-              Start crawl (preview)
-            </button>
-          </div>
-        )}
-        {phase === "busy" && (
-          <div className="border-t border-white/5 px-5 py-8 text-center font-mono text-sm text-slate-400">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />{" "}
-            Fetching sitemap, parsing bundles, staging PDF merge slots…
-          </div>
-        )}
-        {phase === "done" && (
-          <div className="border-t border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
-            <p className="font-mono text-xs text-emerald-200/90">
-              Mock crawl registered. Open <strong className="text-emerald-100">Workspace brain → Web</strong> to see
-              route/finding nodes; attach real PDFs once <code className="text-emerald-300">/ingest/web</code> exists.
-            </p>
-          </div>
-        )}
-      </div>
-      <RustFootnote
-        lines={[
-          "POST /ingest/web/crawl { url, depth, same_origin } → job queue; store graph_id keyed by normalized origin.",
-          "POST /ingest/web/attach-pdf { graph_id, file } reuses PDF pipeline with domain=\"web\" + parent_crawl_id.",
-          "GET /graph?domain=web&graph_id=… for fused site + literature view; agents call tool APIs with audit logs.",
-        ]}
-      />
-    </div>
-  );
-}
-
 export function WorkspaceSurfacePanel({
   surface,
   onClose,
@@ -1120,6 +1005,14 @@ export function WorkspaceSurfacePanel({
 }: Props) {
   /** Public GitHub URL for shallow clone (`ingestion_registry::codebase::clone`). */
   const [githubPublicRepoUrl, setGithubPublicRepoUrl] = useState("");
+  /** Repo-relative path prefix for `POST /ingest { path }`, rules link filter, and security deploy `scope`. */
+  const [githubIngestPath, setGithubIngestPath] = useState("");
+  /** Git network: shallow clone or pull into ~/.fluvio/repos/… */
+  const [githubPullBusy, setGithubPullBusy] = useState(false);
+  const [githubPullErr, setGithubPullErr] = useState<string | null>(null);
+  const [githubPullOk, setGithubPullOk] = useState<string | null>(null);
+
+  /** Parse + embed chunks from an already-cloned repo */
   const [githubCloneBusy, setGithubCloneBusy] = useState(false);
   const [githubCloneErr, setGithubCloneErr] = useState<string | null>(null);
   const [githubCloneOk, setGithubCloneOk] = useState<string | null>(null);
@@ -1136,13 +1029,11 @@ export function WorkspaceSurfacePanel({
           <h2 id="surface-title" className="text-[17px] font-semibold tracking-tight text-zinc-100">
             {surface === "documents" && "Documents"}
             {surface === "gmail" && "Gmail"}
-            {surface === "spotify" && "Spotify"}
             {surface === "github" && "GitHub"}
             {surface === "calendar" && "Google Calendar"}
             {surface === "whatsapp" && "WhatsApp"}
             {surface === "slack" && "Slack"}
             {surface === "notion" && "Notion"}
-            {surface === "web" && "Website crawl"}
             {surface === "equities" && "Stocks & equities"}
             {surface === "futures" && "Futures"}
             {surface === "cryptocurrencies" && "Cryptocurrencies"}
@@ -1258,39 +1149,6 @@ export function WorkspaceSurfacePanel({
           </>
         )}
 
-        {surface === "spotify" && (
-          <>
-            <OauthChromeCard
-              id="spotify"
-              brand={
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1db954] text-sm font-bold text-black">
-                  ♪
-                </span>
-              }
-              title="Spotify"
-              body={
-                <div className="space-y-4 text-sm text-slate-400">
-                  <p>Map recent plays, playlists, and audio features into artist/track nodes for a listening layer on your graph.</p>
-                  <ul className="space-y-2 rounded-lg border border-white/5 bg-black/20 p-3 font-mono text-[11px] text-green-200/80">
-                    <li>user-read-recently-played</li>
-                    <li>playlist-read-private</li>
-                  </ul>
-                  <p className="font-mono text-[10px] text-slate-500">
-                    Production: poll or webhooks where available; rate-limit per user in Rust.
-                  </p>
-                </div>
-              }
-              onOAuthPreviewComplete={onOAuthPreviewComplete}
-            />
-            <RustFootnote
-              lines={[
-                "OAuth PKCE in axum; store tokens in token_store (see ingestion_registry/email pattern).",
-                "Cron: spotify::recently_played → ingest_chunk(..., \"music\", …) with ISRC / track URI edges.",
-              ]}
-            />
-          </>
-        )}
-
         {surface === "github" && (
           <>
             <OauthChromeCard
@@ -1307,9 +1165,10 @@ export function WorkspaceSurfacePanel({
                     <div className="border-b border-white/[0.06] px-3 py-2.5">
                       <p className="text-[13px] font-semibold text-zinc-200">Public repository</p>
                       <p className="mt-1 text-[12px] leading-relaxed text-zinc-600">
-                        Paste a URL or <span className="font-mono text-zinc-400">owner/repo</span>. GitHub now uses the simple
-                        codebase flow: <span className="font-mono text-zinc-500">POST /ingest</span> and{" "}
-                        <span className="font-mono text-zinc-500">GET /parse</span>.
+                        Paste a URL or <span className="font-mono text-zinc-400">owner/repo</span>.{" "}
+                        <span className="font-mono text-zinc-500">POST /codebase/clone</span> (or{" "}
+                        <span className="font-mono text-zinc-500">/sync/codebase/clone</span>) pulls the repo to disk;{" "}
+                        <span className="font-mono text-zinc-500">POST /ingest</span> parses the local mirror into the graph.
                       </p>
                     </div>
                     <div className="space-y-3 p-3">
@@ -1325,15 +1184,78 @@ export function WorkspaceSurfacePanel({
                           onChange={(e) => {
                             setGithubCloneErr(null);
                             setGithubCloneOk(null);
+                            setGithubPullErr(null);
+                            setGithubPullOk(null);
                             setGithubPublicRepoUrl(e.target.value);
                           }}
                           className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-zinc-950/50 px-3 py-2.5 font-mono text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
                         />
                       </label>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <label className="block text-[12px] font-medium text-zinc-600">
+                        Path prefix (optional)
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder="src — same as curl -d path"
+                          value={githubIngestPath}
+                          onChange={(e) => {
+                            setGithubCloneErr(null);
+                            setGithubCloneOk(null);
+                            setGithubPullErr(null);
+                            setGithubPullOk(null);
+                            setGithubIngestPath(e.target.value);
+                          }}
+                          className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-zinc-950/50 px-3 py-2.5 font-mono text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/35 focus:ring-1 focus:ring-sky-500/20"
+                        />
+                      </label>
+                      <p className="text-[11px] leading-relaxed text-zinc-600">
+                        Sent as <span className="font-mono text-zinc-400">path</span> on{" "}
+                        <span className="font-mono text-zinc-500">POST /ingest</span>; also used for rules link filter and
+                        security agent <span className="font-mono text-zinc-500">scope</span> below.
+                      </p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                         <button
                           type="button"
-                          disabled={githubCloneBusy || !githubPublicRepoUrl.trim()}
+                          disabled={githubPullBusy || githubCloneBusy || !githubPublicRepoUrl.trim()}
+                          onClick={async () => {
+                            const url = githubPublicRepoUrl.trim();
+                            if (!url) return;
+                            const repoRef = parseGithubRepoInput(url);
+                            if (!repoRef) {
+                              setGithubPullErr("Enter a valid GitHub URL or owner/repo.");
+                              return;
+                            }
+                            setGithubPullBusy(true);
+                            setGithubPullErr(null);
+                            setGithubPullOk(null);
+                            try {
+                              const data = await postCodebaseClone(kgUrl, url);
+                              setGithubPullOk(
+                                data.was_cloned
+                                  ? `Cloned ${data.owner}/${data.repo} → ${data.local_path}`
+                                  : `Repo already present; pulled latest for ${data.owner}/${data.repo}`,
+                              );
+                              onGithubPublicCloneSuccess?.({
+                                owner: data.owner,
+                                repo: data.repo,
+                                local_path: data.local_path,
+                                was_cloned: data.was_cloned,
+                              });
+                            } catch (e: unknown) {
+                              setGithubPullErr(e instanceof Error ? e.message : String(e));
+                            } finally {
+                              setGithubPullBusy(false);
+                            }
+                          }}
+                          className="rounded-xl border border-sky-500/35 bg-sky-500/10 px-4 py-2.5 text-[13px] font-semibold text-sky-100 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {githubPullBusy ? "Cloning…" : "Clone or pull repo"}
+                        </button>
+                        <span className="font-mono text-[11px] text-zinc-600">POST …/codebase/clone</span>
+                        <button
+                          type="button"
+                          disabled={githubCloneBusy || githubPullBusy || !githubPublicRepoUrl.trim()}
                           onClick={async () => {
                             const url = githubPublicRepoUrl.trim();
                             if (!url) return;
@@ -1346,10 +1268,11 @@ export function WorkspaceSurfacePanel({
                             setGithubCloneErr(null);
                             setGithubCloneOk(null);
                             try {
+                              const pathNorm = githubIngestPath.replace(/\\/g, "/").trim();
                               const res = await fetch(`${kgUrl}/ingest`, {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ url, path: "" }),
+                                body: JSON.stringify({ url, path: pathNorm }),
                               });
                               const text = await res.text();
                               if (!res.ok) {
@@ -1361,22 +1284,11 @@ export function WorkspaceSurfacePanel({
                               } catch {
                                 throw new Error(text || "invalid JSON from server");
                               }
-                              try {
-                                const prune = await fetch(`${kgUrl}/workspace/prune-codebase`, {
-                                  method: "POST",
-                                });
-                                if (!prune.ok) {
-                                  const t = await prune.text().catch(() => "");
-                                  console.warn("prune-codebase:", t || prune.status);
-                                }
-                              } catch (pe) {
-                                console.warn("prune-codebase failed", pe);
-                              }
                               onGithubPublicCloneSuccess?.({
                                 owner: repoRef.owner,
                                 repo: repoRef.repo,
                                 local_path: `${repoRef.owner}/${repoRef.repo}`,
-                                was_cloned: true,
+                                was_cloned: false,
                               });
                               setGithubCloneOk(
                                 `${repoRef.owner}/${repoRef.repo} ingested (${data.chunks} chunks, ${data.nodes} nodes, ${data.edges} edges).`,
@@ -1391,10 +1303,24 @@ export function WorkspaceSurfacePanel({
                           }}
                           className="rounded-xl bg-zinc-100 px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.99]"
                         >
-                          {githubCloneBusy ? "Ingesting…" : "Ingest public repo"}
+                          {githubCloneBusy ? "Ingesting…" : "Ingest into graph"}
                         </button>
                         <span className="font-mono text-[11px] text-zinc-600">POST /ingest</span>
                       </div>
+                      <p className="text-[11px] leading-relaxed text-zinc-600">
+                        New machine or repo: run <span className="font-medium text-zinc-400">Clone or pull</span> first; ingest
+                        only reads files under the path prefix from the local clone.
+                      </p>
+                      {githubPullErr && (
+                        <p className="rounded-xl border border-red-500/25 bg-red-950/40 px-3 py-2 text-[12px] text-red-200/95">
+                          {githubPullErr}
+                        </p>
+                      )}
+                      {githubPullOk && (
+                        <p className="rounded-xl border border-sky-500/20 bg-sky-950/25 px-3 py-2 text-[12px] text-sky-100/95">
+                          {githubPullOk}
+                        </p>
+                      )}
                       {githubCloneErr && (
                         <p className="rounded-xl border border-red-500/25 bg-red-950/40 px-3 py-2 text-[12px] text-red-200/95">
                           {githubCloneErr}
@@ -1407,6 +1333,7 @@ export function WorkspaceSurfacePanel({
                       )}
                     </div>
                   </div>
+
                   <div className="grid gap-2 sm:grid-cols-2">
                     <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 text-[12px] text-zinc-300">
                       <input type="radio" name="gh" defaultChecked readOnly className="accent-sky-500" />
@@ -1436,7 +1363,8 @@ export function WorkspaceSurfacePanel({
             />
             <RustFootnote
               lines={[
-                "GitHub UX now uses POST /ingest { url, path } for indexing, with optional module prefixes for scoped ingest.",
+                "Codebase: POST /codebase/clone or /sync/codebase/clone { url } (git shallow clone or pull) then POST /ingest { url, path } from the local mirror.",
+                "Security rules + agent: use Workspace brain → GitHub (after PDF + repo are in the graph).",
                 "Verify X-Hub-Signature-256 for apps; map payload → PR / push / issue nodes; PAT for private API tree later.",
               ]}
             />
@@ -1522,8 +1450,6 @@ export function WorkspaceSurfacePanel({
             />
           </>
         )}
-
-        {surface === "web" && <WebGraphSetupCard onOAuthPreviewComplete={onOAuthPreviewComplete} />}
 
         {surface === "notion" && (
           <>
@@ -1718,7 +1644,7 @@ export function WorkspaceSurfacePanel({
             />
             <RustFootnote
               lines={[
-                "POST /ingest/pdf with header X-Workspace-Kind: invest binds document to markets meta ledger slot.",
+                "POST /ingest/pdf with header X-Workspace-Kind: design can bind documents to the design workspace when the server supports it.",
                 "Citations extracted as nodes; cross-edge to equities tickers when ISIN/CUSIP match.",
               ]}
             />

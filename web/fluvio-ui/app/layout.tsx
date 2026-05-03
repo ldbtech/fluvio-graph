@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KG Workspace",
-  description: "Build a personal knowledge graph from PDFs today; connect more sources soon.",
+  title: "Fluvio, Knowledge workspace",
+  description:
+    "Private knowledge workspace: ingest Gmail, PDFs, and GitHub into one graph, explore on a canvas, and chat with answers grounded in nodes. Not distributed as a public open source project.",
 };
 
 export default function RootLayout({
@@ -27,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col text-zinc-200">{children}</body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

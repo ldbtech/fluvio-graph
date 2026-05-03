@@ -104,6 +104,7 @@ pub enum Domain {
     Calendar,
     Codebase,
     Web,
+    Architecture,
     Custom(String),
 }
 

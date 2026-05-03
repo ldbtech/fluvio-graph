@@ -1,0 +1,188 @@
+{
+  "brief": "modern 3 bedroom house, open kitchen, garden views",
+  "design_id": "72376b3f-bfd3-42d9-9c2c-5e7e180ea36f",
+  "design_style": {
+    "aesthetic": "modern",
+    "priority": "open kitchen with garden views",
+    "total_area": null,
+    "stories": null
+  },
+  "rooms": [
+    {
+      "id": "entry_foyer",
+      "name": "Entry Foyer",
+      "area_sqm": 8.0,
+      "zone": "public",
+      "natural_light": "medium",
+      "privacy": "public",
+      "notes": null
+    },
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "area_sqm": 35.0,
+      "zone": "public",
+      "natural_light": "high",
+      "privacy": "public",
+      "notes": "Main social space"
+    },
+    {
+      "id": "open_kitchen",
+      "name": "Open Kitchen",
+      "area_sqm": 32.0,
+      "zone": "public",
+      "natural_light": "high",
+      "privacy": "public",
+      "notes": "Open plan design"
+    },
+    {
+      "id": "dining_area",
+      "name": "Dining Area",
+      "area_sqm": 18.0,
+      "zone": "public",
+      "natural_light": "high",
+      "privacy": "public",
+      "notes": "Part of open plan"
+    },
+    {
+      "id": "master_bedroom",
+      "name": "Master Bedroom",
+      "area_sqm": 20.0,
+      "zone": "private",
+      "natural_light": "high",
+      "privacy": "private",
+      "notes": "Primary bedroom"
+    },
+    {
+      "id": "bedroom_two",
+      "name": "Bedroom 2",
+      "area_sqm": 15.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": null
+    },
+    {
+      "id": "bedroom_three",
+      "name": "Bedroom 3",
+      "area_sqm": 12.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": null
+    },
+    {
+      "id": "master_bathroom",
+      "name": "Master Bathroom",
+      "area_sqm": 10.0,
+      "zone": "private",
+      "natural_light": "medium",
+      "privacy": "private",
+      "notes": "Ensuite"
+    },
+    {
+      "id": "main_bathroom",
+      "name": "Main Bathroom",
+      "area_sqm": 8.0,
+      "zone": "private",
+      "natural_light": "low",
+      "privacy": "private",
+      "notes": "Shared bathroom"
+    },
+    {
+      "id": "garden",
+      "name": "Garden",
+      "area_sqm": 80.0,
+      "zone": "outdoor",
+      "natural_light": "high",
+      "privacy": "semi",
+      "notes": "Private outdoor space"
+    }
+  ],
+  "relationships": [
+    {
+      "from_id": "living_room",
+      "to_id": "entry_foyer",
+      "kind": "connects_via",
+      "notes": null
+    },
+    {
+      "from_id": "open_kitchen",
+      "to_id": "dining_area",
+      "kind": "adjacent_to",
+      "notes": "Open plan layout"
+    },
+    {
+      "from_id": "living_room",
+      "to_id": "open_kitchen",
+      "kind": "flows_through",
+      "notes": "Open plan connection"
+    },
+    {
+      "from_id": "dining_area",
+      "to_id": "living_room",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "master_bedroom",
+      "to_id": "master_bathroom",
+      "kind": "connects_via",
+      "notes": "Ensuite access"
+    },
+    {
+      "from_id": "bedroom_two",
+      "to_id": "main_bathroom",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "bedroom_three",
+      "to_id": "main_bathroom",
+      "kind": "adjacent_to",
+      "notes": null
+    },
+    {
+      "from_id": "open_kitchen",
+      "to_id": "garden",
+      "kind": "oriented_toward",
+      "notes": "Garden views from kitchen"
+    },
+    {
+      "from_id": "dining_area",
+      "to_id": "garden",
+      "kind": "oriented_toward",
+      "notes": "Garden views from dining"
+    },
+    {
+      "from_id": "living_room",
+      "to_id": "garden",
+      "kind": "visible_from",
+      "notes": "Views to garden"
+    },
+    {
+      "from_id": "master_bedroom",
+      "to_id": "entry_foyer",
+      "kind": "separated_from",
+      "notes": "Privacy and noise separation"
+    },
+    {
+      "from_id": "bedroom_two",
+      "to_id": "living_room",
+      "kind": "separated_from",
+      "notes": "Noise separation"
+    },
+    {
+      "from_id": "bedroom_three",
+      "to_id": "open_kitchen",
+      "kind": "separated_from",
+      "notes": "Noise separation"
+    },
+    {
+      "from_id": "open_kitchen",
+      "to_id": "garden",
+      "kind": "visible_from",
+      "notes": null
+    }
+  ]
+}

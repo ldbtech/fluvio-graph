@@ -1,6 +1,6 @@
 import type { ConnectorId, ConnectorStatus, GraphEdge, GraphNode, WorkspaceKind } from "./types";
 import { filterGraphBySource, filterLiveEmailGraph } from "./graphFilters";
-import { DESIGN_CONNECTOR_IDS, INVEST_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "./workspaceKinds";
+import { DESIGN_CONNECTOR_IDS, PERSONAL_CONNECTOR_IDS } from "./workspaceKinds";
 
 /** Small deterministic graphs so each connector “brain” looks different in the UI. */
 export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: GraphEdge[] } {
@@ -25,22 +25,6 @@ export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: 
         { from: nodes[0].id, to: nodes[2].id, token: 10, probability: 0.78 },
         { from: nodes[0].id, to: nodes[4].id, token: 24, probability: 0.91 },
         { from: nodes[3].id, to: nodes[0].id, token: 6, probability: 0.65 },
-      ];
-      return { nodes, edges };
-    }
-    case "spotify": {
-      const nodes = [
-        mk("tr1", "Track: Midnight Runner", "1"),
-        mk("ar1", "Artist: Neon Tide", "2"),
-        mk("pl1", "Playlist: Deep focus", "3"),
-        mk("af1", "Audio feature cluster: high valence", "4"),
-        mk("ss1", "Session: 52 min focus block", "1"),
-      ];
-      const edges: GraphEdge[] = [
-        { from: nodes[0].id, to: nodes[1].id, token: 8, probability: 0.88 },
-        { from: nodes[2].id, to: nodes[0].id, token: 5, probability: 0.72 },
-        { from: nodes[0].id, to: nodes[3].id, token: 14, probability: 0.7 },
-        { from: nodes[4].id, to: nodes[0].id, token: 9, probability: 0.8 },
       ];
       return { nodes, edges };
     }
@@ -121,27 +105,6 @@ export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: 
         { from: nodes[1].id, to: nodes[2].id, token: 5, probability: 0.7 },
         { from: nodes[1].id, to: nodes[3].id, token: 4, probability: 0.63 },
         { from: nodes[3].id, to: nodes[4].id, token: 3, probability: 0.52 },
-      ];
-      return { nodes, edges };
-    }
-    case "web": {
-      const nodes = [
-        mk("root", "Page: / (shell + TLS metadata)", "1"),
-        mk("api", "Route: POST /api/login (session cookie)", "2"),
-        mk("csp", "Finding: CSP missing frame-ancestors", "3"),
-        mk("dep", "Asset graph: CDN script → SRI gap", "4"),
-        mk("pdf1", "PDF learnings: OWASP CSRF cheat sheet (attached)", "5"),
-        mk("pdf2", "PDF learnings: internal security baseline v3 (attached)", "5"),
-        mk("xlnk", "Cross-edge: baseline ↔ CSP gap (mock)", "3"),
-      ];
-      const edges: GraphEdge[] = [
-        { from: nodes[0].id, to: nodes[1].id, token: 9, probability: 0.84 },
-        { from: nodes[0].id, to: nodes[3].id, token: 4, probability: 0.68 },
-        { from: nodes[1].id, to: nodes[2].id, token: 6, probability: 0.72 },
-        { from: nodes[4].id, to: nodes[2].id, token: 3, probability: 0.58 },
-        { from: nodes[5].id, to: nodes[2].id, token: 3, probability: 0.55 },
-        { from: nodes[5].id, to: nodes[6].id, token: 2, probability: 0.5 },
-        { from: nodes[6].id, to: nodes[2].id, token: 2, probability: 0.62 },
       ];
       return { nodes, edges };
     }
@@ -342,7 +305,7 @@ export function getMockGraph(domain: ConnectorId): { nodes: GraphNode[]; edges: 
   }
 }
 
-/** Merges subgraphs around a fusion hub (personal: +PDF; invest: markets-only). */
+/** Merges subgraphs around a fusion hub (personal vs design slices). */
 export function getUnifiedGraph(
   kind: WorkspaceKind,
   liveNodes: GraphNode[],
@@ -356,17 +319,14 @@ export function getUnifiedGraph(
     emailLive.nodes.length > 0 || Boolean(opts?.gmailOAuthConnected);
 
   const hubId = "fusion:workspace-hub";
-  const connectorLoop =
-    kind === "invest" ? INVEST_CONNECTOR_IDS : kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
+  const connectorLoop = kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
   const nodes: GraphNode[] = [
     {
       id: hubId,
       label:
-        kind === "invest"
-          ? "Markets fusion hub · multi-vendor + research (mock)"
-          : kind === "design"
-            ? "Design fusion hub · architecture + civil + physics checks (mock)"
-            : "Fusion hub · cross-domain join layer (mock)",
+        kind === "design"
+          ? "Design fusion hub · architecture + civil + physics checks (mock)"
+          : "Fusion hub · cross-domain join layer (mock)",
       page: "Ω",
       source: "unified",
     },
@@ -412,43 +372,10 @@ export function getUnifiedGraph(
   }
 
   if (kind === "personal") {
-    const gmailMsg = nodes.find((n) => n.id === "gmail:m1");
-    const spotifyTr = nodes.find((n) => n.id === "spotify:tr1");
-    if (gmailMsg && spotifyTr) {
-      edges.push({
-        from: gmailMsg.id,
-        to: spotifyTr.id,
-        token: 2,
-        probability: 0.42,
-      });
-    }
-
     const pdfHead = pdfLive.nodes[0] ? `pdf:${pdfLive.nodes[0].id}` : null;
     const ghHead = nodes.find((n) => n.id === "github:repo");
     if (pdfHead && ghHead) {
       edges.push({ from: pdfHead, to: ghHead.id, token: 3, probability: 0.48 });
-    }
-
-    const webCsp = nodes.find((n) => n.id === "web:csp");
-    if (pdfHead && webCsp) {
-      edges.push({ from: pdfHead, to: webCsp.id, token: 2, probability: 0.44 });
-    }
-  }
-
-  if (kind === "invest") {
-    const eq = nodes.find((n) => n.id === "equities:t1");
-    const nw = nodes.find((n) => n.id === "fin_news:h2");
-    if (eq && nw) {
-      edges.push({ from: nw.id, to: eq.id, token: 3, probability: 0.5 });
-    }
-    const cr = nodes.find((n) => n.id === "cryptocurrencies:p1");
-    const fu = nodes.find((n) => n.id === "futures:c1");
-    if (cr && fu) {
-      edges.push({ from: cr.id, to: fu.id, token: 2, probability: 0.41 });
-    }
-    const bk = nodes.find((n) => n.id === "fin_research:bk");
-    if (eq && bk) {
-      edges.push({ from: bk.id, to: eq.id, token: 2, probability: 0.46 });
     }
   }
 
@@ -482,7 +409,7 @@ export function getUnifiedGraph(
   return { nodes, edges };
 }
 
-/** Control-plane meta graph: personal (PDF + apps) or invest (ledger + feeds). */
+/** Control-plane meta graph: personal (PDF + apps) or design (codes + contracts). */
 export function getMetaGraph(
   kind: WorkspaceKind,
   documentGraphReady: boolean,
@@ -493,19 +420,16 @@ export function getMetaGraph(
     {
       id: cp,
       label:
-        kind === "invest"
-          ? "Markets meta · routing & entitlements (mock)"
-          : kind === "design"
-            ? "Design meta · codes, loads, and solver contracts (mock)"
-            : "Meta-graph · orchestrator & policy (mock)",
+        kind === "design"
+          ? "Design meta · codes, loads, and solver contracts (mock)"
+          : "Meta-graph · orchestrator & policy (mock)",
       page: "M",
       source: "meta",
     },
   ];
   const edges: GraphEdge[] = [];
 
-  const domainOrder =
-    kind === "invest" ? INVEST_CONNECTOR_IDS : kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
+  const domainOrder = kind === "design" ? DESIGN_CONNECTOR_IDS : PERSONAL_CONNECTOR_IDS;
 
   if (kind === "personal") {
     const pdfId = "meta:domain:pdf";
@@ -535,64 +459,12 @@ export function getMetaGraph(
       token: 2,
       probability: documentGraphReady && connectorStatus.github === "mock_on" ? 0.55 : 0.22,
     });
-    if (documentGraphReady && connectorStatus.web === "mock_on") {
-      edges.push({
-        from: pdfId,
-        to: "meta:domain:web",
-        token: 3,
-        probability: 0.52,
-      });
-    }
     edges.push({
       from: "meta:domain:calendar",
       to: "meta:domain:gmail",
       token: 2,
       probability: 0.33,
     });
-  } else if (kind === "invest") {
-    const ledgerId = "meta:domain:ledger";
-    nodes.push({
-      id: ledgerId,
-      label: documentGraphReady
-        ? "Research PDFs · shared engine slot (optional)"
-        : "Research PDFs slot (empty — ingest from Personal or bind graph_id)",
-      page: "1",
-      source: "meta",
-    });
-    edges.push({ from: cp, to: ledgerId, token: 4, probability: documentGraphReady ? 0.75 : 0.35 });
-
-    for (const id of domainOrder) {
-      const on = connectorStatus[id] === "mock_on";
-      const nid = `meta:domain:${id}`;
-      nodes.push({
-        id: nid,
-        label: `${id} · ${on ? "API stream on" : "disconnected"}`,
-        page: "2",
-        source: "meta",
-      });
-      edges.push({ from: cp, to: nid, token: 3, probability: on ? 0.86 : 0.36 });
-    }
-
-    edges.push({
-      from: "meta:domain:fin_news",
-      to: "meta:domain:equities",
-      token: 3,
-      probability: 0.44,
-    });
-    edges.push({
-      from: "meta:domain:fin_market_data",
-      to: "meta:domain:cryptocurrencies",
-      token: 2,
-      probability: 0.4,
-    });
-    if (documentGraphReady) {
-      edges.push({
-        from: ledgerId,
-        to: "meta:domain:fin_research",
-        token: 2,
-        probability: 0.48,
-      });
-    }
   } else if (kind === "design") {
     const specsId = "meta:domain:spec_pdfs";
     nodes.push({

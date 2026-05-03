@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #09090b;
+  --foreground: #fafafa;
   /* Refined dark workspace (calm neutrals + one accent) */
   --ui-canvas: #09090b;
   --ui-surface: rgba(24, 24, 27, 0.65);
@@ -23,13 +23,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-  }
-}
-
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -47,6 +40,26 @@ body {
   color: var(--ui-text);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   letter-spacing: -0.011em;
+}
+
+.ui-main {
+  background: var(--ui-canvas);
+  color: var(--ui-text);
+}
+
+.ui-chrome {
+  border-color: var(--ui-border);
+  background: color-mix(in oklab, var(--ui-surface-solid) 82%, transparent);
+  box-shadow: 0 8px 26px rgba(2, 6, 23, 0.1);
+}
+
+.ui-pill {
+  border-color: var(--ui-border);
+  background: color-mix(in oklab, var(--ui-surface-solid) 88%, transparent);
+}
+
+.ui-text-muted {
+  color: var(--ui-text-secondary);
 }
 
 ::selection {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PendingToolApproval } from "@/lib/architectureToolAgent";
 import { KG_URL } from "@/lib/constants";
 import { mockAssistantReply } from "@/lib/mockWorkspace";
 import type { BrainTab, ChatMessage, MockAgent, WorkspaceKind } from "@/lib/types";
@@ -71,30 +72,6 @@ const DESIGN_AGENTS: MockAgent[] = [
   },
 ];
 
-const MARKETS_AGENTS: MockAgent[] = [
-  {
-    id: "tape-librarian",
-    name: "Tape librarian",
-    description:
-      "Normalizes vendor symbology, corporate actions, and session calendars into canonical ticker nodes (mock).",
-    icon: "▤",
-  },
-  {
-    id: "roll-scheduler",
-    name: "Roll scheduler",
-    description:
-      "Tracks front-month liquidity and proposes roll windows across futures + hedged crypto perps (mock).",
-    icon: "↻",
-  },
-  {
-    id: "risk-governor",
-    name: "Risk governor",
-    description:
-      "Enforces exposure caps vs benchmark, margin buffers, and kill-switches before desk agents trade (mock).",
-    icon: "⚖",
-  },
-];
-
 const RESEARCH_AGENTS: MockAgent[] = [
   {
     id: "net-scout",
@@ -107,7 +84,7 @@ const RESEARCH_AGENTS: MockAgent[] = [
     id: "error-radar",
     name: "Error & anomaly radar",
     description:
-      "Scans web crawl + PDF nodes for contradictions, risky patterns, and missing controls; proposes concrete edits / tickets (mock).",
+      "Scans graph nodes for contradictions, risky patterns, and missing controls; proposes concrete edits / tickets (mock).",
     icon: "⚑",
   },
   {
@@ -127,6 +104,8 @@ type RunningAgent = {
 
 type Tab = "chat" | "agents";
 
+export type DesignPendingTool = PendingToolApproval & { replayMessage: string };
+
 type Props = {
   workspaceKind: WorkspaceKind;
   /** When true, panel is a fixed right column in the brain layout (not floating). */
@@ -139,6 +118,15 @@ type Props = {
   nodeCount: number;
   chatPrefill: string | null;
   onConsumeChatPrefill: () => void;
+  /** GitHub brain: repo-relative path from focused planet — biases `/chat` retrieval. */
+  codebaseFocusPath?: string | null;
+  /** Design brain slash-command handler; returns assistant text when handled. */
+  onDesignCommand?: (question: string) => Promise<string | null>;
+  /** New TS tool in `generated/` — user must approve before POST /architecture/chat continues. */
+  designPendingTool?: DesignPendingTool | null;
+  designApproveBusy?: boolean;
+  onApproveDesignTool?: () => Promise<string | null>;
+  onDiscardDesignTool?: () => Promise<void>;
 };
 
 export function WorkspaceRightPanel({
@@ -151,14 +139,23 @@ export function WorkspaceRightPanel({
   nodeCount,
   chatPrefill,
   onConsumeChatPrefill,
+  codebaseFocusPath = null,
+  onDesignCommand,
+  designPendingTool = null,
+  designApproveBusy = false,
+  onApproveDesignTool,
+  onDiscardDesignTool,
 }: Props) {
   const messagesRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const copyFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tab, setTab] = useState<Tab>("chat");
   const [open, setOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState<RunningAgent[]>([]);
+  const [copiedAssistantIdx, setCopiedAssistantIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (messagesRef.current) {
@@ -169,6 +166,7 @@ export function WorkspaceRightPanel({
   useEffect(() => {
     setMessages([]);
     setInput("");
+    setCopiedAssistantIdx(null);
   }, [domainKey]);
 
   useEffect(() => {
@@ -179,6 +177,47 @@ export function WorkspaceRightPanel({
     onConsumeChatPrefill();
   }, [chatPrefill, onConsumeChatPrefill]);
 
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    // Auto-grow with content (capped so panel layout remains stable).
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
+  }, [input]);
+
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimerRef.current) clearTimeout(copyFeedbackTimerRef.current);
+    };
+  }, []);
+
+  const copyAssistantResponse = useCallback(async (text: string, messageIndex: number) => {
+    if (!text) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      if (copyFeedbackTimerRef.current) clearTimeout(copyFeedbackTimerRef.current);
+      setCopiedAssistantIdx(messageIndex);
+      copyFeedbackTimerRef.current = setTimeout(() => {
+        setCopiedAssistantIdx(null);
+        copyFeedbackTimerRef.current = null;
+      }, 2000);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const sendMessage = useCallback(async () => {
     if (!input.trim() || loading) return;
     const question = input.trim();
@@ -187,6 +226,27 @@ export function WorkspaceRightPanel({
     setLoading(true);
 
     try {
+      if (designPendingTool && onDesignCommand) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            content:
+              "Approve or discard the pending architecture tool (banner above) before sending another message.",
+          },
+        ]);
+        setLoading(false);
+        return;
+      }
+      if (onDesignCommand) {
+        const handled = await onDesignCommand(question);
+        if (handled !== null) {
+          setMessages((m) => [...m, { role: "assistant", content: handled }]);
+          setLoading(false);
+          return;
+        }
+      }
+
       if (chatSource !== "live" || graphEmpty) {
         await new Promise((r) => setTimeout(r, 420 + Math.random() * 400));
         setMessages((m) => [
@@ -197,10 +257,14 @@ export function WorkspaceRightPanel({
         return;
       }
 
+      const body: Record<string, unknown> = { question, history: messages };
+      if (brainTab === "github" && codebaseFocusPath?.trim()) {
+        body.focus_path = codebaseFocusPath.trim();
+      }
       const res = await fetch(`${KG_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, history: messages }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { answer: string };
@@ -211,7 +275,18 @@ export function WorkspaceRightPanel({
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, graphEmpty, chatSource, brainTab, workspaceKind]);
+  }, [
+    input,
+    loading,
+    messages,
+    graphEmpty,
+    chatSource,
+    brainTab,
+    workspaceKind,
+    codebaseFocusPath,
+    onDesignCommand,
+    designPendingTool,
+  ]);
 
   const deploy = (def: MockAgent) => {
     setRunning((r) => {
@@ -323,27 +398,99 @@ export function WorkspaceRightPanel({
                   )}
                 </p>
               </div>
-              <div ref={messagesRef} className="min-h-[200px] flex-1 space-y-3 overflow-y-auto p-3">
+              {designPendingTool && onApproveDesignTool && onDiscardDesignTool && (
+                <div className="border-b border-amber-500/25 bg-amber-950/50 px-3 py-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200/90">
+                    Tool awaiting approval
+                  </p>
+                  <p className="mt-1 text-[12px] leading-snug text-zinc-300">
+                    <span className="font-medium text-zinc-100">{designPendingTool.tool_name}</span>{" "}
+                    <span className="font-mono text-zinc-500">({designPendingTool.file_name})</span>
+                    {" — "}promotes into <span className="font-mono text-zinc-400">fluvio-tools/src/tools</span> and
+                    refreshes the graph. Then your last message is sent to architecture chat.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={designApproveBusy}
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            const reply = await onApproveDesignTool();
+                            if (reply?.trim()) {
+                              setMessages((m) => [...m, { role: "assistant" as const, content: reply }]);
+                            }
+                          } catch (e: unknown) {
+                            const msg = e instanceof Error ? e.message : String(e);
+                            setMessages((m) => [...m, { role: "assistant" as const, content: `Approve failed: ${msg}` }]);
+                          }
+                        })();
+                      }}
+                      className="rounded-lg bg-amber-500 px-3 py-1.5 text-[12px] font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-50"
+                    >
+                      {designApproveBusy ? "Approving…" : "Approve & continue"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={designApproveBusy}
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            await onDiscardDesignTool();
+                          } catch (e: unknown) {
+                            const msg = e instanceof Error ? e.message : String(e);
+                            setMessages((m) => [...m, { role: "assistant" as const, content: `Discard failed: ${msg}` }]);
+                          }
+                        })();
+                      }}
+                      className="rounded-lg border border-white/[0.12] bg-zinc-900/80 px-3 py-1.5 text-[12px] font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:opacity-50"
+                    >
+                      Discard (rollback)
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div
+                ref={messagesRef}
+                className="min-h-[200px] flex-1 space-y-3 overflow-y-auto p-3 select-text"
+              >
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                     <span className="text-2xl text-zinc-600">◇</span>
                     <p className="max-w-[240px] px-2 text-[13px] leading-relaxed text-zinc-500">
-                      Ask about the graph, compare claims, or queue a follow-up.
+                      {onDesignCommand
+                        ? "Generate: /design generate <brief>. Edit in plain English (same as POST /architecture/chat) or /modify <message>. /design help"
+                        : "Ask about the graph, compare claims, or queue a follow-up."}
                     </p>
                   </div>
                 )}
-                {messages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-2xl border px-3.5 py-2.5 text-[13px] leading-relaxed break-words ${
-                      m.role === "user"
-                        ? "ml-5 border-sky-500/20 bg-sky-500/10 text-zinc-100"
-                        : "mr-3 border-white/[0.06] bg-zinc-900/80 text-zinc-300"
-                    }`}
-                  >
-                    {m.content}
-                  </div>
-                ))}
+                {messages.map((m, i) =>
+                  m.role === "assistant" ? (
+                    <div
+                      key={i}
+                      className="mr-3 select-text rounded-2xl border border-white/[0.06] bg-zinc-900/80 px-3.5 pb-2.5 pt-2 text-[13px] leading-relaxed text-zinc-300"
+                    >
+                      <div className="mb-1.5 flex justify-end">
+                        <button
+                          type="button"
+                          aria-label="Copy assistant reply"
+                          onClick={() => void copyAssistantResponse(m.content, i)}
+                          className="rounded-lg px-2 py-0.5 text-[11px] font-medium text-zinc-500 transition hover:bg-white/[0.06] hover:text-zinc-300"
+                        >
+                          {copiedAssistantIdx === i ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <div className="break-words whitespace-pre-wrap">{m.content}</div>
+                    </div>
+                  ) : (
+                    <div
+                      key={i}
+                      className="ml-5 rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3.5 py-2.5 text-[13px] leading-relaxed break-words text-zinc-100 select-text"
+                    >
+                      {m.content}
+                    </div>
+                  ),
+                )}
                 {loading && (
                   <div className="mr-3 rounded-2xl border border-white/[0.06] bg-zinc-900/60 px-3.5 py-2.5 text-[13px] text-zinc-500">
                     <span className="animate-pulse">Thinking</span>
@@ -352,7 +499,8 @@ export function WorkspaceRightPanel({
                 )}
               </div>
               <div className="flex gap-2 border-t border-white/[0.06] p-3">
-                <input
+                <textarea
+                  ref={composerRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -361,6 +509,7 @@ export function WorkspaceRightPanel({
                       void sendMessage();
                     }
                   }}
+                  rows={1}
                   placeholder={
                     brainTab === "unified"
                       ? "Message unified graph…"
@@ -368,11 +517,13 @@ export function WorkspaceRightPanel({
                         ? "Message control plane…"
                         : brainTab === "github"
                           ? "Ask about the repo graph…"
+                          : onDesignCommand
+                            ? "Plain English edits, or /design generate …"
                           : chatSource === "live"
                             ? "Message PDF graph…"
                             : `Message ${brainTab}…`
                   }
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3 py-2.5 text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/40 focus:ring-1 focus:ring-sky-500/20"
+                  className="max-h-[220px] min-h-[42px] flex-1 resize-none overflow-y-auto rounded-xl border border-white/[0.08] bg-zinc-900/80 px-3 py-2.5 text-[13px] leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/40 focus:ring-1 focus:ring-sky-500/20"
                 />
                 <button
                   type="button"
@@ -447,33 +598,6 @@ export function WorkspaceRightPanel({
                     Web scout and remediation flows (placeholder).
                   </p>
                   {RESEARCH_AGENTS.map((def) => (
-                    <div
-                      key={def.id}
-                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"
-                    >
-                      <span className="text-lg text-zinc-400">{def.icon}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-zinc-100">{def.name}</p>
-                        <p className="text-[12px] text-zinc-500">{def.description}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => deploy(def)}
-                        className="shrink-0 rounded-lg border border-white/[0.1] bg-zinc-800 px-3 py-1.5 text-[11px] font-semibold text-zinc-200 transition hover:bg-zinc-700"
-                      >
-                        Start
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {dock && workspaceKind === "invest" && (
-                <div className="space-y-2 border-t border-white/[0.06] pt-4">
-                  <p className="px-0.5 text-[11px] font-medium text-zinc-500">Markets · mock</p>
-                  <p className="text-[12px] leading-relaxed text-zinc-600">
-                    Desk agents for symbology, rolls, and risk (placeholder).
-                  </p>
-                  {MARKETS_AGENTS.map((def) => (
                     <div
                       key={def.id}
                       className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-zinc-900/50 p-3"

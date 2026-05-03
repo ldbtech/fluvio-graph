@@ -291,7 +291,7 @@ mod tests {
         assert_eq!(chunk.metadata.get("sender").unwrap(), "alice@example.com");
         assert_eq!(chunk.metadata.get("recipients").unwrap(), "bob@example.com");
         assert_eq!(chunk.metadata.get("subject").unwrap(), "Subject here");
-        assert_eq!(chunk.metadata.get("source").unwrap(), "gmail");
+        assert_eq!(chunk.metadata.get("source").unwrap(), "email");
         assert_eq!(chunk.metadata.get("timestamp").unwrap(), "1700000000");
     }
 

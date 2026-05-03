@@ -9,6 +9,12 @@ use crate::graph::enums::{Domain, NodeKind, GraphEvent, NodePredicate, NodeKindF
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NodeId(pub Uuid);
 
+impl std::fmt::Display for NodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 impl NodeId {
     /// Content-addressed: deterministic from source type + canonical text.
     /// Two sources extracting "Peter Steinberger" as a Person → identical NodeId.
@@ -96,6 +102,20 @@ pub struct DomainGraph {
     pub adj: HashMap<NodeId, Vec<Edge>>, // outgoing edges per node.
     pub edge_index: HashMap<EdgeId, (NodeId, usize)>, // edge id -> (from_node, index in adj vec)
     pub tx: broadcast::Sender<GraphEvent>,
+}
+
+impl Clone for DomainGraph {
+    fn clone(&self) -> Self {
+        let (tx, _) = tokio::sync::broadcast::channel(100);
+        Self {
+            id:         self.id.clone(),
+            domain:     self.domain.clone(),
+            nodes:      self.nodes.clone(),
+            adj:        self.adj.clone(),
+            edge_index: self.edge_index.clone(),
+            tx,
+        }
+    }
 }
 
 impl DomainGraph {
@@ -261,6 +281,5 @@ impl DomainGraph {
             },
         }
     }
-
 }
 
