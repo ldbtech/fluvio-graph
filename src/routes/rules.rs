@@ -18,7 +18,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::server::AppState;
+use crate::agent_jobs::AgentJobEntry;
+use crate::app_state::AppState;
 use crate::ingestion_registry::documents::rule_linker::{
     linker::{
         LinkConfig, LinkResult, NodeView,
@@ -29,17 +30,6 @@ use crate::ingestion_registry::documents::rule_linker::{
         SecurityAgentResult, run_agent,
     },
 };
-
-// ── Shared agent store ────────────────────────────────────────────────────────
-
-/// In-memory store for running/completed security agent jobs.
-/// Keyed by agent_id (UUID string).
-pub type AgentStore = Arc<Mutex<HashMap<String, AgentJobEntry>>>;
-
-pub struct AgentJobEntry {
-    pub progress: Arc<SecurityAgentProgress>,
-    pub result:   Arc<Mutex<Option<SecurityAgentResult>>>,
-}
 
 // ── POST /rules/link ──────────────────────────────────────────────────────────
 

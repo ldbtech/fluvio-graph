@@ -22,7 +22,7 @@ use crate::agents::tool_spawner::{
     JobManifest, SpawnResult, ToolGenJob,
     ToolGenPhase, ToolGenProgress,
 };
-use crate::server::AppState;
+use crate::app_state::AppState;
 
 // ── POST /tools/detect ────────────────────────────────────────────────────────
 

@@ -33,10 +33,10 @@ export function WorkspaceTopChrome({
     <header className="ui-chrome fixed left-0 right-0 top-0 z-50 flex h-12 items-center justify-between border-b px-4 backdrop-blur-2xl">
       <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
         <Link
-          href="/"
+          href="/product"
           className="truncate text-sm font-semibold tracking-tight text-[var(--ui-text)] transition hover:text-sky-300/90"
         >
-          Workspace
+          Fluvio
         </Link>
 
         <nav

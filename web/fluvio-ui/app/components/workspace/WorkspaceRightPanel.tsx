@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PendingToolApproval } from "@/lib/architectureToolAgent";
-import { KG_URL } from "@/lib/constants";
+import { getKgEngineUrl } from "@/lib/constants";
 import { mockAssistantReply } from "@/lib/mockWorkspace";
 import type { BrainTab, ChatMessage, MockAgent, WorkspaceKind } from "@/lib/types";
 
@@ -261,7 +261,7 @@ export function WorkspaceRightPanel({
       if (brainTab === "github" && codebaseFocusPath?.trim()) {
         body.focus_path = codebaseFocusPath.trim();
       }
-      const res = await fetch(`${KG_URL}/chat`, {
+      const res = await fetch(`${getKgEngineUrl()}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraphCanvas } from "@/app/components/workspace/GraphCanvas";
 import { GraphErrorBoundary } from "@/app/components/workspace/GraphErrorBoundary";
-import { KG_URL } from "@/lib/constants";
+import { getKgEngineUrl } from "@/lib/constants";
 import { type ChatMessage, type VideoNode, useVideoStore } from "@/lib/videoStore";
 import type { GraphEdge, GraphNode, SelectedNode } from "@/lib/types";
 
@@ -199,7 +199,7 @@ function scenesToVideoNodes(scenes: SceneApiRow[], fps: number): VideoNode[] {
 }
 
 async function fetchVideoGraphFromServer(videoId: string): Promise<VideoNode[]> {
-  const r = await fetch(`${KG_URL}/video/${encodeURIComponent(videoId)}`);
+  const r = await fetch(`${getKgEngineUrl()}/video/${encodeURIComponent(videoId)}`);
   if (!r.ok) return [];
   const json = (await r.json()) as VideoDetailResponse;
   return scenesToVideoNodes(json.scenes ?? [], json.fps ?? 0);
@@ -335,7 +335,7 @@ export default function VideoEditorApp() {
     const tick = async () => {
       if (cancelled) return;
       try {
-        const stRes = await fetch(`${KG_URL}/video/${encodeURIComponent(videoId)}/status`);
+        const stRes = await fetch(`${getKgEngineUrl()}/video/${encodeURIComponent(videoId)}/status`);
         if (!stRes.ok) {
           setVisionStatus(null);
           timeoutId = window.setTimeout(tick, 4000);
@@ -548,13 +548,13 @@ export default function VideoEditorApp() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const resp = await fetch(`${KG_URL}/ingest/video`, { method: "POST", body: fd });
+      const resp = await fetch(`${getKgEngineUrl()}/ingest/video`, { method: "POST", body: fd });
       if (!resp.ok) {
         const detail = await resp.text().catch(() => "");
         revokeAndFail(
           detail
             ? `Ingest failed (HTTP ${resp.status}): ${detail.slice(0, 400)}`
-            : `Ingest failed: server returned HTTP ${resp.status}. Is kg-engine running at ${KG_URL}?`,
+            : `Ingest failed: server returned HTTP ${resp.status}. Is kg-engine running at ${getKgEngineUrl()}?`,
         );
         return;
       }
@@ -601,7 +601,7 @@ export default function VideoEditorApp() {
         /* ignore */
       }
       const msg = e instanceof Error ? e.message : String(e);
-      setUploadError(`Cannot reach ${KG_URL} or ingest failed: ${msg}`);
+      setUploadError(`Cannot reach ${getKgEngineUrl()} or ingest failed: ${msg}`);
       setIngestProgress(0);
     } finally {
       window.clearInterval(pulse);
@@ -678,7 +678,7 @@ export default function VideoEditorApp() {
 
     const history = kgChatHistoryFromMessages(useVideoStore.getState().messages);
     try {
-      const resp = await fetch(`${KG_URL}/chat`, {
+      const resp = await fetch(`${getKgEngineUrl()}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: instruction, history }),
@@ -706,7 +706,7 @@ export default function VideoEditorApp() {
       addMessage({
         id: `a-${Date.now()}`,
         role: "assistant",
-        content: `Network error talking to kg-engine at ${KG_URL}: ${msg}`,
+        content: `Network error talking to kg-engine at ${getKgEngineUrl()}: ${msg}`,
       });
     }
     setIsProcessing(false);
@@ -806,7 +806,7 @@ export default function VideoEditorApp() {
         <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.12),transparent)]" />
         <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-white/[0.06] bg-zinc-950/80 px-4 backdrop-blur-xl">
           <div className="flex items-center gap-2 text-sm">
-            <Link href="/" className="font-semibold tracking-tight text-white transition hover:text-violet-200">
+            <Link href="/product" className="font-semibold tracking-tight text-white transition hover:text-violet-200">
               Fluvio
             </Link>
             <span className="text-zinc-600">/</span>
@@ -908,7 +908,7 @@ export default function VideoEditorApp() {
               </h1>
               <p className="mt-3 max-w-sm text-pretty text-sm leading-relaxed text-zinc-400">
                 Drag files here or browse. Each file is sent to <span className="font-mono text-zinc-500">POST /ingest/video</span>{" "}
-                on <span className="font-mono text-zinc-500">{KG_URL}</span>; playback uses your local blob until the clip
+                on <span className="font-mono text-zinc-500">{getKgEngineUrl()}</span>; playback uses your local blob until the clip
                 is added. Scene nodes load from <span className="font-mono text-zinc-500">GET /video/{"{id}"}</span>; local LLaVA
                 progress is on <span className="font-mono text-zinc-500">GET /video/{"{id}"}/status</span> (Ollama{" "}
                 <span className="font-mono text-zinc-500">OLLAMA_URL</span> on the server).
@@ -952,7 +952,7 @@ export default function VideoEditorApp() {
                 </div>
               )}
               <p className="mt-10 font-mono text-[10px] text-zinc-600">
-                API <span className="text-zinc-500">{KG_URL}</span>
+                API <span className="text-zinc-500">{getKgEngineUrl()}</span>
               </p>
             </div>
           </div>
@@ -965,7 +965,7 @@ export default function VideoEditorApp() {
     <main className="relative h-screen w-screen overflow-hidden bg-zinc-950 pt-14 text-zinc-100 selection:bg-violet-500/30">
       <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center gap-3 border-b border-white/[0.06] bg-zinc-950/90 px-3 backdrop-blur-xl sm:px-4">
         <div className="flex min-w-0 shrink-0 items-center gap-2 text-xs sm:text-sm">
-          <Link href="/" className="shrink-0 font-semibold text-white transition hover:text-violet-200">
+          <Link href="/product" className="shrink-0 font-semibold text-white transition hover:text-violet-200">
             Fluvio
           </Link>
           <span className="text-zinc-600">/</span>
@@ -1149,7 +1149,7 @@ export default function VideoEditorApp() {
                         </div>
                       ) : null}
                       <p className="mt-1 font-mono text-[9px] text-zinc-600">
-                        Track: GET {KG_URL}/video/{"{"}id{"}"}/status
+                        Track: GET {getKgEngineUrl()}/video/{"{"}id{"}"}/status
                       </p>
                     </div>
                   ) : null}
@@ -1564,7 +1564,7 @@ export default function VideoEditorApp() {
                           <p className="max-w-[280px] px-2 text-xs leading-relaxed text-zinc-600">
                             Ask about the clip graph or your ingest — messages go to{" "}
                             <span className="font-mono text-zinc-500">POST /chat</span> on{" "}
-                            <span className="font-mono text-zinc-500">{KG_URL}</span>. Mention{" "}
+                            <span className="font-mono text-zinc-500">{getKgEngineUrl()}</span>. Mention{" "}
                             <span className="font-mono text-zinc-500">film grain</span> for the tool-generation demo.
                           </p>
                         </div>

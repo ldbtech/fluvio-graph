@@ -3,3 +3,5 @@
 planet.txt
 speech.txt
 .env
+.env.local
+.env.*.local

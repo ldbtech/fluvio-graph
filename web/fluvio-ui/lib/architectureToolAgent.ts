@@ -1,4 +1,4 @@
-import { KG_URL } from "./constants";
+import { getKgEngineUrl } from "./constants";
 
 const ARCH_DOMAIN = "architecture";
 const POLL_MS = 1500;
@@ -61,7 +61,7 @@ async function parseJsonOrThrow<T>(res: Response): Promise<T> {
 
 /** POST /tools/detect — graph-based match only; no code generation. */
 export async function detectArchitectureTool(request: string): Promise<ToolDetectResponse> {
-  const res = await fetch(`${KG_URL}/tools/detect`, {
+  const res = await fetch(`${getKgEngineUrl()}/tools/detect`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ request, domain: ARCH_DOMAIN }),
@@ -71,7 +71,7 @@ export async function detectArchitectureTool(request: string): Promise<ToolDetec
 
 /** POST /tools/approve — promote `fluvio-tools/src/tools/generated/<file>` → `tools/<file>`. */
 export async function approveArchitectureTool(fileName: string, jobId: string): Promise<void> {
-  const res = await fetch(`${KG_URL}/tools/approve`, {
+  const res = await fetch(`${getKgEngineUrl()}/tools/approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -85,7 +85,7 @@ export async function approveArchitectureTool(fileName: string, jobId: string): 
 
 /** DELETE /tools/jobs/:id — rollback generated files and remove the job. */
 export async function discardArchitectureToolJob(jobId: string): Promise<void> {
-  const res = await fetch(`${KG_URL}/tools/jobs/${encodeURIComponent(jobId)}`, {
+  const res = await fetch(`${getKgEngineUrl()}/tools/jobs/${encodeURIComponent(jobId)}`, {
     method: "DELETE",
   });
   await parseJsonOrThrow(res);
@@ -125,7 +125,7 @@ export async function ensureArchitectureToolsForMessage(
 
   let jobId: string;
   try {
-    const res = await fetch(`${KG_URL}/tools/spawn`, {
+    const res = await fetch(`${getKgEngineUrl()}/tools/spawn`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ request, domain: ARCH_DOMAIN }),
@@ -142,7 +142,7 @@ export async function ensureArchitectureToolsForMessage(
 
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(`${KG_URL}/tools/jobs/${encodeURIComponent(jobId)}`);
+      const res = await fetch(`${getKgEngineUrl()}/tools/jobs/${encodeURIComponent(jobId)}`);
       const status = await parseJsonOrThrow<ToolJobStatus>(res);
       last = status;
       options?.onJobStatus?.(status);

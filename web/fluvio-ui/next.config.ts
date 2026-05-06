@@ -14,6 +14,8 @@ function turboRel(abs: string): string {
 }
 
 const nextConfig: NextConfig = {
+  /** Lets dev HMR load from your machine’s LAN IP (e.g. phone on same Wi‑Fi). Add more hosts if your IP changes. */
+  allowedDevOrigins: ["192.168.1.83"],
   turbopack: {
     root: turbopackRoot,
     resolveAlias: {

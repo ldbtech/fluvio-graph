@@ -27,7 +27,7 @@ use crate::ingestion_registry::videos::{
     frame::extract_frame_bytes,
     vision::{VisionConfig, describe_scene},
 };
-use crate::server::AppState;
+use crate::app_state::AppState;
 
 // ── Storage path ──────────────────────────────────────────────────────────────
 

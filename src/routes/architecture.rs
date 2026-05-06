@@ -5,7 +5,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::server::AppState;
+use crate::app_state::AppState;
 use crate::ingestion_registry::architecture::{
     extract_space_program, space_program_to_chunks,
     compute_layout, generate_scene, merge_llm_artifacts_into_scene, ArchitectureScene, NaturalLight,

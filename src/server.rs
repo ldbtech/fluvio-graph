@@ -5,7 +5,6 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
-use crate::routes::rules::AgentStore;
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -57,6 +56,9 @@ use crate::routes::video::{
     post_ingest_video, get_video,
     get_video_scenes, get_video_status,
 };
+
+pub use crate::app_state::AppState;
+use crate::database::pool::setup_database;
 
 /// Workspace graphs live under `fluvio_graphs/workspace/` (`unified.json` plus filtered snapshots).
 const WORKSPACE_GRAPHS_DIR: &str = "fluvio_graphs/workspace";
@@ -133,23 +135,6 @@ fn load_server_graph(graph: &mut DomainGraph) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Clone)]
-pub struct AppState {
-    pub pipeline: Arc<Mutex<IngestionPipeline>>,
-    pub api_key: String,
-    /// Expected `state` query param on `/connect/gmail/callback` (CSRF).
-    pub oauth_csrf: Arc<Mutex<Option<String>>>,
-    /// Gmail sync progress for `GET /sync/gmail/progress` while `POST /sync/gmail` runs in the background.
-    pub gmail_progress: Arc<GmailSyncProgress>,
-    pub presist: fn(&DomainGraph) -> anyhow::Result<()>,
-    pub agent_store: AgentStore,
-    pub architecture_designs: Arc<Mutex<HashMap<String, SpaceProgram>>>,
-
-    // Tool Spawner
-    pub tool_spawner:          Arc<ToolSpawner>,
-    pub job_store:             JobStore,
-}
-
 pub async fn serve(api_key: String) -> anyhow::Result<()> {
     let embed_ctx = Arc::new(Mutex::new(EmbeddingContext::new()?));
     let mut graph = DomainGraph::new(GraphId::new("workspace"), Domain::Custom("workspace".into()));
@@ -158,9 +143,19 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
 
     let pipeline = Arc::new(Mutex::new(IngestionPipeline::new(graph, embed_ctx.clone())));
 
+    // All origins OK for dev; include full method set used by routers (PUT /twin/zone,
+    // DELETE /tools/jobs/…, OPTIONS preflight).
     let cors = CorsLayer::new()
         .allow_origin(Any)
-        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+            Method::OPTIONS,
+            Method::HEAD,
+        ])
         .allow_headers(Any);
 
     let gmail_progress = Arc::new(GmailSyncProgress::new_idle());
@@ -179,6 +174,8 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         })
     );
 
+    let pg_pool = setup_database().await?;
+
     let state = AppState {
         pipeline,
         api_key,
@@ -190,6 +187,13 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
 
         tool_spawner:         Arc::new(spawner),
         job_store:            Arc::new(Mutex::new(HashMap::new())),
+
+        pg_pool,
+
+        fluvio_mock_docs:       Arc::new(Mutex::new(Vec::new())),
+        fluvio_account_profile: Arc::new(Mutex::new(
+            crate::app_state::FluvioAccountProfile::default(),
+        )),
     };
 
     let app = Router::new()
@@ -242,6 +246,7 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/video/{id}/scenes",     get(get_video_scenes))
         .route("/video/{id}/status",     get(get_video_status))
 
+        .merge(crate::routes::twin::routes())
         .layer(DefaultBodyLimit::max(256 * 1024 * 1024))
         .layer(cors)
         .with_state(state);

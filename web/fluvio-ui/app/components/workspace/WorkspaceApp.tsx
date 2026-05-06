@@ -25,7 +25,7 @@ import {
   ensureArchitectureToolsForMessage,
   type ToolJobStatus,
 } from "@/lib/architectureToolAgent";
-import { KG_URL } from "@/lib/constants";
+import { getKgEngineUrl } from "@/lib/constants";
 import { fetchGraphMeta, fetchGraphWorkspace } from "@/lib/fetchGraphWorkspace";
 import { filterGraphBySource, filterLiveEmailGraph } from "@/lib/graphFilters";
 import { fetchCodebaseGalaxyTree } from "@/lib/fetchCodebaseGalaxy";
@@ -173,7 +173,7 @@ export default function WorkspaceApp() {
     setGraphLoading(true);
     setGraphLoadProgress({ message: "Starting…", percent: 0 });
     try {
-      const data = await fetchGraphWorkspace(KG_URL, (p) => setGraphLoadProgress(p), signal);
+      const data = await fetchGraphWorkspace(getKgEngineUrl(), (p) => setGraphLoadProgress(p), signal);
       startTransition(() => {
         setNodes(data.nodes);
         setEdges(data.edges);
@@ -197,7 +197,7 @@ export default function WorkspaceApp() {
       setGraphSampleNote(parts.length ? parts.join(" · ") : null);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      setError(`cannot reach kg-engine at ${KG_URL} — is it running?`);
+      setError(`cannot reach kg-engine at ${getKgEngineUrl()} — is it running?`);
       setGraphSampleNote(null);
     } finally {
       setGraphLoading(false);
@@ -214,7 +214,7 @@ export default function WorkspaceApp() {
   const loadGraphMeta = useCallback(async () => {
     setError(null);
     try {
-      const meta = await fetchGraphMeta(KG_URL);
+      const meta = await fetchGraphMeta(getKgEngineUrl());
       setGraphSourceCounts(meta.source_counts ?? {});
       setGraphTotals({
         nodes: meta.graph_total_nodes,
@@ -223,7 +223,7 @@ export default function WorkspaceApp() {
         returnedEdges: 0,
       });
     } catch {
-      setError(`cannot reach kg-engine at ${KG_URL} — is it running?`);
+      setError(`cannot reach kg-engine at ${getKgEngineUrl()} — is it running?`);
     }
   }, []);
 
@@ -248,7 +248,7 @@ export default function WorkspaceApp() {
   useEffect(() => {
     const pollGmail = async () => {
       try {
-        const res = await fetch(`${KG_URL}/connect/gmail/status`);
+        const res = await fetch(`${getKgEngineUrl()}/connect/gmail/status`);
         if (!res.ok) return;
         const data = (await res.json()) as { connected: boolean };
         setGmailConnected(data.connected);
@@ -266,7 +266,7 @@ export default function WorkspaceApp() {
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
-  }, [KG_URL]);
+  }, []);
 
   const onFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -328,7 +328,7 @@ export default function WorkspaceApp() {
 
           xhr.onerror = () => {
             clearServerPulse();
-            reject(new Error(`network error — is kg-engine running? (${KG_URL})`));
+            reject(new Error(`network error — is kg-engine running? (${getKgEngineUrl()})`));
           };
 
           xhr.onabort = () => {
@@ -336,7 +336,7 @@ export default function WorkspaceApp() {
             reject(new Error("upload aborted"));
           };
 
-          xhr.open("POST", `${KG_URL}/ingest/pdf`);
+          xhr.open("POST", `${getKgEngineUrl()}/ingest/pdf`);
           xhr.send(form);
 
           requestAnimationFrame(() => {
@@ -409,7 +409,7 @@ export default function WorkspaceApp() {
       return;
     }
     let cancelled = false;
-    void fetchCodebaseGalaxyTree(KG_URL, githubCloneInfo)
+    void fetchCodebaseGalaxyTree(getKgEngineUrl(), githubCloneInfo)
       .then((tree) => {
         if (!cancelled) setGithubGalaxyTree(tree);
       })
@@ -445,7 +445,7 @@ export default function WorkspaceApp() {
       setGithubResolveErr(null);
       setSelected(null);
       try {
-        const res = await postCodebaseResolve(KG_URL, {
+        const res = await postCodebaseResolve(getKgEngineUrl(), {
           url,
           path: pathNorm,
           max_depth: 2,
@@ -654,7 +654,7 @@ export default function WorkspaceApp() {
         setDesignBusy(true);
         setDesignError(null);
         try {
-          const res = await fetch(`${KG_URL}/architecture/generate`, {
+          const res = await fetch(`${getKgEngineUrl()}/architecture/generate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ brief: b }),
@@ -684,7 +684,7 @@ export default function WorkspaceApp() {
         setDesignError(null);
         try {
           const edits = JSON.parse(raw) as unknown;
-          const res = await fetch(`${KG_URL}/architecture/modify`, {
+          const res = await fetch(`${getKgEngineUrl()}/architecture/modify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ design_id: designId, edits }),
@@ -741,7 +741,7 @@ export default function WorkspaceApp() {
             skipToolEnsureNextRef.current = false;
           }
 
-          const res = await fetch(`${KG_URL}/architecture/chat`, {
+          const res = await fetch(`${getKgEngineUrl()}/architecture/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -857,7 +857,7 @@ export default function WorkspaceApp() {
       setActivity("Tool approved into catalog; finishing architecture chat.");
       skipToolEnsureNextRef.current = true;
       setDesignBusy(true);
-      const res = await fetch(`${KG_URL}/architecture/chat`, {
+      const res = await fetch(`${getKgEngineUrl()}/architecture/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1095,7 +1095,7 @@ export default function WorkspaceApp() {
             statusById={connectorStatus}
             onSelectSurface={onSelectSurface}
             activity={activity}
-            kgUrl={KG_URL}
+            kgUrl={getKgEngineUrl()}
             onWorkspaceGraphChanged={onWorkspaceGraphChanged}
           />
 
@@ -1105,7 +1105,7 @@ export default function WorkspaceApp() {
                 surface={centerPanel}
                 onClose={() => setCenterPanel(null)}
                 pdfInputId={PDF_INPUT_ID}
-                kgUrl={KG_URL}
+                kgUrl={getKgEngineUrl()}
                 graphNodes={nodes.length}
                 graphEdges={edges.length}
                 onOAuthPreviewComplete={onOAuthPreviewComplete}
@@ -1252,7 +1252,7 @@ export default function WorkspaceApp() {
           )}
           {brainTab === "github" && connectorStatus.github === "mock_on" && (
             <GithubRepoFileTree
-              kgUrl={KG_URL}
+              kgUrl={getKgEngineUrl()}
               cloneInfo={githubCloneInfo}
               className="flex max-h-[40vh] w-full min-h-0 shrink-0 flex-col border-b border-white/[0.06] sm:max-h-none sm:max-w-[min(100%,272px)] sm:border-b-0 sm:border-r"
               onResolveFile={onGithubFileResolve}
@@ -1281,7 +1281,7 @@ export default function WorkspaceApp() {
             />
             {brainTab === "github" && connectorStatus.github === "mock_on" && (
               <GithubBrainSecurityPanel
-                kgUrl={KG_URL}
+                kgUrl={getKgEngineUrl()}
                 pdfReady={documentGraphReady}
                 focusPathPrefix={githubChatFocusPath}
                 onGraphRefresh={fetchGraph}

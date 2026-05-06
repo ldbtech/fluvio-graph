@@ -9,7 +9,7 @@ use crate::ingestion_registry::{
     codebase::{resolver::ResolvedGraph, CodebaseConnector},
     ConnectorError,
 };
-use crate::server::AppState;
+use crate::app_state::AppState;
 use axum::extract::State;
 
 /// `codebase://github.com/{owner}/{repo}/` + repo-relative tail (`path` or `path#symbol`).

@@ -1,27 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { BusinessCardShowcase } from "@/app/components/onboarding/BusinessCardShowcase";
+import { LandingDigitalTwinCards } from "./LandingDigitalTwinCards";
 import { LandingFutureVisual } from "./LandingFutureVisual";
 import { LandingHeroVisual } from "./LandingHeroVisual";
 
 const pillars = [
   {
-    title: "Ingest",
-    subtitle: "Sources write to one engine",
+    title: "Teach",
+    subtitle: "Connect what shaped you",
     body:
-      "PDFs, Gmail, GitHub clones, and architecture briefs land in kg-engine as structured nodes, not a pile of embeddings you hope match later.",
+      "Pull in Gmail, GitHub, PDFs, and briefs—the things that actually contain your opinions, workflows, and history. Your twin’s recall is structured nodes you can inspect, not a black box.",
   },
   {
-    title: "Structure",
-    subtitle: "A brain you can navigate",
+    title: "Reflect",
+    subtitle: "A memory you trust",
     body:
-      "Isolate slices per tab or fuse what you have enabled. The canvas is the contract: every answer can point back to a node you can see.",
+      "The graph becomes your authoritative “you”: chats and answers attach to slices of mail, repos, or rooms. When someone asks your twin something, it can walk edges instead of free-associating.",
   },
   {
-    title: "Reason",
-    subtitle: "Chat on the graph",
+    title: "Share",
+    subtitle: "Show up everywhere once",
     body:
-      "Docked chat stays grounded in the active slice, documents, mail, modules, or rooms, so the model walks edges instead of guessing.",
+      "The same twin powers your workspace, docked chat, NFC, and a wallet pass in Apple Wallet or Google Wallet—so introductions, FAQs, and follow-ups stay consistent without you copy-pasting the same story.",
   },
 ] as const;
 
@@ -78,6 +80,18 @@ export function LandingPage() {
           </Link>
           <nav className="flex items-center justify-end gap-0.5 sm:gap-2">
             <a
+              href="#digital-twins"
+              className="hidden rounded-full px-3 py-2 text-[13px] font-medium text-slate-400 transition hover:bg-sky-500/10 hover:text-sky-200 sm:inline-flex sm:px-4"
+            >
+              Your twin
+            </a>
+            <a
+              href="#business-cards"
+              className="hidden rounded-full px-3 py-2 text-[13px] font-medium text-slate-400 transition hover:bg-sky-500/10 hover:text-sky-200 sm:inline-flex sm:px-4"
+            >
+              Cards
+            </a>
+            <a
               href="#product"
               className="hidden rounded-full px-3 py-2 text-[13px] font-medium text-slate-400 transition hover:bg-sky-500/10 hover:text-sky-200 sm:inline-flex sm:px-4"
             >
@@ -90,10 +104,22 @@ export function LandingPage() {
               Future
             </a>
             <Link
+              href="/onboarding"
+              className="rounded-full px-2.5 py-2 text-[12px] font-medium text-slate-300 transition hover:bg-violet-500/15 hover:text-violet-100 sm:px-4 sm:text-[13px]"
+            >
+              Create twin
+            </Link>
+            <Link
               href="/qa"
               className="rounded-full px-2.5 py-2 text-[12px] font-medium text-slate-400 transition hover:bg-sky-500/10 hover:text-sky-200 sm:px-4 sm:text-[13px]"
             >
               QA
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-full border border-violet-400/30 bg-violet-500/15 px-3 py-2 text-[12px] font-medium text-violet-100 transition hover:bg-violet-500/25 sm:px-4 sm:text-[13px]"
+            >
+              NFC dashboard
             </Link>
             <Link
               href="/workspace"
@@ -109,23 +135,25 @@ export function LandingPage() {
         {/* Hero, split on large screens like Linear / Apple product */}
         <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-20 sm:px-8 sm:pb-20 sm:pt-28 lg:grid-cols-2 lg:items-center lg:gap-16 lg:pt-32">
           <div className="max-w-xl lg:max-w-none">
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">Knowledge workspace</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">Personal AI twin</p>
             <h1 className="mt-3 text-balance text-[clamp(1.72rem,9vw,3.25rem)] font-medium leading-[1.08] tracking-[-0.045em] text-white sm:mt-4">
-              Ground your AI in data it can navigate.
+              Create a digital twin of yourself.
             </h1>
             <p className="mt-4 max-w-md text-pretty text-[14px] leading-[1.6] text-slate-400 sm:mt-5 sm:text-[16px]">
-              One workspace for ingest, exploration, and chat, so retrieval follows structure instead of vibes.
+              Teach an agent from your mail, repos, files, and story—then let it introduce you, answer on your behalf, and stay
+              grounded in the graph only you curate.
             </p>
             <p className="mt-2.5 max-w-md text-pretty text-[13px] leading-relaxed text-slate-500 sm:mt-3 sm:text-[14px]">
-              Built for teams that live in Gmail, repositories, and documents, and want the model to follow links and
-              nodes, not only similar paragraphs.
+              Start by adding a wallet pass in Apple Wallet or Google Wallet—no NFC order or checkout with Apple Pay /
+              Google Pay required. Optional physical tap and retail carts when you want them. Refine your twin in the workspace
+              and keep tight control over tone, citations, and what it is allowed to do.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-2.5 sm:mt-9 sm:gap-3">
               <Link
-                href="/workspace"
+                href="/onboarding"
                 className="inline-flex h-10 items-center justify-center rounded-full bg-sky-500 px-5 text-[13px] font-medium text-white shadow-[0_0_24px_-6px_rgba(14,165,233,0.5)] transition hover:bg-sky-400 sm:h-11 sm:px-7 sm:text-[14px]"
               >
-                Enter workspace
+                Create your twin
               </Link>
               <a
                 href="#product"
@@ -133,6 +161,12 @@ export function LandingPage() {
               >
                 How it works
               </a>
+              <Link
+                href="/workspace"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-violet-400/25 bg-violet-500/[0.08] px-4.5 text-[13px] font-medium text-violet-100/95 transition hover:border-violet-400/40 hover:bg-violet-500/15 sm:h-11 sm:px-6 sm:text-[14px]"
+              >
+                Refine in workspace
+              </Link>
             </div>
           </div>
 
@@ -151,10 +185,14 @@ export function LandingPage() {
               <LandingHeroVisual />
             </div>
             <p className="mt-4 text-center text-[11px] font-medium tracking-[0.02em] text-slate-500 sm:text-left">
-              Ingest · graph · reason
+              You · knowledge · share
             </p>
           </div>
         </section>
+
+        <LandingDigitalTwinCards />
+
+        <BusinessCardShowcase />
 
         {/* Bento, Notion / Apple–style feature blocks */}
         <section
@@ -165,7 +203,7 @@ export function LandingPage() {
             <div className="max-w-2xl">
               <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">How it works</h2>
               <p className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.75rem] sm:leading-snug">
-                Three beats. One loop.
+                From your sources to a twin people can meet.
               </p>
             </div>
 
@@ -189,10 +227,11 @@ export function LandingPage() {
           <div className="max-w-2xl">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">Sources</h2>
             <p className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.75rem]">
-              Connectors, one graph
+              What feeds your twin
             </p>
             <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-slate-500 sm:text-[15px]">
-              Same graph for the canvas and chat. What you enable is what you can traverse.
+              Every connector you turn on sharpens how your twin sounds and what it can cite—the same structured graph backs
+              your canvas, chat, and card.
             </p>
           </div>
 
@@ -244,11 +283,11 @@ export function LandingPage() {
             <div className="max-w-2xl">
               <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">Future</h2>
               <p className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.75rem] sm:leading-snug">
-                Video & images through the graph, edits without a human in the loop
+                Richer memories for your twin—video, imagery, edits on your behalf
               </p>
               <p className="mt-4 text-[15px] leading-relaxed text-slate-500">
-                Same contract as today: everything lands as nodes and edges. Policies, budgets, and kill-switches replace
-                you babysitting every click. The model proposes structured edits; the engine applies what you allow.
+                Same idea: your life lands as inspectable nodes and edges. Policies and budgets let your twin propose
+                structured actions—shows, thumbnails, drafts—without you approving every tap.
               </p>
             </div>
 
@@ -262,16 +301,25 @@ export function LandingPage() {
         {/* Closing CTA, single focal, no gradient frame shouting */}
         <section className="border-t border-sky-500/[0.08] py-16 sm:py-24">
           <div className="mx-auto max-w-2xl px-5 text-center sm:px-8">
-            <h2 className="text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.65rem]">Run it against your engine</h2>
+            <h2 className="text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.65rem]">Bring your digital twin online</h2>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-slate-500">
-              Sources, brain canvas, and docked chat. Open the workspace when your kg-engine instance is running.
+              Onboarding sets up your twin and add-to-wallet pass (hardware optional); tune context in the workspace when your
+              kg-engine instance is running.
             </p>
-            <Link
-              href="/workspace"
-              className="mt-7 inline-flex h-10 items-center justify-center rounded-full bg-sky-500 px-6 text-[13px] font-medium text-white shadow-[0_0_28px_-6px_rgba(14,165,233,0.55)] transition hover:bg-sky-400 sm:mt-8 sm:h-11 sm:px-8 sm:text-[14px]"
-            >
-              Open workspace
-            </Link>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
+              <Link
+                href="/onboarding"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-sky-500 px-6 text-[13px] font-medium text-white shadow-[0_0_28px_-6px_rgba(14,165,233,0.55)] transition hover:bg-sky-400 sm:h-11 sm:px-8 sm:text-[14px]"
+              >
+                Create your twin
+              </Link>
+              <Link
+                href="/workspace"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-violet-400/30 bg-violet-500/10 px-6 text-[13px] font-medium text-violet-100 transition hover:bg-violet-500/20 sm:h-11 sm:px-8 sm:text-[14px]"
+              >
+                Open workspace
+              </Link>
+            </div>
             <p className="mx-auto mt-8 max-w-lg text-[13px] leading-relaxed text-slate-600">
               Fluvio and kg-engine are not published as a public repository. Distribution stays private so the same
               capabilities are harder to turn into a generic mass scanning or “drive by repo” workflow against third
@@ -283,9 +331,15 @@ export function LandingPage() {
         <footer className="border-t border-sky-500/[0.08] py-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 text-[12px] text-slate-600 sm:flex-row sm:px-8">
             <span>
-              © {new Date().getFullYear()} Fluvio · Closed source · KG workspace for kg-engine
+              © {new Date().getFullYear()} Fluvio · Closed source · Digital twins on kg-engine
             </span>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              <Link href="/onboarding" className="transition hover:text-violet-300">
+                Onboarding
+              </Link>
+              <Link href="/dashboard" className="transition hover:text-violet-300">
+                NFC dashboard
+              </Link>
               <Link href="/workspace" className="transition hover:text-sky-400">
                 Workspace
               </Link>

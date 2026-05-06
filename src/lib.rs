@@ -1,3 +1,5 @@
+pub mod agent_jobs;
+pub mod app_state;
 pub mod graph;
 pub mod ingestion;
 pub mod server;
@@ -5,3 +7,4 @@ pub mod query;
 pub mod ingestion_registry;
 pub mod routes;
 pub mod agents;
+pub mod database;

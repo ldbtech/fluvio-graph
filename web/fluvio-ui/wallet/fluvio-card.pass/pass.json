@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.com.placeholder.fluvio",
+  "serialNumber": "00000000000000000000000000000001",
+  "teamIdentifier": "XXXXXXXXXX",
+  "organizationName": "Fluvio",
+  "description": "Fluvio digital twin card",
+  "logoText": "Digital twin",
+  "foregroundColor": "rgb(237,237,239)",
+  "backgroundColor": "rgb(10,10,15)",
+  "labelColor": "rgb(171,169,237)",
+  "suppressStripShine": true,
+  "generic": {
+    "primaryFields": [
+      {
+        "key": "name",
+        "label": "NAME",
+        "value": "-"
+      }
+    ],
+    "secondaryFields": [
+      {
+        "key": "twin",
+        "label": "POWERED BY",
+        "value": "Fluvio"
+      }
+    ],
+    "auxiliaryFields": [
+      {
+        "key": "hint",
+        "label": "TAP",
+        "value": "Open chat from QR →"
+      }
+    ]
+  }
+}

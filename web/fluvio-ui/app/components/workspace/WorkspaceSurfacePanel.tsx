@@ -230,7 +230,12 @@ function GmailKgEngineConnect({
     <div className="mx-auto max-w-lg">
       <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-zinc-300">
         <span className="font-semibold text-emerald-200/95">Live</span> — Gmail OAuth and sync use your kg-engine server at{" "}
-        <code className="rounded bg-black/25 px-1 py-0.5 font-mono text-[11px] text-sky-200/90">{kgUrl}</code>
+        <code
+          className="rounded bg-black/25 px-1 py-0.5 font-mono text-[11px] text-sky-200/90"
+          suppressHydrationWarning
+        >
+          {kgUrl}
+        </code>
       </div>
       <div className="relative min-h-[320px]">
         {syncing && (
@@ -1074,7 +1079,10 @@ export function WorkspaceSurfacePanel({
               <dl className="divide-y divide-white/[0.06] px-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
                   <dt className="font-medium text-zinc-500">Endpoint</dt>
-                  <dd className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300">
+                  <dd
+                    className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300"
+                    suppressHydrationWarning
+                  >
                     POST {kgUrl}/ingest/pdf
                   </dd>
                 </div>
@@ -1084,7 +1092,12 @@ export function WorkspaceSurfacePanel({
                 </div>
                 <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
                   <dt className="font-medium text-zinc-500">Graph</dt>
-                  <dd className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300">GET {kgUrl}/graph</dd>
+                  <dd
+                    className="min-w-0 break-all text-right font-mono text-[12px] text-zinc-300"
+                    suppressHydrationWarning
+                  >
+                    GET {kgUrl}/graph
+                  </dd>
                 </div>
                 <div className="flex flex-wrap items-baseline justify-between gap-3 py-3 text-[13px]">
                   <dt className="font-medium text-zinc-500">Current graph</dt>

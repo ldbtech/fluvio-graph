@@ -4,16 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "prebuild": "npm run wallet:prepare",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "wallet:prepare": "node scripts/prepare-wallet-pass.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
     "@types/d3": "^7.4.3",
     "d3": "^7.9.0",
+    "framer-motion": "^12.38.0",
     "next": "16.2.3",
+    "passkit-generator": "^3.5.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sharp": "^0.34.5",
     "three": "^0.175.0",
     "zustand": "^5.0.12"
   },
