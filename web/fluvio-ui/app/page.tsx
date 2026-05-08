@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { LandingPage } from "@/app/components/landing/LandingPage";
 
 export const metadata: Metadata = {
-  title: "Fluvio · Personal AI twin",
-  description:
-    "Teach a digital twin from mail, repos, and files—then share it via wallet passes or NFC when you're ready. Create your twin or explore the product.",
+  title: "FluvioMe - Your introduction in Wallet",
+  description: "Wallet or tap. Your AI twin—not another dead contact.",
 };
 
 export default function Home() {

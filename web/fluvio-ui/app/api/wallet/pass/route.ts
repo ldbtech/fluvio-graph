@@ -93,6 +93,32 @@ export async function GET(req: Request): Promise<Response> {
     typeof account.nfc_card_id === "string" && account.nfc_card_id.length > 0 ? account.nfc_card_id.trim() : null;
   const tapUrl = cardId ? `${origin}/tap?card=${encodeURIComponent(cardId)}` : `${origin}/tap`;
 
+  const blankLabel = "\u2060"; // invisible, avoids loud NAME/LABEL headers in Wallet UI
+  const displayName = (account.display_name ?? "").trim() || "You";
+  const taglineRaw = (account.tagline ?? "").trim();
+
+  /** Match onboarding card rhythm: headline + subtitle; no trailing em dash placeholders. */
+  const secondaryRows: Array<{ key: string; label: string; value: string }> = [];
+  if (taglineRaw) {
+    secondaryRows.push({ key: "tagline", label: blankLabel, value: taglineRaw });
+  }
+  const slug = (account.owner_slug ?? "").trim();
+  if (slug) {
+    secondaryRows.push({ key: "handle", label: blankLabel, value: `@${slug}` });
+  }
+
+  const generic = {
+    primaryFields: [
+      {
+        key: "name",
+        label: blankLabel,
+        value: displayName,
+      },
+    ],
+    secondaryFields: secondaryRows.slice(0, 2),
+    auxiliaryFields: [] as Array<{ key: string; label: string; value: string }>,
+  };
+
   const pass = await PKPass.from(
     {
       model: modelPath,
@@ -103,30 +129,14 @@ export async function GET(req: Request): Promise<Response> {
       serialNumber: ownerId,
       passTypeIdentifier: passTypeId,
       teamIdentifier: teamId,
-      description: `Fluvio · ${account.display_name ?? "Twin"}`,
-      organizationName: "Fluvio",
-      logoText: "Digital twin",
+      description: `FluvioMe · ${displayName}`,
+      organizationName: "FluvioMe",
+      logoText: "",
       foregroundColor: "rgb(237,237,239)",
       backgroundColor: "rgb(10,10,15)",
-      labelColor: "rgb(171,169,237)",
+      labelColor: "rgb(148,146,169)",
       suppressStripShine: true,
-      generic: {
-        primaryFields: [
-          {
-            key: "name",
-            label: "NAME",
-            value: account.display_name ?? "Fluvio user",
-          },
-        ],
-        secondaryFields: [{ key: "line", label: "LINE", value: account.tagline ?? "Twin card" }],
-        auxiliaryFields: [
-          {
-            key: "slug",
-            label: "HANDLE",
-            value: account.owner_slug ? `@${account.owner_slug}` : "—",
-          },
-        ],
-      },
+      generic,
     } as never,
   );
 
@@ -137,11 +147,11 @@ export async function GET(req: Request): Promise<Response> {
   });
 
   const buffer = pass.getAsBuffer();
-  const slug = typeof account.owner_slug === "string" && account.owner_slug ? account.owner_slug : "card";
+  const fileSlug = slug || "card";
   return new Response(Buffer.from(buffer), {
     headers: {
       "Content-Type": "application/vnd.apple.pkpass",
-      "Content-Disposition": `attachment; filename="fluvio-${slug}.pkpass"`,
+      "Content-Disposition": `attachment; filename="fluviome-${fileSlug}.pkpass"`,
       "Cache-Control": "no-store",
     },
   });

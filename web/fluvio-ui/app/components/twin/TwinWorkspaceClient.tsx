@@ -268,8 +268,8 @@ export function TwinWorkspaceClient() {
           <div className="shrink-0 border-t border-white/[0.06] bg-[#07060c]/95 px-2 py-3 backdrop-blur-sm sm:px-3">
             <div className="flex flex-wrap items-center justify-between gap-2 gap-y-2">
               <p className="text-[11px] leading-snug text-[#5F5E5A]">
-                Connections come from <span className="text-[#888780]">GET /twin/network</span> (NFC taps on
-                your account). Use Dashboard setup if graph fails to load.
+                <span className="text-[#888780]">GET /twin/network</span> drives this viz (NFC taps). Chat pulls that
+                view plus Documents from Dashboard ingest into kg-engine—not only what you tap here.
               </p>
               <button
                 type="button"
@@ -291,8 +291,9 @@ export function TwinWorkspaceClient() {
         >
           <div className="border-b border-white/[0.06] px-3 py-2.5 sm:px-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#534AB7]/90">Ask the twin</p>
-            <p className="mt-0.5 max-w-[min(100%,40ch)] text-pretty text-[13px] leading-snug text-[#888780] sm:max-w-none sm:text-[12px]">
-              Questions route through your graph — e.g. who to ping, how you know someone, what to prep.
+              <p className="mt-0.5 max-w-[min(100%,40ch)] text-pretty text-[13px] leading-snug text-[#888780] sm:max-w-none sm:text-[12px]">
+              Profile plus this NFC graph snapshot, merged with Dashboard · Personal graph ingests (PDF, video,
+              code, Gmail) — same kg-engine workspace as Map.
             </p>
           </div>
           <div

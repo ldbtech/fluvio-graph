@@ -1,5 +1,5 @@
 import { getKgEngineUrl } from "@/lib/constants";
-import { getOwnerId } from "@/lib/fluvioDashboardApi";
+import { authHeaders } from "@/lib/fluvioDashboardApi";
 
 export type TwinChatApiMessage = { role: "user" | "assistant"; content: string };
 
@@ -36,15 +36,10 @@ export async function streamTwinAssistant(
   const gc = opts?.graphContext?.trim();
   if (gc) body.graph_context = gc;
 
-  // Build headers with owner ID
-  const ownerId = getOwnerId();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (ownerId) headers["X-Owner-ID"] = ownerId;
-
   try {
     const kg = await fetch(`${getKgEngineUrl()}/twin/chat`, {
-      method: "POST",
-      headers,
+      method:  "POST",
+      headers: authHeaders(),
       body:   JSON.stringify(body),
       signal,
     });

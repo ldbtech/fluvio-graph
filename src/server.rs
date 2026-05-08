@@ -247,6 +247,7 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/video/{id}/status",     get(get_video_status))
 
         .merge(crate::routes::twin::routes())
+        .merge(crate::routes::auth::routes())
         .layer(DefaultBodyLimit::max(256 * 1024 * 1024))
         .layer(cors)
         .with_state(state);

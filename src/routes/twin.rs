@@ -3,7 +3,7 @@
 //! Production twin API — replaces fluvio_mock.rs
 //!
 //! URL structure (frontend updated to match):
-//!   GET  /twin/me                    — get owner profile + docs + connections
+//!   GET  /twin/me                    — owner profile (requires Bearer session or X-Owner-ID)
 //!   POST /twin/me/profile            — upsert name, email, phone
 //!   POST /twin/setup                 — create account + NFC card
 //!   GET  /twin/tap/{card_id}         — NFC tap → connect two users
@@ -29,7 +29,11 @@ use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
 
 use crate::app_state::AppState;
+use crate::authentication::extract_bearer_headers;
+use crate::graph::enums::Domain;
+use crate::graph::structs::Node;
 use crate::database::{
+    auth::get_session_by_token,
     users::{create_user, get_user_by_id, update_user, CreateUser, User},
     cards::{create_card, get_card_by_id, get_cards_by_user},
     connections::{
@@ -39,20 +43,28 @@ use crate::database::{
 };
 
 // ── Owner resolution ──────────────────────────────────────────────────────────
-// Owner UUID is stored in PostgreSQL. The browser keeps it in localStorage after
-// POST /twin/setup and sends `X-Owner-ID` on subsequent requests.
-// There is no anonymous fallback — without a valid header you cannot read another user's dashboard.
+// 1) `Authorization: Bearer <session>` — session from POST /twin/auth/verify.
+// 2) Legacy: `X-Owner-ID` (localStorage from POST /twin/setup) for clients not on email auth yet.
+// No implicit “first user” fallback — unauthenticated requests get no owner.
 
-async fn resolve_owner(state: &AppState, owner_id: Option<Uuid>) -> Option<User> {
-    let id = owner_id?;
-    get_user_by_id(&state.pg_pool, id).await.ok().flatten()
-}
+async fn resolve_owner(state: &AppState, headers: &axum::http::HeaderMap) -> Option<User> {
+    if let Some(token) = extract_bearer_headers(headers) {
+        if let Ok(Some(session)) = get_session_by_token(&state.pg_pool, &token).await {
+            if let Ok(Some(user)) = get_user_by_id(&state.pg_pool, session.user_id).await {
+                return Some(user);
+            }
+        }
+    }
 
-fn owner_id_from_header(headers: &axum::http::HeaderMap) -> Option<Uuid> {
-    headers
+    let owner_id = headers
         .get("x-owner-id")
         .and_then(|v| v.to_str().ok())
-        .and_then(|s| Uuid::parse_str(s).ok())
+        .and_then(|s| Uuid::parse_str(s).ok());
+
+    match owner_id {
+        Some(id) => get_user_by_id(&state.pg_pool, id).await.ok().flatten(),
+        None => None,
+    }
 }
 
 // ── POST /twin/setup ──────────────────────────────────────────────────────────
@@ -143,9 +155,9 @@ pub async fn get_twin_me(
     State(state):  State<AppState>,
     headers:       axum::http::HeaderMap,
 ) -> Result<Json<TwinAccount>, (StatusCode, String)> {
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await
-        .ok_or((StatusCode::NOT_FOUND, "no account found — POST /twin/setup first".into()))?;
+    let user = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer or X-Owner-ID".into()))?;
 
     // Get connections from PostgreSQL
     let db_conns = get_connections(&state.pg_pool, user.id)
@@ -207,9 +219,9 @@ pub async fn post_twin_profile(
     headers:      axum::http::HeaderMap,
     Json(body):   Json<ProfileBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await
-        .ok_or((StatusCode::NOT_FOUND, "no account — POST /twin/setup first".into()))?;
+    let user = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer or X-Owner-ID".into()))?;
 
     update_user(
         &state.pg_pool,
@@ -262,7 +274,7 @@ pub async fn get_twin_tap(
         .ok_or((StatusCode::NOT_FOUND, "user not found".into()))?;
 
     // Who is tapping? (the person holding the phone)
-    let tapper = resolve_owner(&state, owner_id_from_header(&headers)).await;
+    let tapper = resolve_owner(&state, &headers).await;
 
     // Create connection if tapper is known
     let connection = if let Some(tapper) = &tapper {
@@ -327,9 +339,9 @@ pub async fn get_twin_network(
     State(state): State<AppState>,
     headers:      axum::http::HeaderMap,
 ) -> Result<Json<NetworkGraph>, (StatusCode, String)> {
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await
-        .ok_or((StatusCode::NOT_FOUND, "no account".into()))?;
+    let user = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required".into()))?;
 
     let connected = get_connected_user_ids(&state.pg_pool, user.id)
         .await
@@ -433,9 +445,9 @@ pub async fn post_twin_ingest(
     headers:      axum::http::HeaderMap,
     Json(body):   Json<IngestBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await
-        .ok_or((StatusCode::NOT_FOUND, "no account".into()))?;
+    let user = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required".into()))?;
 
     let title   = body.title.unwrap_or_else(|| "Untitled note".to_string());
     let content = body.body.unwrap_or_default();
@@ -513,9 +525,9 @@ pub async fn put_twin_zone(
         return Err((StatusCode::BAD_REQUEST, "zone must be 1 or 2".into()));
     }
 
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await
-        .ok_or((StatusCode::NOT_FOUND, "no account".into()))?;
+    let user = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required".into()))?;
 
     let updated = update_zone(&state.pg_pool, user.id, other_id, body.zone)
         .await
@@ -544,8 +556,7 @@ pub async fn post_twin_chat(
     headers:      axum::http::HeaderMap,
     Json(req):    Json<TwinChatRequest>,
 ) -> Result<Response, (StatusCode, String)> {
-    let owner_id = owner_id_from_header(&headers);
-    let user     = resolve_owner(&state, owner_id).await;
+    let user = resolve_owner(&state, &headers).await;
 
     let msgs: Vec<serde_json::Value> = req.messages.iter()
         .filter(|m| (m.role == "user" || m.role == "assistant") && !m.content.trim().is_empty())
@@ -664,46 +675,126 @@ pub async fn post_twin_chat(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// Build knowledge context string from the user's graph nodes.
+/// True when this node was created via `POST /twin/ingest` (scoped to one twin graph).
+fn twin_owned_note(n: &Node, owner_graph_id: &str) -> bool {
+    if owner_graph_id.is_empty() {
+        return false;
+    }
+    n.metadata
+        .get("owner_graph_id")
+        .map(|v| v.as_str() == owner_graph_id)
+        .unwrap_or(false)
+}
+
+/// Workspace / Map pipeline chunks: PDF uploads, video, codebase, Gmail, architecture, etc.
+/// These live in the shared `pipeline.graph` but omit `owner_graph_id`, so twin chat previously ignored them.
+fn is_workspace_library_node(n: &Node) -> bool {
+    let src = n
+        .metadata
+        .get("source")
+        .map(|s| s.to_ascii_lowercase())
+        .unwrap_or_default();
+    if matches!(
+        src.as_str(),
+        "pdf" | "email" | "gmail" | "codebase" | "video" | "architecture" | "tools"
+    ) {
+        return true;
+    }
+    matches!(
+        &n.domain,
+        Domain::Pdf | Domain::Email | Domain::Codebase | Domain::Architecture
+    ) || matches!(&n.domain, Domain::Custom(s) if s == "video")
+}
+
+fn knowledge_context_line(n: &Node, max_chars: usize) -> String {
+    let kind = n
+        .metadata
+        .get("kind")
+        .map(|s| s.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| n.metadata.get("source").map(|s| s.as_str()))
+        .unwrap_or("chunk");
+    let tag = n
+        .metadata
+        .get("filename")
+        .or_else(|| n.metadata.get("title"))
+        .map(|s| format!(" `{}`", s.replace('`', "'")))
+        .unwrap_or_default();
+    let excerpt: String = n.source_text.chars().take(max_chars).collect();
+    format!("- [{kind}]{tag}\n  {excerpt}")
+}
+
+/// Build knowledge context: profile + workspace ingests (same graph as `/ingest/pdf`, Map) + twin-scoped notes.
 async fn build_knowledge_context(state: &AppState, user: Option<&User>) -> String {
     let Some(user) = user else {
         return "No profile data available.".to_string();
     };
 
-    let graph_id = user.graph_id
+    let graph_id = user
+        .graph_id
         .map(|g| g.to_string())
         .unwrap_or_default();
 
     let pipeline = match state.pipeline.lock() {
-        Ok(p)  => p,
+        Ok(p) => p,
         Err(_) => return "Graph unavailable.".to_string(),
     };
 
-    let nodes: Vec<String> = pipeline.graph.nodes.values()
-        .filter(|n| {
-            n.metadata.get("owner_graph_id")
-                .map(|v| v == &graph_id)
-                .unwrap_or(false)
-        })
-        .map(|n| format!("- [{}] {}", n.metadata.get("kind").map(|s| s.as_str()).unwrap_or("note"), n.source_text.chars().take(300).collect::<String>()))
+    // Cap workspace text — many PDF chunks can exceed model limits.
+    const WS_MAX_NODES: usize = 64;
+    const WS_CHARS_PER_NODE: usize = 720;
+    const WS_CTX_CAP: usize = 28_000;
+
+    let mut workspace_lines: Vec<String> = pipeline
+        .graph
+        .nodes
+        .values()
+        .filter(|n| is_workspace_library_node(n) && !twin_owned_note(n, graph_id.as_str()))
+        .map(|n| knowledge_context_line(n, WS_CHARS_PER_NODE))
         .collect();
 
-    if nodes.is_empty() {
-        return format!(
-            "## Profile\n{}\n\nEmail: {}\nPhone: {}",
-            user.name,
-            user.email.as_deref().unwrap_or("not provided"),
-            user.phone.as_deref().unwrap_or("not provided"),
-        );
+    workspace_lines.sort();
+    workspace_lines.truncate(WS_MAX_NODES);
+    while workspace_lines.join("\n\n").len() > WS_CTX_CAP && workspace_lines.len() > 8 {
+        workspace_lines.pop();
     }
+    let workspace_block = workspace_lines.join("\n\n");
 
-    format!(
-        "## Profile\n{}\nEmail: {}\nPhone: {}\n\n## Knowledge\n{}",
+    let twin_lines: Vec<String> = pipeline
+        .graph
+        .nodes
+        .values()
+        .filter(|n| twin_owned_note(n, graph_id.as_str()))
+        .map(|n| knowledge_context_line(n, 520))
+        .collect();
+
+    let profile_block = format!(
+        "## Profile\n{}\nEmail: {}\nPhone: {}",
         user.name,
         user.email.as_deref().unwrap_or("not provided"),
         user.phone.as_deref().unwrap_or("not provided"),
-        nodes.join("\n")
-    )
+    );
+
+    let mut sections: Vec<String> = vec![profile_block];
+
+    if !workspace_block.is_empty() {
+        sections.push(format!(
+            "## Workspace (PDF/video/code/email ingests — feeds Map)\n{workspace_block}"
+        ));
+    }
+
+    if !twin_lines.is_empty() {
+        sections.push(format!("## Twin notes & NFC context\n{}", twin_lines.join("\n\n")));
+    }
+
+    if workspace_block.is_empty() && twin_lines.is_empty() {
+        sections.push(
+            "No ingested chunks yet. Add PDFs or video under Dashboard → Personal graph, or save notes on the Dashboard."
+                .to_string(),
+        );
+    }
+
+    sections.join("\n\n")
 }
 
 /// Get documents from graph for a user.

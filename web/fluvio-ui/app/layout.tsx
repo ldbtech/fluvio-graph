@@ -13,9 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fluvio, Knowledge workspace",
-  description:
-    "Private knowledge workspace: ingest Gmail, PDFs, and GitHub into one graph, explore on a canvas, and chat with answers grounded in nodes. Not distributed as a public open source project.",
+  title: { default: "FluvioMe", template: "%s · FluvioMe" },
+  description: "Put your introduction in Apple or Google Wallet—or on an NFC card. From Fluvio.",
 };
 
 /** Safe-area friendly on notched phones; NFC / twin flows use full bleed. */

@@ -19,21 +19,20 @@ async function main() {
     passTypeIdentifier: "pass.com.placeholder.fluvio",
     serialNumber: "00000000000000000000000000000001",
     teamIdentifier: "XXXXXXXXXX",
-    organizationName: "Fluvio",
-    description: "Fluvio digital twin card",
-    logoText: "Digital twin",
+    organizationName: "FluvioMe",
+    description: "FluvioMe pass · template",
+    logoText: "",
     foregroundColor: "rgb(237,237,239)",
     backgroundColor: "rgb(10,10,15)",
-    labelColor: "rgb(171,169,237)",
+    labelColor: "rgb(148,146,169)",
     suppressStripShine: true,
     generic: {
-      primaryFields: [
-        { key: "name", label: "NAME", value: "-" },
+      primaryFields: [{ key: "name", label: "", value: "Preview name" }],
+      secondaryFields: [
+        { key: "tagline", label: "", value: "Your line follows here" },
+        { key: "handle", label: "", value: "@you" },
       ],
-      secondaryFields: [{ key: "twin", label: "POWERED BY", value: "Fluvio" }],
-      auxiliaryFields: [
-        { key: "hint", label: "TAP", value: "Open chat from QR →" },
-      ],
+      auxiliaryFields: [],
     },
   };
 

@@ -4,3 +4,4 @@ pub mod architecture;
 pub mod tools;
 pub mod video;
 pub mod twin;
+pub mod auth;

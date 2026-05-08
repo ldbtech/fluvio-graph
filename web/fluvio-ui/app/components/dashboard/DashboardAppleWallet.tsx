@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { FluvioTwinMark } from "@/app/components/twin/FluvioTwinMark";
-import { getOwnerId } from "@/lib/fluvioDashboardApi";
+import { getTwinUserId } from "@/lib/fluvioDashboardApi";
 
 type Props = {
   displayName: string;
@@ -15,7 +15,7 @@ export function DashboardAppleWallet({ displayName, tagline, ownerSlug }: Props)
   const [err, setErr] = useState<string | null>(null);
 
   const addToAppleWallet = useCallback(async () => {
-    const id = getOwnerId();
+    const id = getTwinUserId();
     if (!id) return;
     setBusy(true);
     setErr(null);
@@ -55,53 +55,46 @@ export function DashboardAppleWallet({ displayName, tagline, ownerSlug }: Props)
   }, []);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-[#12101c] via-[#0b0b10] to-[#07060c] p-5 sm:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch lg:justify-between lg:gap-8">
-        <div className="relative min-h-[176px] min-w-[min(100%,288px)] flex-1 lg:max-w-md">
+    <section className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-white/[0.02] p-6 sm:p-8">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-stretch lg:justify-between lg:gap-10">
+        <div className="relative min-h-[176px] min-w-[min(100%,340px)] flex-1 lg:max-w-md">
+          {/* Same footprint as onboarding NFC preview: logo tile + imprint, one subtle footer line */}
           <div
-            className="relative mx-auto aspect-[1.586/1] w-full max-w-[286px] overflow-hidden rounded-xl border border-white/[0.1] shadow-[0_36px_80px_-32px_rgba(83,74,183,0.55),inset_0_1px_0_rgba(255,255,255,0.05)] lg:mx-0"
+            className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[1.125rem] border border-white/[0.12] bg-[linear-gradient(155deg,#1c1c22_0%,#0f0f12_42%,#080809_100%)] shadow-[0_36px_60px_-28px_rgba(0,0,0,0.85)] shadow-black/70 lg:mx-0"
+            style={{ aspectRatio: "1.586 / 1" }}
             aria-hidden
           >
-            <div className="absolute inset-0 bg-[linear-gradient(145deg,#1a1730_0%,#09090e_52%,#050508_100%)]" />
-            <div className="absolute inset-x-8 top-3 h-[1px] bg-gradient-to-r from-transparent via-[#534AB7]/45 to-transparent" />
-            <div className="absolute left-5 top-4 flex items-center gap-2">
-              <FluvioTwinMark size={36} className="opacity-95" />
-              <span className="text-[13px] font-medium tracking-[0.16em] text-white/90">FLUVIO</span>
+            <div className="absolute inset-x-9 top-3 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+            <div className="absolute left-[1.125rem] top-[2.125rem] right-[1.125rem] flex gap-4">
+              <div className="flex size-[3.375rem] shrink-0 items-center justify-center overflow-hidden rounded-[0.625rem] border border-white/[0.1] bg-white/[0.04] shadow-inner shadow-black/30">
+                <FluvioTwinMark size={28} className="opacity-[0.92]" />
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[1.0625rem] font-semibold leading-tight tracking-[-0.02em] text-white">
+                  {displayName.trim() || "Your name"}
+                </p>
+                <p className="mt-3 truncate text-[13px] font-medium text-zinc-300">@{ownerSlug.trim() || "you"}</p>
+                {tagline.trim() ? (
+                  <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-zinc-500">{tagline.trim()}</p>
+                ) : (
+                  <p className="mt-2 text-[11px] text-zinc-600">Short tagline</p>
+                )}
+              </div>
             </div>
-            <div className="absolute bottom-12 left-5 right-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7369c4]/90">
-                Personal twin
-              </p>
-              <p className="mt-2 truncate text-lg font-medium tracking-tight text-white">{displayName}</p>
-              <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[#9a96b8]">{tagline}</p>
-              <p className="mt-4 font-mono text-[10px] text-[#5F5E5A]">
-                @{ownerSlug}
-              </p>
+            <div className="absolute bottom-[1rem] left-[1.125rem] right-[1.125rem] flex items-end justify-between gap-2 border-t border-white/[0.06] pt-[0.75rem]">
+              <span className="font-mono text-[9px] tracking-wide text-zinc-600">Tap · FluvioMe</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Wallet</span>
             </div>
           </div>
-          <div className="pointer-events-none absolute -right-4 top-12 hidden h-32 w-32 rounded-full bg-[#534AB7]/22 blur-[40px] sm:block" aria-hidden />
         </div>
 
         <div className="flex flex-1 flex-col justify-center gap-3 lg:max-w-xl">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5F5E5A]">
-              Apple Wallet
-            </p>
-            <h3 className="mt-2 text-[1.15rem] font-medium tracking-[-0.03em] text-white sm:text-lg">
-              Black twin card matching your NFC profile
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-[#888780]">
-              On{" "}
-              <span className="text-[#AFA9EC]">
-                iPhone or iPad Safari
-              </span>
-              , tap{" "}
-              <span className="font-medium text-white/90">
-                Add to Wallet
-              </span>
-              {" "}
-              to install a branded pass—same geometry and violet accents as Fluvio in the browser. Wallet shows your name
-              and a QR code that opens your public tap route for visitors.
+            <p className="text-[13px] font-medium text-zinc-500">Apple Wallet</p>
+            <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-white sm:text-[1.35rem]">Your pass</h3>
+            <p className="mt-3 text-[15px] leading-relaxed text-zinc-500">
+              On iPhone or iPad, open this page in Safari and tap below. Your name and a QR code go in Wallet—same look as your
+              tap card online.
             </p>
           </div>
 
@@ -124,12 +117,15 @@ export function DashboardAppleWallet({ displayName, tagline, ownerSlug }: Props)
                 {busy ? "Preparing…" : "Add to Apple Wallet"}
               </span>
             </button>
-            <p className="text-[11px] leading-snug text-[#5F5E5A] sm:max-w-[14rem]">
-              Requires env signing keys (Pass Type ID + WWDR). Also set{" "}
-              <span className="font-mono text-[#888780]">WALLET_PASS_URL_SECRET</span> and{" "}
-              <span className="font-mono text-[#888780]">NEXT_PUBLIC_APP_URL</span>
-              {" "}for QR links.
-            </p>
+            <details className="sm:max-w-xs">
+              <summary className="cursor-pointer text-[13px] text-zinc-600 underline-offset-2 hover:text-zinc-500">
+                Developer setup
+              </summary>
+              <p className="mt-2 text-[12px] leading-snug text-zinc-600">
+                Apple Pass signing and env vars (Pass Type ID, WWDR, <span className="font-mono text-zinc-500">WALLET_PASS_URL_SECRET</span>
+                , <span className="font-mono text-zinc-500">NEXT_PUBLIC_APP_URL</span>) must be set on the server.
+              </p>
+            </details>
           </div>
         </div>
       </div>

@@ -28,26 +28,23 @@ type TwinCardDef = {
 
 const cards: TwinCardDef[] = [
   {
-    eyebrow: "01 · You, encoded",
-    title: "Built from your real context",
-    body:
-      "The twin learns from what you already have: mail, repositories, PDFs, and notes. It doesn’t improvise a personality from thin air—it cites the graph of your life and work.",
+    eyebrow: "Voice",
+    title: "You teach it once.",
+    body: "It answers in your lane—because you wrote the lane.",
     accent: "sky",
     decor: "nodes",
   },
   {
-    eyebrow: "02 · Presence",
-    title: "A card that is you in the room",
-    body:
-      "Most people start with a wallet pass in Apple Wallet or Google Wallet (next to Apple Pay and Google Pay)—no ship, no cart. Add NFC or other formats later if you want a physical tap. Same mind as your private workspace.",
+    eyebrow: "Place",
+    title: "It sits where tickets sit.",
+    body: "Wallet—not a QR code on a slide deck nobody scans.",
     accent: "violet",
     decor: "pulse",
   },
   {
-    eyebrow: "03 · Boundaries",
-    title: "Your lines, not the model’s",
-    body:
-      "You decide what it can quote, suggest, or automate. Guardrails and policies live in the engine so your twin stays professional, on-brand, and safe to share.",
+    eyebrow: "Boundaries",
+    title: "You draw the lines.",
+    body: "What it says. What it holds back. Updated whenever you say so.",
     accent: "cyan",
     decor: "shard",
   },
@@ -60,9 +57,9 @@ const accentRing: Record<TwinCardAccent, string> = {
 };
 
 const accentGlow: Record<TwinCardAccent, string> = {
-  sky: "shadow-[0_0_52px_-12px_rgba(56,189,248,0.35)]",
-  violet: "shadow-[0_0_52px_-12px_rgba(167,139,250,0.32)]",
-  cyan: "shadow-[0_0_52px_-12px_rgba(34,211,238,0.3)]",
+  sky: "shadow-none",
+  violet: "shadow-none",
+  cyan: "shadow-none",
 };
 
 const accentChip: Record<TwinCardAccent, string> = {
@@ -175,7 +172,7 @@ function DigitalTwinCard({ card, reduceMotion }: { card: TwinCardDef; reduceMoti
 
       <article
         className={[
-          "relative flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/[0.08] bg-gradient-to-br from-slate-950/90 via-slate-950/70 to-slate-950/40 p-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:rounded-3xl",
+          "relative flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/[0.07] bg-gradient-to-br from-zinc-900/85 via-zinc-950/65 to-black/55 p-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:rounded-3xl",
           accentGlow[card.accent],
         ].join(" ")}
         style={{ transform: tilt, transition }}
@@ -206,7 +203,7 @@ function DigitalTwinCard({ card, reduceMotion }: { card: TwinCardDef; reduceMoti
                 accentChip[card.accent],
               ].join(" ")}
             >
-              Your twin
+              FluvioMe
             </span>
           </div>
 
@@ -237,20 +234,13 @@ export function LandingDigitalTwinCards() {
   );
 
   return (
-    <section
-      id="digital-twins"
-      className="scroll-mt-24 border-t border-sky-500/[0.08] bg-gradient-to-b from-[#070a12] via-slate-950/40 to-[#070a12] py-16 sm:py-24"
-    >
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="max-w-2xl">
-          <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-sky-400/70">Digital twin of you</h2>
-          <p className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-[1.75rem] sm:leading-snug">
-            Three pillars of how yours comes to life.
-          </p>
-          <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-slate-500 sm:text-[15px]">
-            Teach it from your sources, share via wallet first or add NFC when you prefer, and keep control of what “you”
-            sounds like—all on the same grounded graph as your workspace.
-          </p>
+    <section id="fluviome" className="scroll-mt-24 border-t border-white/[0.06] py-20 sm:py-28">
+      <div className="mx-auto max-w-5xl px-5 sm:px-10">
+        <div className="max-w-lg">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Design</p>
+          <h2 className="mt-4 text-[1.875rem] font-semibold tracking-[-0.04em] text-white sm:text-[2rem]">
+            Built for frictionless intros.
+          </h2>
         </div>
 
         <div className="relative mt-10 sm:mt-14">
