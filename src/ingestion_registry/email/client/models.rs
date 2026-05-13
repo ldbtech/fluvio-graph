@@ -115,6 +115,18 @@ pub struct GmailLabel {
     pub threads_unread: Option<i64>,
 }
 
+// ---- Profile ---------------------------------------------------------------
+
+/// `users.getProfile`
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailUserProfile {
+    pub email_address:  Option<String>,
+    pub messages_total: Option<i64>,
+    pub threads_total:  Option<i64>,
+    pub history_id:     String,
+}
+
 // ---- List Responses ---------------------------------------------------------------
 
 /// Response for `user.messages.list`
@@ -201,6 +213,15 @@ pub struct HistoryMessageDeleted {
     pub message: MessageRef,
 }
 
+/// Successful `users.messages.send` envelope (subset of fields).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailSendResponse {
+    pub id:           String,
+    pub thread_id:    String,
+    pub label_ids:    Option<Vec<String>>,
+}
+
 // ---- Helper functions ---------------------------------------------------------------
 
 /// Gmail returns `internalDate` as a string containing a unix timestamp in milliseconds.
@@ -253,6 +274,10 @@ impl GmailMessage {
 
     pub fn date(&self) -> Option<&str> {
         self.headers("date")
+    }
+
+    pub fn message_id_header(&self) -> Option<&str> {
+        self.headers("message-id")
     }
 
     /// Recursively extract all email addresses from the message parts.

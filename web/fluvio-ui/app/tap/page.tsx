@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { NfcTapLanding } from "@/app/components/twin/NfcTapLanding";
+import { NfcTapLanding } from "@/features/twin/components/NfcTapLanding";
 
 export const metadata: Metadata = {
   title: "Fluvio · Demo card tap",

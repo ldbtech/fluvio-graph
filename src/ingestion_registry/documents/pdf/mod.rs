@@ -1,6 +1,7 @@
 //! PDF ingestion: memory-mapped file reads, page-chunk iterator, and optional text cleanup.
 
 pub mod cleaner;
+pub mod routes;
 
 mod mmap_chunk;
 mod pdf_document;

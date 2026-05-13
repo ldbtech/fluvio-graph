@@ -6,7 +6,7 @@ Rust **HTTP service** for building a **multi-domain knowledge graph** from docum
 
 ## What you get
 
-- **REST API (Axum)** on **http://0.0.0.0:8001** — PDF upload, Gmail connect/sync, paged graph endpoints for the UI, chat, and workspace project lifecycle (save/load/archive graphs under `fluvio_graphs/`).
+- **REST API (Axum)** on **http://0.0.0.0:8001** — PDF upload, Gmail connect/sync, paged graph endpoints for the UI, and chat. Durable graph storage is **SurrealDB** (no on-disk JSON snapshots).
 - **Web UI** — `web/fluvio-ui`: connectors, graph view, chat, workspace projects. Run it alongside the Rust server.
 
 ---
@@ -15,6 +15,7 @@ Rust **HTTP service** for building a **multi-domain knowledge graph** from docum
 
 - **Rust** — **1.85 or newer** (`edition = "2024"`). Install via [rustup](https://rustup.rs/), then `rustup update stable`.
 - **Anthropic API key** — required for `/chat`. Create a key in the [Anthropic console](https://console.anthropic.com/).
+- **SurrealDB** — kg-engine persists graph nodes (for example after `POST /twin/ingest`) to Surreal. By default it connects to **`ws://127.0.0.1:8000`** with namespace **`fluvio`** and database **`graph`** (root/root). Run a SurrealDB server on that port, or set `SURREAL_URL=embedded` in `.env` to use the embedded `surrealkv://./fluvio_surreal_data` store instead (no separate process; the `surreal sql` CLI will not see that data).
 - **Gmail (optional)** — Google OAuth client credentials in **`~/.fluvio/config.json`** (see comments in `src/ingestion_registry/email/auth/oauth.rs` for the expected JSON shape and redirect URI `http://localhost:8001/connect/gmail/callback`).
 - **Network (first run)** — the embedding model is downloaded on first use into `.fastembed_cache/` (gitignored).
 
@@ -22,13 +23,25 @@ Rust **HTTP service** for building a **multi-domain knowledge graph** from docum
 
 ## Configuration
 
-Create a `.env` file in the repository root (gitignored — **do not commit secrets**):
+Create a **`.env`** file in the repository root (gitignored — **do not commit secrets**). The server loads it via [dotenvy](https://crates.io/crates/dotenvy) when present; you can also `export …` in your shell.
+
+Typical `.env`:
 
 ```bash
 ANTHROPIC_API_KEY=<your-anthropic-api-key>
+
+# Surreal — optional; omit these to use defaults (ws://127.0.0.1:8000, root/root, fluvio/graph).
+SURREAL_URL=ws://127.0.0.1:8000
+SURREAL_USER=root
+SURREAL_PASS=root
+SURREAL_NS=fluvio
+SURREAL_DB=graph
+
+# Embedded Surreal only (no server on 8000): use instead of the block above
+# SURREAL_URL=embedded
 ```
 
-The server loads `.env` via [dotenvy](https://crates.io/crates/dotenvy) when present. You can also `export ANTHROPIC_API_KEY=...` in your shell.
+**Embedded Surreal only** (no separate Surreal process): set `SURREAL_URL=embedded` and comment out or remove the other `SURREAL_*` lines if you like; the `surreal sql` CLI will not see that data.
 
 ---
 
@@ -72,7 +85,7 @@ CORS is open for local UI development (`tower-http`).
 | Workspace | `POST` | `/workspace/archive`, `/workspace/load`, `/workspace/delete` | JSON body `{ "id": "<project-id>" }`. |
 | Workspace | `POST` | `/workspace/reset` | Clears the in-memory graph and workspace snapshots; **no JSON body**. |
 
-**On-disk layout** — Active workspace graphs live under **`fluvio_graphs/workspace/`** (for example `unified.json`, connector-specific snapshots). Saved projects use **`fluvio_graphs/projects/`**. A legacy **`fluvio_graph.json`** in the process working directory may still be read for migration paths.
+**Durable storage** — All ingested nodes/edges (codebase, PDF, video, email) are persisted into **SurrealDB** via `src/storage/surreal.rs`. The in-memory `IngestionPipeline` graph is a per-process working set only; nothing is snapshotted to JSON. Surreal records are keyed by `owner_id` (Postgres user id) and `zone` so reads can be scoped per user.
 
 ---
 
@@ -84,7 +97,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [http://localhost:8001](http://localhost:8001) by default (`NEXT_PUBLIC_KG_URL` overrides this in `web/fluvio-ui/lib/constants.ts`).
+Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [http://localhost:8001](http://localhost:8001) by default (`NEXT_PUBLIC_KG_URL` overrides this in `web/fluvio-ui/shared/lib/constants.ts`).
 
 ---
 
@@ -94,11 +107,11 @@ Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [
 |------|------|
 | `src/main.rs` | Starts the HTTP server only. |
 | `src/server.rs` | Axum routes: ingest, graph, chat, Gmail, workspace. |
-| `src/graph/` | Graph types, embeddings, registry, persistence helpers. |
-| `src/ingestion.rs` | Ingestion pipeline wiring. |
+| `src/graph/` | Graph types, embeddings, registry. |
+| `src/storage/surreal.rs` | SurrealDB persistence (durable nodes/edges per user). |
+| `src/ingestion.rs` | Ingestion pipeline wiring (in-RAM working set). |
 | `src/query.rs` | RAG-style retrieval over the graph. |
 | `src/ingestion_registry/` | Connectors and document types (e.g. PDF, Gmail). |
-| `fluvio_graphs/` | Workspace and project graph JSON (local data; gitignore as appropriate). |
 | `web/fluvio-ui/` | Next.js frontend. |
 
 ---
@@ -106,6 +119,8 @@ Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [
 ## Troubleshooting
 
 - **`ANTHROPIC_API_KEY` errors** — Ensure `.env` exists in the directory you run from, or export the variable.
+- **`SurrealDB connect failed`** — Start Surreal on `127.0.0.1:8000`, or set `SURREAL_URL=embedded` if you intentionally run without a server.
+- **`SELECT * FROM nodes` empty in `surreal sql`** — Confirm the CLI uses the same endpoint and `USE NS fluvio DB graph` as kg-engine (see startup log `[SurrealDB] Connected to …`). If you use `SURREAL_URL=embedded`, data is not on the network server.
 - **Port 8001 in use** — Stop the other process or change the bind address in `src/server.rs`.
 - **Gmail OAuth** — Confirm `~/.fluvio/config.json` exists and redirect URIs match your Google Cloud OAuth client.
 - **First embedding run is slow** — Model download; watch the console for fastembed progress.

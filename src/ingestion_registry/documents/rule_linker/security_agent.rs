@@ -17,7 +17,6 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::graph::enums::{Domain, NodeKind};
 use crate::graph::fluvio_graph::FluvioGraph;
@@ -209,9 +208,8 @@ pub async fn run_agent(
     config:     SecurityAgentConfig,
     api_key:    String,
     graph:      Arc<Mutex<DomainGraph>>,
-    embed_ctx:  Arc<Mutex<EmbeddingContext>>,
+    _embed_ctx: Arc<Mutex<EmbeddingContext>>, // Unused
     progress:   Arc<SecurityAgentProgress>,
-    persist_fn: fn(&DomainGraph) -> anyhow::Result<()>,
 ) -> SecurityAgentResult {
     progress.update(|p| {
         p.running = true;
@@ -463,13 +461,8 @@ pub async fn run_agent(
         count
     };
 
-    // Persist.
-    {
-        let g = graph.lock().unwrap();
-        if let Err(e) = persist_fn(&g) {
-            eprintln!("[security_agent] persist failed: {e}");
-        }
-    }
+    // Durable persistence happens on ingest (SurrealDB); the agent only annotates the in-RAM
+    // working graph used by this request, so no JSON snapshot is taken here.
 
     let violates_count  = violations.iter().filter(|v| v.edge_kind == "violates").count();
     let implements_count = violations.iter().filter(|v| v.edge_kind == "implements").count();

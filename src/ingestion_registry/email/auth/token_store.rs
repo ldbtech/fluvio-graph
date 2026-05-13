@@ -6,7 +6,7 @@ use thiserror::Error;
 // ── Errors ────────────────────────────────────────────────────────────────────
 #[derive(Debug, Error)]
 pub enum TokenStoreError {
-    #[error("credentials not found at {0} — complete Gmail OAuth on kg-engine first (GET /connect/gmail?redirect=1 or web UI Sources → Gmail)")]
+    #[error("credentials not found at {0} — complete Gmail OAuth on kg-engine first (POST /connect/gmail/start while signed in, or web UI Sources → Gmail)")]
     NotFound(String),
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),

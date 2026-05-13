@@ -18,7 +18,7 @@ use crate::ingestion_registry::connector::{ConnectorError, FluvioConnector, Norm
 use super::clone::{clone_or_pull, is_cloned, repo_path, CloneError, CloneResult, RepoRef};
 use super::normalizer::normalize_file;
 use super::parser::{parse_file, ParseError, enrich_with_calls};
-use super::tree::{build_tree_from_path, flatten_files, Language, NodeKind};
+use super::tree::{build_tree_from_path, flatten_files, Language};
 
 // ── Error mapping ─────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ fn map_clone_error(e: CloneError) -> ConnectorError {
 
 fn map_parse_error(e: ParseError) -> ConnectorError {
     match e {
-        ParseError::Io { path, source } => ConnectorError::Io(source),
+        ParseError::Io { path: _, source } => ConnectorError::Io(source),
         ParseError::UnsupportedLanguage(lang) => ConnectorError::Parse(
             format!("unsupported language: {lang:?}"),
         ),

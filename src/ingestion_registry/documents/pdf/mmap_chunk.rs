@@ -40,6 +40,16 @@ impl PDFChunkIterator {
             index: 0,
         })
     }
+
+    /// Number of iterator steps (page groups) for progress UI.
+    pub fn total_chunks(&self) -> usize {
+        if self.pages_per_chunk == 0 {
+            return 0;
+        }
+        self.pages
+            .len()
+            .div_ceil(self.pages_per_chunk)
+    }
 }
 
 impl Iterator for PDFChunkIterator {

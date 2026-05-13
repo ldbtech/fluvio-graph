@@ -15,17 +15,23 @@ use std::time::Duration;
 
 use reqwest::Client;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use thiserror::Error;
 
+use sqlx::PgPool;
+use uuid::Uuid;
+
+use crate::database::gmail_credentials::get_gmail_credentials;
 use crate::ingestion_registry::email::auth::{
-    load_token, refresh_access_token, GmailToken,
+    load_token, refresh_access_token, refresh_access_token_for_user, GmailToken,
 };
 
 use super::models::{
-    GmailLabel, GmailMessage, GmailThread,
+    GmailLabel, GmailMessage, GmailSendResponse, GmailThread, GmailUserProfile,
     HistoryListResponse, LabelListResponse,
     MessageListResponse, ThreadListResponse,
 };
+use std::collections::HashSet;
 
 const BASE_URL: &str = "https://gmail.googleapis.com/gmail/v1/users/me";
 const MAX_RETRIES: u32 = 3;
@@ -38,7 +44,7 @@ const TRANSPORT_RETRY_MAX: u32 = 2;
 
 #[derive(Debug, Error)]
 pub enum GmailClientError {
-    #[error("not authenticated — no token at ~/.fluvio/credentials/gmail.json; complete OAuth via http://localhost:8001/connect/gmail?redirect=1 first")]
+    #[error("not authenticated — complete Gmail OAuth for this account first (dashboard Sources → Gmail)")]
     NotAuthenticated,
     #[error("token refresh failed: {0}")]
     TokenRefresh(String),
@@ -85,9 +91,16 @@ impl From<reqwest::Error> for GmailClientError {
 
 // ── Client ────────────────────────────────────────────────────────────────────
 
+#[derive(Clone)]
+enum GmailTokenStore {
+    File,
+    Postgres { pool: PgPool, user_id: Uuid },
+}
+
 pub struct GmailClient {
-    http:  Client,
-    token: GmailToken,
+    http:          Client,
+    token:         GmailToken,
+    persistence:   GmailTokenStore,
 }
 
 impl GmailClient {
@@ -104,14 +117,67 @@ impl GmailClient {
             token
         };
 
-        let http = Client::builder()
+        let http = Self::build_http_client()?;
+
+        Ok(Self {
+            http,
+            token,
+            persistence: GmailTokenStore::File,
+        })
+    }
+
+    /// Load Gmail OAuth credentials for **this Fluvio user** from Postgres; refresh when expired.
+    pub async fn for_user(pool: &PgPool, user_id: Uuid) -> Result<Self, GmailClientError> {
+        let row = get_gmail_credentials(pool, user_id)
+            .await
+            .map_err(|e| GmailClientError::TokenRefresh(e.to_string()))?
+            .ok_or(GmailClientError::NotAuthenticated)?;
+
+        let mut token = GmailToken {
+            access_token:  row.access_token,
+            refresh_token: row.refresh_token,
+            expires_at:    row.expires_at.timestamp(),
+        };
+
+        if token.is_expired() {
+            token = refresh_access_token_for_user(pool, user_id, &token)
+                .await
+                .map_err(|e| GmailClientError::TokenRefresh(e.to_string()))?;
+        }
+
+        let http = Self::build_http_client()?;
+
+        Ok(Self {
+            http,
+            token,
+            persistence: GmailTokenStore::Postgres {
+                pool: pool.clone(),
+                user_id,
+            },
+        })
+    }
+
+    async fn refresh_token_in_place(&mut self) -> Result<(), GmailClientError> {
+        self.token = match &self.persistence {
+            GmailTokenStore::File => refresh_access_token(&self.token)
+                .await
+                .map_err(|e| GmailClientError::TokenRefresh(e.to_string()))?,
+            GmailTokenStore::Postgres { pool, user_id } => {
+                refresh_access_token_for_user(pool, *user_id, &self.token)
+                    .await
+                    .map_err(|e| GmailClientError::TokenRefresh(e.to_string()))?
+            }
+        };
+        Ok(())
+    }
+
+    fn build_http_client() -> Result<Client, GmailClientError> {
+        Client::builder()
             .timeout(REQUEST_TIMEOUT)
             .connect_timeout(CONNECT_TIMEOUT)
             .user_agent(concat!("kg-engine/", env!("CARGO_PKG_VERSION")))
             .build()
-            .map_err(|e| GmailClientError::Http(format_reqwest_error(&e)))?;
-
-        Ok(Self { http, token })
+            .map_err(|e| GmailClientError::Http(format_reqwest_error(&e)))
     }
 
     // ── Messages ──────────────────────────────────────────────────────────────
@@ -164,6 +230,40 @@ impl GmailClient {
         Ok(all)
     }
 
+    /// Mailbox profile (includes current `historyId` for incremental sync).
+    pub async fn get_user_profile(&mut self) -> Result<GmailUserProfile, GmailClientError> {
+        self.get("profile", &[]).await
+    }
+
+    /// Page through `history.list` and collect **messageAdded** IDs (cap `max_ids`).
+    pub async fn collect_message_ids_added_since(
+        &mut self,
+        start_history_id: &str,
+        max_ids: usize,
+    ) -> Result<Vec<String>, GmailClientError> {
+        let mut out: Vec<String> = Vec::new();
+        let mut seen = HashSet::new();
+        let mut page_token: Option<String> = None;
+        for _ in 0..50 {
+            let res = self.list_history(start_history_id, page_token.as_deref()).await?;
+            for h in &res.history {
+                for add in &h.messages_added {
+                    if seen.insert(add.message.id.clone()) {
+                        out.push(add.message.id.clone());
+                        if out.len() >= max_ids {
+                            return Ok(out);
+                        }
+                    }
+                }
+            }
+            match &res.next_page_token {
+                Some(t) if !t.is_empty() => page_token = Some(t.clone()),
+                _ => break,
+            }
+        }
+        Ok(out)
+    }
+
     /// Fetch a single full message by ID.
     pub async fn get_message(
         &mut self,
@@ -171,6 +271,49 @@ impl GmailClient {
     ) -> Result<GmailMessage, GmailClientError> {
         let path = format!("messages/{}", id);
         self.get(&path, &[("format", "full".to_string())]).await
+    }
+
+    /// Lightweight headers + snippet for list UIs (fast vs `format=full`).
+    pub async fn get_message_metadata(&mut self, id: &str) -> Result<GmailMessage, GmailClientError> {
+        let path = format!("messages/{}", id);
+        self.get(
+            &path,
+            &[
+                ("format", "metadata".to_string()),
+                ("metadataHeaders", "Subject".to_string()),
+                ("metadataHeaders", "From".to_string()),
+                ("metadataHeaders", "Date".to_string()),
+            ],
+        )
+        .await
+    }
+
+    /// Latest messages in **Inbox**, newest first by `internalDate`, with metadata only per message.
+    ///
+    /// `messages.list` order is not guaranteed chronological, so we list a small over-sample,
+    /// fetch metadata, sort, then truncate.
+    /// `gmail_q` — full Gmail search string e.g. `in:inbox` or `in:inbox (from:a@… OR …)`.
+    pub async fn inbox_recent_summaries(
+        &mut self,
+        limit: u32,
+        gmail_q: &str,
+    ) -> Result<Vec<GmailMessage>, GmailClientError> {
+        let limit = limit.clamp(1, 50);
+        let fetch_n = (limit.saturating_mul(3)).clamp(limit, 45);
+        let refs = self.list_messages(Some(gmail_q), Some(fetch_n)).await?;
+        let mut out = Vec::new();
+        for r in refs {
+            if let Ok(m) = self.get_message_metadata(&r.id).await {
+                out.push(m);
+            }
+        }
+        out.sort_by(|a, b| {
+            let ta = a.internal_date.unwrap_or(0);
+            let tb = b.internal_date.unwrap_or(0);
+            tb.cmp(&ta)
+        });
+        out.truncate(limit as usize);
+        Ok(out)
     }
 
     /// Fetch multiple messages by ID concurrently in batches.
@@ -265,6 +408,28 @@ impl GmailClient {
         self.get(&path, &[("format", "full".to_string())]).await
     }
 
+    /// Send an RFC822 message (`messages.send`). `thread_id` threads the reply in Gmail UI.
+    pub async fn send_rfc822(
+        &mut self,
+        thread_id: Option<&str>,
+        rfc822_utf8: &str,
+    ) -> Result<GmailSendResponse, GmailClientError> {
+        use base64::Engine;
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct GmailSendReq<'a> {
+            raw:         String,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            thread_id:   Option<&'a str>,
+        }
+        let raw = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(rfc822_utf8.as_bytes());
+        let body = GmailSendReq {
+            raw,
+            thread_id,
+        };
+        self.post_json("messages/send", &body).await
+    }
+
     // ── Labels ────────────────────────────────────────────────────────────────
 
     /// Fetch all labels for the authenticated user.
@@ -331,9 +496,7 @@ impl GmailClient {
 
             // 401 — refresh token and retry once.
             if status == 401 && attempt == 0 {
-                self.token = refresh_access_token(&self.token)
-                    .await
-                    .map_err(|e| GmailClientError::TokenRefresh(e.to_string()))?;
+                self.refresh_token_in_place().await?;
                 attempt += 1;
                 continue;
             }
@@ -360,6 +523,68 @@ impl GmailClient {
 
             let body = res.text().await?;
             let parsed: T = serde_json::from_str(&body)?;
+            return Ok(parsed);
+        }
+    }
+
+    async fn post_json<B: Serialize + ?Sized, T: DeserializeOwned>(
+        &mut self,
+        path: &str,
+        body: &B,
+    ) -> Result<T, GmailClientError> {
+        let url = format!("{}/{}", BASE_URL, path);
+        let mut attempt = 0u32;
+
+        loop {
+            let mut send_try = 0u32;
+            let res = loop {
+                let req = self
+                    .http
+                    .post(&url)
+                    .bearer_auth(&self.token.access_token)
+                    .header("content-type", "application/json")
+                    .json(body);
+                match req.send().await {
+                    Ok(r) => break r,
+                    Err(e)
+                        if send_try < TRANSPORT_RETRY_MAX
+                            && (e.is_timeout() || e.is_connect()) =>
+                    {
+                        let wait = Duration::from_millis(400 * 2u64.pow(send_try));
+                        tokio::time::sleep(wait).await;
+                        send_try += 1;
+                    }
+                    Err(e) => return Err(GmailClientError::Http(format_reqwest_error(&e))),
+                }
+            };
+            let status = res.status();
+
+            if status == 401 && attempt == 0 {
+                self.refresh_token_in_place().await?;
+                attempt += 1;
+                continue;
+            }
+
+            if status == 429 {
+                if attempt >= MAX_RETRIES {
+                    return Err(GmailClientError::RateLimited);
+                }
+                let wait = Duration::from_millis(500 * 2u64.pow(attempt));
+                tokio::time::sleep(wait).await;
+                attempt += 1;
+                continue;
+            }
+
+            if !status.is_success() {
+                let body_txt = res.text().await.unwrap_or_default();
+                return Err(GmailClientError::ApiError {
+                    status: status.as_u16(),
+                    body:   body_txt,
+                });
+            }
+
+            let body_txt = res.text().await?;
+            let parsed: T = serde_json::from_str(&body_txt)?;
             return Ok(parsed);
         }
     }

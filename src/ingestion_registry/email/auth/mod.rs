@@ -17,7 +17,9 @@ pub use oauth::{
     OAuthConfig,
     OAuthError,
     OAuthState,
-    get_auth_url,
     exchange_code,
+    exchange_code_for_user,
+    get_auth_url,
     refresh_access_token,
+    refresh_access_token_for_user,
 };

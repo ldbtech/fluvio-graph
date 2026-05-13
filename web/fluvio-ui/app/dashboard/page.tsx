@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardClient } from "@/app/components/dashboard/DashboardClient";
+import { DashboardClient } from "@/features/dashboard/components/DashboardClient";
 
 export const metadata: Metadata = {
   title: "Overview · FluvioMe",

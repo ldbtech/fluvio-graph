@@ -12,7 +12,7 @@ use crate::graph::fluvio_graph::FluvioGraph;
 
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
@@ -140,9 +140,6 @@ pub async fn post_rules_link(
                 let _ = pipeline.graph.insert_edge(edge);
             }
         }
-
-        (state.presist)(&pipeline.graph)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
     let result = build_result(&document_id, &filename, matches);
@@ -227,7 +224,6 @@ pub async fn post_security_deploy(
     };
 
     let api_key    = state.api_key.clone();
-    let persist_fn = state.presist;
     let agent_id_clone = agent_id.clone();
 
     // Spawn background task.
@@ -239,7 +235,6 @@ pub async fn post_security_deploy(
             graph_arc,
             embed_ctx,
             progress,
-            persist_fn,
         ).await;
 
         *result_store.lock().unwrap() = Some(result);

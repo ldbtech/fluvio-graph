@@ -3,21 +3,21 @@
 //! User CRUD — clean database operations only.
 //! No business logic here — just SQL.
 
-use sqlx::PgPool;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
+use uuid::Uuid;
 
 // ── User struct ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
-    pub id:         Uuid,
-    pub name:       String,
-    pub email:      Option<String>,
-    pub phone:      Option<String>,
-    pub graph_id:   Option<Uuid>,
-    pub created_at: DateTime<Utc>,
+    pub id:          Uuid,
+    pub name:        String,
+    pub email:       Option<String>,
+    pub phone:       Option<String>,
+    pub physical_id: Option<Uuid>,
+    pub created_at:  DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,19 +29,18 @@ pub struct CreateUser {
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
-/// Insert a new user. Returns the created user with generated id + graph_id.
+/// Insert a new user. Returns the created user with generated id + physical_id (NFC / card scope).
 pub async fn create_user(pool: &PgPool, input: &CreateUser) -> anyhow::Result<User> {
-    let user = sqlx::query_as!(
-        User,
+    let user = sqlx::query_as::<_, User>(
         r#"
         INSERT INTO users (name, email, phone)
         VALUES ($1, $2, $3)
-        RETURNING id, name, email, phone, graph_id, created_at
+        RETURNING id, name, email, phone, physical_id, created_at
         "#,
-        input.name,
-        input.email,
-        input.phone,
     )
+    .bind(&input.name)
+    .bind(&input.email)
+    .bind(&input.phone)
     .fetch_one(pool)
     .await
     .map_err(|e| anyhow::anyhow!("create_user failed: {e}"))?;
@@ -52,14 +51,13 @@ pub async fn create_user(pool: &PgPool, input: &CreateUser) -> anyhow::Result<Us
 
 /// Fetch a user by their UUID.
 pub async fn get_user_by_id(pool: &PgPool, id: Uuid) -> anyhow::Result<Option<User>> {
-    let user = sqlx::query_as!(
-        User,
+    let user = sqlx::query_as::<_, User>(
         r#"
-        SELECT id, name, email, phone, graph_id, created_at
+        SELECT id, name, email, phone, physical_id, created_at
         FROM users WHERE id = $1
         "#,
-        id
     )
+    .bind(id)
     .fetch_optional(pool)
     .await
     .map_err(|e| anyhow::anyhow!("get_user_by_id failed: {e}"))?;
@@ -67,34 +65,31 @@ pub async fn get_user_by_id(pool: &PgPool, id: Uuid) -> anyhow::Result<Option<Us
     Ok(user)
 }
 
-/// Fetch a user by their graph_id.
-/// Used when traversing from a graph node back to the user record.
-pub async fn get_user_by_graph_id(pool: &PgPool, graph_id: Uuid) -> anyhow::Result<Option<User>> {
-    let user = sqlx::query_as!(
-        User,
+/// Fetch a user by their `physical_id` (stable NFC / card scope UUID).
+pub async fn get_user_by_physical_id(pool: &PgPool, physical_id: Uuid) -> anyhow::Result<Option<User>> {
+    let user = sqlx::query_as::<_, User>(
         r#"
-        SELECT id, name, email, phone, graph_id, created_at
-        FROM users WHERE graph_id = $1
+        SELECT id, name, email, phone, physical_id, created_at
+        FROM users WHERE physical_id = $1
         "#,
-        graph_id
     )
+    .bind(physical_id)
     .fetch_optional(pool)
     .await
-    .map_err(|e| anyhow::anyhow!("get_user_by_graph_id failed: {e}"))?;
+    .map_err(|e| anyhow::anyhow!("get_user_by_physical_id failed: {e}"))?;
 
     Ok(user)
 }
 
 /// Fetch a user by email.
 pub async fn get_user_by_email(pool: &PgPool, email: &str) -> anyhow::Result<Option<User>> {
-    let user = sqlx::query_as!(
-        User,
+    let user = sqlx::query_as::<_, User>(
         r#"
-        SELECT id, name, email, phone, graph_id, created_at
+        SELECT id, name, email, phone, physical_id, created_at
         FROM users WHERE email = $1
         "#,
-        email
     )
+    .bind(email)
     .fetch_optional(pool)
     .await
     .map_err(|e| anyhow::anyhow!("get_user_by_email failed: {e}"))?;
@@ -110,8 +105,7 @@ pub async fn update_user(
     email: Option<&str>,
     phone: Option<&str>,
 ) -> anyhow::Result<User> {
-    let user = sqlx::query_as!(
-        User,
+    let user = sqlx::query_as::<_, User>(
         r#"
         UPDATE users
         SET
@@ -119,13 +113,13 @@ pub async fn update_user(
             email = COALESCE($3, email),
             phone = COALESCE($4, phone)
         WHERE id = $1
-        RETURNING id, name, email, phone, graph_id, created_at
+        RETURNING id, name, email, phone, physical_id, created_at
         "#,
-        id,
-        name,
-        email,
-        phone,
     )
+    .bind(id)
+    .bind(name)
+    .bind(email)
+    .bind(phone)
     .fetch_one(pool)
     .await
     .map_err(|e| anyhow::anyhow!("update_user failed: {e}"))?;
@@ -136,29 +130,34 @@ pub async fn update_user(
 
 /// Delete a user by id. Cascades to cards and connections.
 pub async fn delete_user(pool: &PgPool, id: Uuid) -> anyhow::Result<bool> {
-    let result = sqlx::query!(
-        "DELETE FROM users WHERE id = $1",
-        id
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("delete_user failed: {e}"))?;
+    let result = sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(id)
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("delete_user failed: {e}"))?;
 
     Ok(result.rows_affected() > 0)
 }
 
 /// List all users — admin use only.
 pub async fn list_users(pool: &PgPool) -> anyhow::Result<Vec<User>> {
-    let users = sqlx::query_as!(
-        User,
+    let users = sqlx::query_as::<_, User>(
         r#"
-        SELECT id, name, email, phone, graph_id, created_at
+        SELECT id, name, email, phone, physical_id, created_at
         FROM users ORDER BY created_at DESC
-        "#
+        "#,
     )
     .fetch_all(pool)
     .await
     .map_err(|e| anyhow::anyhow!("list_users failed: {e}"))?;
 
     Ok(users)
+}
+
+/// Stable scope string for NFC / physical-card graph tagging (`metadata["owner_physical_id"]`).
+#[inline]
+pub fn user_physical_scope(user: &User) -> String {
+    user.physical_id
+        .map(|p| p.to_string())
+        .unwrap_or_else(|| user.id.to_string())
 }

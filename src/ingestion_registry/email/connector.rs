@@ -18,6 +18,9 @@
 
 use std::sync::Arc;
 
+use sqlx::PgPool;
+use uuid::Uuid;
+
 use crate::graph::enums::Domain;
 use crate::ingestion_registry::connector::{ConnectorError, FluvioConnector, NormalizedChunk};
 
@@ -68,6 +71,10 @@ pub struct GmailConnector {
     pub batch_size: usize,
     /// When set (e.g. from the HTTP server), thread/message fetch progress is recorded for polling.
     progress: Option<Arc<GmailSyncProgress>>,
+    /// When **both** are set, load Gmail OAuth from Postgres for this Fluvio user (dashboard flow).
+    /// When unset, falls back to `~/.fluvio/credentials/gmail.json` (CLI / legacy).
+    gmail_pool: Option<PgPool>,
+    gmail_user_id: Option<Uuid>,
 }
 
 impl GmailConnector {
@@ -79,7 +86,15 @@ impl GmailConnector {
             bootstrap_query:  None,
             batch_size:       10,
             progress:         None,
+            gmail_pool:       None,
+            gmail_user_id:    None,
         }
+    }
+
+    pub fn with_gmail_user(mut self, pool: PgPool, user_id: Uuid) -> Self {
+        self.gmail_pool = Some(pool);
+        self.gmail_user_id = Some(user_id);
+        self
     }
 
     /// Sets both [`Self::max_threads`] and [`Self::max_messages`] (handy for CLI/tests).
@@ -112,20 +127,6 @@ impl GmailConnector {
     pub fn with_progress(mut self, progress: Arc<GmailSyncProgress>) -> Self {
         self.progress = Some(progress);
         self
-    }
-
-    /// Check credentials exist before attempting any API calls.
-    fn check_auth(&self) -> Result<(), ConnectorError> {
-        if !credentials_exist() {
-            let path = gmail_token_path().display().to_string();
-            return Err(ConnectorError::Auth(format!(
-                "Gmail OAuth token not found (expected {path}). \
-                 Sign in: visit http://localhost:8001/connect/gmail?redirect=1 (same machine as kg-engine) \
-                 or use the web app Sources → Gmail → Sign in with Google, finish the Google consent page, \
-                 then try sync again."
-            )));
-        }
-        Ok(())
     }
 
     /// Full sync: list threads (optional Gmail `q` + cap), normalize each thread.
@@ -398,8 +399,6 @@ impl FluvioConnector for GmailConnector {
     ///   "incremental" → fetch since last historyId
     ///   anything else → treat as Gmail search query
     fn extract(&self, source: &str) -> Result<Vec<NormalizedChunk>, ConnectorError> {
-        self.check_auth()?;
-
         let mode = SyncMode::from_source(source);
 
         // FluvioConnector::extract is sync but our Gmail client is async.
@@ -425,9 +424,30 @@ impl FluvioConnector for GmailConnector {
 }
 
 impl GmailConnector {
+    async fn open_gmail_client(&self) -> Result<GmailClient, ConnectorError> {
+        match (&self.gmail_pool, self.gmail_user_id) {
+            (Some(pool), Some(uid)) => GmailClient::for_user(pool, uid)
+                .await
+                .map_err(|e| ConnectorError::Auth(e.to_string())),
+            (None, None) => {
+                if !credentials_exist() {
+                    let path = gmail_token_path().display().to_string();
+                    return Err(ConnectorError::Auth(format!(
+                        "Gmail OAuth token not found (expected {path} for CLI) or complete Gmail in the signed-in dashboard (Sources)."
+                    )));
+                }
+                GmailClient::new()
+                    .await
+                    .map_err(|e| ConnectorError::Auth(e.to_string()))
+            }
+            _ => Err(ConnectorError::Auth(
+                "GmailConnector misconfigured (partial gmail_pool / user id)".into(),
+            )),
+        }
+    }
+
     async fn run(&self, mode: SyncMode) -> Result<Vec<NormalizedChunk>, ConnectorError> {
-        let mut client = GmailClient::new().await
-            .map_err(|e| ConnectorError::Auth(e.to_string()))?;
+        let mut client = self.open_gmail_client().await?;
 
         match mode {
             SyncMode::Full          => self.sync_full(&mut client).await,
@@ -477,16 +497,6 @@ mod tests {
     fn test_connector_name() {
         let c = GmailConnector::new();
         assert_eq!(c.name(), "gmail");
-    }
-
-    #[test]
-    fn test_check_auth_fails_without_credentials() {
-        // Only fails if ~/.fluvio/credentials/gmail.json doesn't exist.
-        // In CI this always fails — locally may pass.
-        let c = GmailConnector::new();
-        if !credentials_exist() {
-            assert!(c.check_auth().is_err());
-        }
     }
 
     #[test]

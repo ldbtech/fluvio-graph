@@ -5,7 +5,7 @@
 
 use sqlx::PgPool;
 use uuid::Uuid;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 // ── AuthCode ──────────────────────────────────────────────────────────────────

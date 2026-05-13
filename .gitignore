@@ -5,3 +5,12 @@ speech.txt
 .env
 .env.local
 .env.*.local
+
+# Legacy in-process graph snapshots — replaced by SurrealDB. Ignored so a stray
+# write or copy from older builds never ends up in git again.
+fluvio_graphs/
+web/fluvio-ui/fluvio_graphs/
+
+# SurrealDB embedded data dirs.
+fluvio_surreal.db/
+fluvio_surreal_data/

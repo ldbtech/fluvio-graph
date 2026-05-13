@@ -4,12 +4,18 @@ use std::path::Path;
 
 use axum::{extract::Query, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::ingestion_registry::{
-    codebase::{resolver::ResolvedGraph, CodebaseConnector},
+    codebase::{resolver::ResolvedGraph, CodebaseConnector, RepoRef},
     ConnectorError,
 };
 use crate::app_state::AppState;
+use crate::authentication::AuthUser;
+use crate::database::user_uploads::{
+    delete_user_uploads_by_kind, insert_user_upload, list_user_uploads_for_user_by_kind,
+};
+use crate::graph::structs::NodeId;
 use axum::extract::State;
 
 /// `codebase://github.com/{owner}/{repo}/` + repo-relative tail (`path` or `path#symbol`).
@@ -26,7 +32,7 @@ fn build_import_subgraph_from_resolved(
     resolved: &ResolvedGraph,
     repo_url: &str,
 ) -> Result<(Vec<ResolveGraphNode>, Vec<ResolveGraphEdge>), (StatusCode, String)> {
-    let repo_ref = crate::ingestion_registry::codebase::RepoRef::parse(repo_url.trim())
+    let repo_ref = RepoRef::parse(repo_url.trim())
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let owner = repo_ref.owner.as_str();
     let repo_name = repo_ref.repo.as_str();
@@ -306,13 +312,92 @@ pub struct CodebaseIngestResponse {
     edges: usize,
 }
 
+/// Drop in-memory + Surreal nodes tagged with `metadata.codebase_scope == scope` for this user.
+async fn purge_codebase_scope_for_user(
+    state:   &AppState,
+    user_id: Uuid,
+    scope:   &str,
+) -> Result<(), (StatusCode, String)> {
+    let mut surreal_ids: Vec<NodeId> = state
+        .surreal_storage
+        .get_user_nodes(user_id, Some("Codebase"), 1)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .into_iter()
+        .filter(|r| {
+            r.metadata
+                .get("codebase_scope")
+                .map(|v| v == scope)
+                .unwrap_or(false)
+        })
+        .map(|r| r.to_node().id)
+        .collect();
+
+    let pipeline_ids = {
+        let mut pipeline = state
+            .pipeline
+            .lock()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let ids: Vec<NodeId> = pipeline
+            .graph
+            .nodes
+            .values()
+            .filter(|n| {
+                n.metadata
+                    .get("codebase_scope")
+                    .map(|v| v == scope)
+                    .unwrap_or(false)
+            })
+            .map(|n| n.id)
+            .collect();
+        let _ = pipeline.graph.remove_nodes_by_metadata("codebase_scope", scope);
+        ids
+    };
+
+    surreal_ids.extend(pipeline_ids);
+    surreal_ids.sort_by_key(|id| id.0);
+    surreal_ids.dedup_by_key(|id| id.0);
+
+    if !surreal_ids.is_empty() {
+        state
+            .surreal_storage
+            .delete_node_records(&surreal_ids)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+    Ok(())
+}
+
 pub async fn post_codebase_ingest(
     State(state): State<AppState>,
+    AuthUser(user): AuthUser,
     Json(body): Json<CodebaseIngestQuery>,
-) -> Result<Json<CodebaseIngestResponse>, (StatusCode, String)>{
+) -> Result<Json<CodebaseIngestResponse>, (StatusCode, String)> {
     let url = body.url.trim().to_string();
     let path = body.path.trim().to_string();
 
+    let repo = RepoRef::parse(&url).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let scope = repo.key();
+
+    let existing = list_user_uploads_for_user_by_kind(&state.pg_pool, user.id, "codebase", 50)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut scope_set: HashSet<String> = existing
+        .iter()
+        .filter_map(|r| r.document_id.clone())
+        .collect();
+    scope_set.insert(scope.clone());
+
+    for s in scope_set {
+        purge_codebase_scope_for_user(&state, user.id, &s).await?;
+    }
+
+    delete_user_uploads_by_kind(&state.pg_pool, user.id, "codebase")
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let url_for_library = url.clone();
     let join = tokio::task::spawn_blocking(move || {
         let connector = CodebaseConnector::new();
         connector.extract_under_prefix(&url, &path)
@@ -325,36 +410,94 @@ pub async fn post_codebase_ingest(
                 let status = match &e {
                     ConnectorError::NotConfigured(_)              => StatusCode::NOT_FOUND,
                     ConnectorError::Parse(_)                      => StatusCode::BAD_REQUEST,
-                    _                                             => StatusCode::INTERNAL_SERVER_ERROR, 
+                    _                                             => StatusCode::INTERNAL_SERVER_ERROR,
                 };
                 (status, e.to_string())
             })?;
 
     let chunk_count = chunks.len();
-    
-    let (nodes, edges) = {
+    let owner_str = user.id.to_string();
+
+    // Pipeline mutates RAM only as a working set; the lock is dropped before any `.await`.
+    let (surreal_subgraph, total_nodes, total_edges) = {
         let mut pipeline = state.pipeline.lock()
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                
-        let (_nodes_added, _structured_edges) = pipeline
+
+        let before_ids: std::collections::HashSet<NodeId> =
+            pipeline.graph.nodes.keys().copied().collect();
+
+        pipeline
             .ingest_normalized_chunks(&chunks)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                
-        pipeline.wire_edges(0.35);
-                
+
+        let new_node_ids: Vec<NodeId> = pipeline
+            .graph
+            .nodes
+            .keys()
+            .filter(|id| !before_ids.contains(id))
+            .copied()
+            .collect();
+
+        if !new_node_ids.is_empty() {
+            pipeline.wire_edges_for_nodes(&new_node_ids, 0.35);
+        }
+
+        for id in &new_node_ids {
+            if let Some(n) = pipeline.graph.nodes.get_mut(id) {
+                n.metadata.insert("owner_id".into(), owner_str.clone());
+                n.metadata.insert("zone".into(), "1".into());
+                n.metadata.insert("codebase_scope".into(), scope.clone());
+                n.metadata
+                    .entry("kind".into())
+                    .or_insert_with(|| "codebase".into());
+            }
+        }
+
+        let surreal_subgraph = pipeline
+            .graph
+            .subgraph_closed(new_node_ids.iter().copied());
         let total_nodes = pipeline.graph.nodes.len();
         let total_edges: usize = pipeline.graph.adj.values().map(|e| e.len()).sum();
-                
-        (state.presist)(&pipeline.graph)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                
-        (total_nodes, total_edges)
+
+        (surreal_subgraph, total_nodes, total_edges)
     };
-    
+
+    if !surreal_subgraph.nodes.is_empty() {
+        state
+            .surreal_storage
+            .save_graph(user.id, &surreal_subgraph, 1)
+            .await
+            .map_err(|e| (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("SurrealDB codebase persist failed: {e}"),
+            ))?;
+
+        let subgraph_nodes = surreal_subgraph.nodes.len() as i32;
+        let subgraph_edges: i32 = surreal_subgraph
+            .adj
+            .values()
+            .map(|e| e.len() as i32)
+            .sum();
+
+        if let Err(e) = insert_user_upload(
+            &state.pg_pool,
+            user.id,
+            "codebase",
+            &url_for_library,
+            Some(scope.as_str()),
+            subgraph_nodes,
+            subgraph_edges,
+        )
+        .await
+        {
+            tracing::warn!("[DB] user_uploads codebase insert skipped: {e}");
+        }
+    }
+
     Ok(Json(CodebaseIngestResponse {
         chunks: chunk_count,
-        nodes,
-        edges,
+        nodes: total_nodes,
+        edges: total_edges,
     }))
 }
 
@@ -408,6 +551,7 @@ pub struct CodebaseResolveResponse {
 
 pub async fn post_codebase_resolve(
     State(state): State<AppState>,
+    AuthUser(user): AuthUser,
     Json(body): Json<CodebaseResolveBody>,
 ) -> Result<Json<CodebaseResolveResponse>, (StatusCode, String)> {
     let url       = body.url.trim().to_string();
@@ -447,26 +591,67 @@ pub async fn post_codebase_resolve(
     let (graph_nodes, graph_edges) =
         build_import_subgraph_from_resolved(&resolved, &url_for_graph)?;
 
-    let (nodes, edges) = {
+    let scope_for_nodes = RepoRef::parse(&url_for_graph)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+        .key();
+
+    let owner_str = user.id.to_string();
+
+    let (surreal_subgraph, nodes, edges) = {
         let mut pipeline = state
             .pipeline
             .lock()
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+        let before_ids: std::collections::HashSet<NodeId> =
+            pipeline.graph.nodes.keys().copied().collect();
+
         pipeline
             .ingest_normalized_chunks(&resolved.chunks)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        pipeline.wire_edges(0.35);
+        let new_node_ids: Vec<NodeId> = pipeline
+            .graph
+            .nodes
+            .keys()
+            .filter(|id| !before_ids.contains(id))
+            .copied()
+            .collect();
 
+        if !new_node_ids.is_empty() {
+            pipeline.wire_edges_for_nodes(&new_node_ids, 0.35);
+        }
+
+        for id in &new_node_ids {
+            if let Some(n) = pipeline.graph.nodes.get_mut(id) {
+                n.metadata.insert("owner_id".into(), owner_str.clone());
+                n.metadata.insert("zone".into(), "1".into());
+                n.metadata.insert("codebase_scope".into(), scope_for_nodes.clone());
+                n.metadata
+                    .entry("kind".into())
+                    .or_insert_with(|| "codebase".into());
+            }
+        }
+
+        let surreal_subgraph = pipeline
+            .graph
+            .subgraph_closed(new_node_ids.iter().copied());
         let nodes = pipeline.graph.nodes.len();
         let edges: usize = pipeline.graph.adj.values().map(|e| e.len()).sum();
 
-        (state.presist)(&pipeline.graph)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        (nodes, edges)
+        (surreal_subgraph, nodes, edges)
     };
+
+    if !surreal_subgraph.nodes.is_empty() {
+        state
+            .surreal_storage
+            .save_graph(user.id, &surreal_subgraph, 1)
+            .await
+            .map_err(|e| (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("SurrealDB codebase persist failed: {e}"),
+            ))?;
+    }
 
     eprintln!(
         "[codebase/resolve] ok url={} path={} chunks={chunk_count} resolved_files={} graph_nodes={} graph_edges={} pipeline_nodes={nodes}",

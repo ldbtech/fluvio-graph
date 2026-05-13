@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { TwinWorkspaceClient } from "@/app/components/twin/TwinWorkspaceClient";
 
 export const metadata: Metadata = {
-  title: "Connections · Fluvio",
-  description: "Your connection graph and Ali's NFC twin chat.",
+  title: "My Network · Fluvio",
+  description: "Your tap connections — twin chat grounded in shared Surreal data.",
 };
 
 export default function GraphPage() {

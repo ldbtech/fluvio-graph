@@ -3,7 +3,7 @@
 //! Production twin API — replaces fluvio_mock.rs
 //!
 //! URL structure (frontend updated to match):
-//!   GET  /twin/me                    — owner profile (requires Bearer session or X-Owner-ID)
+//!   GET  /twin/me                    — owner profile (Bearer session)
 //!   POST /twin/me/profile            — upsert name, email, phone
 //!   POST /twin/setup                 — create account + NFC card
 //!   GET  /twin/tap/{card_id}         — NFC tap → connect two users
@@ -24,47 +24,42 @@ use axum::{
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
 
 use crate::app_state::AppState;
 use crate::authentication::extract_bearer_headers;
-use crate::graph::enums::Domain;
-use crate::graph::structs::Node;
+use crate::graph::structs::{Node, NodeId};
+use crate::graph::enums::{Domain, NodeKind};
+use crate::graph::fluvio_graph::FluvioGraph;
 use crate::database::{
     auth::get_session_by_token,
-    users::{create_user, get_user_by_id, update_user, CreateUser, User},
+    users::{create_user, get_user_by_id, update_user, user_physical_scope, CreateUser, User},
+    user_uploads::list_user_uploads_for_user,
     cards::{create_card, get_card_by_id, get_cards_by_user},
     connections::{
         create_connection, get_connections, get_connected_user_ids,
-        update_zone,
+        get_connection, update_zone,
     },
 };
+use crate::storage::surreal::SurrealNodeRow;
 
 // ── Owner resolution ──────────────────────────────────────────────────────────
-// 1) `Authorization: Bearer <session>` — session from POST /twin/auth/verify.
-// 2) Legacy: `X-Owner-ID` (localStorage from POST /twin/setup) for clients not on email auth yet.
-// No implicit “first user” fallback — unauthenticated requests get no owner.
+// `Authorization: Bearer <session>` only — session from POST /twin/auth/verify.
+// (`require_logged_in_session` guards the twin router globally; callers still use this for lookups.)
 
-async fn resolve_owner(state: &AppState, headers: &axum::http::HeaderMap) -> Option<User> {
-    if let Some(token) = extract_bearer_headers(headers) {
-        if let Ok(Some(session)) = get_session_by_token(&state.pg_pool, &token).await {
-            if let Ok(Some(user)) = get_user_by_id(&state.pg_pool, session.user_id).await {
-                return Some(user);
-            }
-        }
-    }
+/// Ingested nodes carry `metadata["owner_physical_id"]` (legacy: `owner_graph_id`).
+fn node_physical_scope_matches(n: &Node, scope: &str) -> bool {
+    matches!(n.metadata.get("owner_physical_id"), Some(v) if v == scope)
+        || matches!(n.metadata.get("owner_graph_id"), Some(v) if v == scope)
+}
 
-    let owner_id = headers
-        .get("x-owner-id")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| Uuid::parse_str(s).ok());
-
-    match owner_id {
-        Some(id) => get_user_by_id(&state.pg_pool, id).await.ok().flatten(),
-        None => None,
-    }
+pub(crate) async fn resolve_owner(state: &AppState, headers: &axum::http::HeaderMap) -> Option<User> {
+    let token = extract_bearer_headers(headers)?;
+    let session = get_session_by_token(&state.pg_pool, &token).await.ok()??;
+    get_user_by_id(&state.pg_pool, session.user_id).await.ok()?
 }
 
 // ── POST /twin/setup ──────────────────────────────────────────────────────────
@@ -78,10 +73,10 @@ pub struct SetupBody {
 
 #[derive(Serialize)]
 pub struct SetupResponse {
-    pub user_id:  Uuid,
-    pub graph_id: Uuid,
-    pub card_id:  Uuid,
-    pub name:     String,
+    pub user_id:     Uuid,
+    pub physical_id: Uuid,
+    pub card_id:     Uuid,
+    pub name:        String,
 }
 
 pub async fn post_twin_setup(
@@ -108,10 +103,10 @@ pub async fn post_twin_setup(
     tracing::info!("[Twin] setup: {} ({})", user.name, user.id);
 
     Ok(Json(SetupResponse {
-        user_id:  user.id,
-        graph_id: user.graph_id.unwrap_or(user.id),
-        card_id:  card.id,
-        name:     user.name,
+        user_id:     user.id,
+        physical_id: user.physical_id.unwrap_or(user.id),
+        card_id:     card.id,
+        name:        user.name,
     }))
 }
 
@@ -127,7 +122,8 @@ pub struct TwinAccount {
     pub phone:      String,
     /// NFC card programmed on `GET /twin/tap/{id}` flows (wallet QR, physical tags).
     pub nfc_card_id: Option<Uuid>,
-    pub graph_id:   Option<Uuid>,
+    /// Stable physical / NFC scope UUID (Postgres `users.physical_id`).
+    pub physical_id: Option<Uuid>,
     pub documents:  Vec<TwinDocument>,
     pub connections: Vec<TwinConnection>,
 }
@@ -157,7 +153,7 @@ pub async fn get_twin_me(
 ) -> Result<Json<TwinAccount>, (StatusCode, String)> {
     let user = resolve_owner(&state, &headers)
         .await
-        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer or X-Owner-ID".into()))?;
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer <session>".into()))?;
 
     // Get connections from PostgreSQL
     let db_conns = get_connections(&state.pg_pool, user.id)
@@ -183,13 +179,21 @@ pub async fn get_twin_me(
         }
     }
 
-    // Get documents from graph — nodes tagged with this user's graph_id
+    // Get documents from graph — nodes tagged with this user's physical scope
     let docs = get_twin_documents(&state, &user).await;
 
     let user_cards = get_cards_by_user(&state.pg_pool, user.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let nfc_card_id = user_cards.into_iter().find(|c| c.card_type == "nfc").map(|c| c.id);
+    let nfc_card_id = if let Some(c) = user_cards.iter().find(|c| c.card_type == "nfc") {
+        Some(c.id)
+    } else {
+        let c = create_card(&state.pg_pool, user.id, "nfc")
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        tracing::info!("[Twin] issued default NFC card {} for {}", c.id, user.name);
+        Some(c.id)
+    };
 
     Ok(Json(TwinAccount {
         user_id:      user.id,
@@ -199,7 +203,7 @@ pub async fn get_twin_me(
         email:        user.email.clone().unwrap_or_default(),
         phone:        user.phone.clone().unwrap_or_default(),
         nfc_card_id,
-        graph_id:     user.graph_id,
+        physical_id: user.physical_id,
         documents:    docs,
         connections:  twin_conns,
     }))
@@ -221,7 +225,7 @@ pub async fn post_twin_profile(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let user = resolve_owner(&state, &headers)
         .await
-        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer or X-Owner-ID".into()))?;
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required — send Authorization: Bearer <session>".into()))?;
 
     update_user(
         &state.pg_pool,
@@ -253,7 +257,7 @@ pub struct TwinPublicProfile {
     pub user_id:      Uuid,
     pub name:         String,
     pub tagline:      String,
-    pub graph_id:     Option<Uuid>,
+    pub physical_id: Option<Uuid>,
     pub card_id:      Uuid,
 }
 
@@ -279,7 +283,8 @@ pub async fn get_twin_tap(
     // Create connection if tapper is known
     let connection = if let Some(tapper) = &tapper {
         if tapper.id != tapped_user.id {
-            let conn = create_connection(&state.pg_pool, tapper.id, tapped_user.id, 1)
+            // Zone 2 = contact + CV tier — matches Dashboard “full share” so peer chat can read zone‑1 ingests.
+            let conn = create_connection(&state.pg_pool, tapper.id, tapped_user.id, 2)
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
             Some(conn)
@@ -302,7 +307,7 @@ pub async fn get_twin_tap(
             user_id:  tapped_user.id,
             name:     tapped_user.name,
             tagline:  "Digital Twin — powered by Fluvio".to_string(),
-            graph_id: tapped_user.graph_id,
+            physical_id: tapped_user.physical_id,
             card_id:  card.id,
         },
         connection_id: connection.as_ref().map(|c| c.id).unwrap_or(Uuid::nil()),
@@ -398,16 +403,10 @@ pub async fn get_twin_network_user(
     let pipeline = state.pipeline.lock()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let graph_id_str = user.graph_id
-        .map(|g| g.to_string())
-        .unwrap_or_default();
+    let scope_str = user_physical_scope(&user);
 
     let doc_nodes: Vec<NetworkNode> = pipeline.graph.nodes.values()
-        .filter(|n| {
-            n.metadata.get("owner_graph_id")
-                .map(|v| v == &graph_id_str)
-                .unwrap_or(false)
-        })
+        .filter(|n| node_physical_scope_matches(n, &scope_str))
         .take(5)
         .map(|n| NetworkNode {
             id:     n.id.to_string(),
@@ -429,6 +428,78 @@ pub async fn get_twin_network_user(
     }).collect();
 
     Ok(Json(NetworkGraph { nodes, edges }))
+}
+
+#[derive(Serialize)]
+pub struct PeerGraphStatus {
+    pub viewer_user_id:             Uuid,
+    pub peer_user_id:               Uuid,
+    pub peer_name:                  String,
+    pub connected:                  bool,
+    pub zone:                       Option<i16>,
+    pub surreal_rows_in_zone:       usize,
+    pub surreal_workspace_rows:     usize,
+    pub pg_user_upload_rows:        usize,
+    pub pg_user_upload_kinds:       Vec<String>,
+    pub card_based_connection:      bool,
+}
+
+/// Debug/status endpoint: verify whether selected peer has persisted Surreal rows visible to viewer's zone.
+pub async fn get_twin_network_user_status(
+    State(state): State<AppState>,
+    headers:      axum::http::HeaderMap,
+    Path(peer_id): Path<Uuid>,
+) -> Result<Json<PeerGraphStatus>, (StatusCode, String)> {
+    let viewer = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required".into()))?;
+
+    let peer = get_user_by_id(&state.pg_pool, peer_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "peer not found".into()))?;
+
+    let conn = get_connection(&state.pg_pool, viewer.id, peer_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let zone = conn.as_ref().map(|c| c.zone);
+    let max_zone = zone.unwrap_or(0);
+    let connected = conn.is_some();
+
+    let surreal_rows = if connected {
+        state
+            .surreal_storage
+            .get_user_nodes(peer_id, None, max_zone)
+            .await
+            .unwrap_or_default()
+    } else {
+        vec![]
+    };
+    let surreal_workspace_rows = surreal_rows
+        .iter()
+        .filter(|r| surreal_row_workspace_library(r))
+        .count();
+
+    let uploads = list_user_uploads_for_user(&state.pg_pool, peer_id, 120)
+        .await
+        .unwrap_or_default();
+    let mut kinds: Vec<String> = uploads.iter().map(|u| u.kind.clone()).collect();
+    kinds.sort();
+    kinds.dedup();
+
+    Ok(Json(PeerGraphStatus {
+        viewer_user_id:        viewer.id,
+        peer_user_id:          peer.id,
+        peer_name:             peer.name,
+        connected,
+        zone,
+        surreal_rows_in_zone:  surreal_rows.len(),
+        surreal_workspace_rows,
+        pg_user_upload_rows:   uploads.len(),
+        pg_user_upload_kinds:  kinds,
+        card_based_connection: connected,
+    }))
 }
 
 // ── POST /twin/ingest ─────────────────────────────────────────────────────────
@@ -457,44 +528,56 @@ pub async fn post_twin_ingest(
         return Err((StatusCode::BAD_REQUEST, "body is required".into()));
     }
 
-    // Ingest into graph as a note node
-    let graph_id = user.graph_id.unwrap_or(user.id).to_string();
     let source_uri = format!("twin://{}/note/{}", user.id, Uuid::new_v4());
 
-    use crate::graph::enums::{Domain, NodeKind};
-    use crate::graph::structs::{Node, NodeId};
-    use crate::graph::fluvio_graph::FluvioGraph;
-    use std::collections::HashMap;
-
+    let scope_str = user_physical_scope(&user);
     let mut metadata = HashMap::new();
     metadata.insert("kind".into(),           kind.clone());
     metadata.insert("title".into(),          title.clone());
     metadata.insert("owner_id".into(),       user.id.to_string());
-    metadata.insert("owner_graph_id".into(), graph_id.clone());
+    metadata.insert("owner_physical_id".into(), scope_str);
     metadata.insert("zone".into(),           "1".into());
 
-    let mut pipeline = state.pipeline.lock()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Embed + insert into in-memory graph in a short scope so no MutexGuard crosses await.
+    let node_for_surreal = {
+        let mut pipeline = state.pipeline.lock()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let embeddings = pipeline.embed_ctx.lock()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .embed(&content)
-        .unwrap_or_default();
+        let embeddings = pipeline.embed_ctx.lock()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .embed(&content)
+            .unwrap_or_default();
 
-    let node = Node {
-        id:          NodeId::from_content("twin_note", &source_uri),
-        domain:      Domain::Custom("twin".to_string()),
-        source_uri:  source_uri.clone(),
-        source_text: format!("{title}\n\n{content}"),
-        embeddings,
-        metadata,
-        kind:        NodeKind::Artifcat,
+        let node = Node {
+            id:          NodeId::from_content("twin_note", &source_uri),
+            domain:      Domain::Custom("twin".to_string()),
+            source_uri:  source_uri.clone(),
+            source_text: format!("{title}\n\n{content}"),
+            embeddings,
+            metadata,
+            kind:        NodeKind::Artifcat,
+        };
+
+        pipeline
+            .graph
+            .insert_node(node.clone())
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        node
     };
 
-    pipeline.graph.insert_node(node)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Surreal is authoritative for chat context; fail ingest if persistence fails.
+    state
+        .surreal_storage
+        .upsert_node(user.id, &node_for_surreal, 1)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("SurrealDB upsert_node failed: {e}"),
+            )
+        })?;
 
-    tracing::info!("[Twin] ingested {} note for {}", kind, user.name);
+    tracing::info!("[Twin] ingested {kind} note for {}", user.name);
 
     Ok(Json(json!({
         "ok": true,
@@ -549,6 +632,66 @@ pub struct TwinChatRequest {
     pub messages:      Vec<TwinChatMessage>,
     #[serde(default)]
     pub graph_context: Option<String>,
+    /// When set, load Surreal graph for this user (must be you or an NFC connection).
+    #[serde(default)]
+    pub graph_owner_id: Option<Uuid>,
+}
+
+// ── Chat knowledge scope (Surreal-backed) ────────────────────────────────────
+
+#[derive(Clone)]
+struct ChatKnowledgeScope {
+    /// Whose `nodes.owner_id` rows to read from SurrealDB.
+    pub owner_id:     Uuid,
+    pub max_zone:     i16,
+    /// Person the context describes (prompt copy).
+    pub subject_name: String,
+    pub is_self:      bool,
+}
+
+async fn resolve_chat_knowledge_scope(
+    state:              &AppState,
+    viewer:             Option<&User>,
+    graph_owner_param:  Option<Uuid>,
+) -> Result<Option<ChatKnowledgeScope>, (StatusCode, String)> {
+    let Some(viewer) = viewer else {
+        if graph_owner_param.is_some() {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                "sign in required to load another user's graph".into(),
+            ));
+        }
+        return Ok(None);
+    };
+
+    let target = graph_owner_param.unwrap_or(viewer.id);
+    if target == viewer.id {
+        return Ok(Some(ChatKnowledgeScope {
+            owner_id:     viewer.id,
+            max_zone:     2,
+            subject_name: viewer.name.clone(),
+            is_self:      true,
+        }));
+    }
+
+    let other_id = target;
+    let conn = get_connection(&state.pg_pool, viewer.id, other_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((
+            StatusCode::FORBIDDEN,
+            "not connected — only NFC connections can load each other's graphs".into(),
+        ))?;
+    let other = get_user_by_id(&state.pg_pool, other_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "user not found".into()))?;
+    Ok(Some(ChatKnowledgeScope {
+        owner_id:     other_id,
+        max_zone:     conn.zone,
+        subject_name: other.name,
+        is_self:      false,
+    }))
 }
 
 pub async fn post_twin_chat(
@@ -567,17 +710,52 @@ pub async fn post_twin_chat(
         return Err((StatusCode::BAD_REQUEST, "messages required".into()));
     }
 
-    // Build system prompt from real graph data
-    let knowledge = build_knowledge_context(&state, user.as_ref()).await;
-    let name      = user.as_ref().map(|u| u.name.as_str()).unwrap_or("this person");
+    let scope = resolve_chat_knowledge_scope(&state, user.as_ref(), req.graph_owner_id)
+        .await?;
 
-    let mut system = format!(
-        "You are {name}'s AI twin. You speak in first person as {name}.\n\
-         Answer questions naturally and conversationally as if you are them.\n\
-         Ground your answers in the KNOWLEDGE CONTEXT below.\n\
-         If something is not in the context, say so honestly in their voice.\n\n\
-         KNOWLEDGE CONTEXT:\n{knowledge}"
-    );
+    let query_hint = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .map(|m| m.content.as_str());
+
+    let knowledge = build_knowledge_context(
+        &state,
+        user.as_ref(),
+        scope.as_ref(),
+        query_hint,
+    )
+    .await;
+
+    let name = user
+        .as_ref()
+        .map(|u| u.name.as_str())
+        .unwrap_or("this person");
+
+    let subject = scope
+        .as_ref()
+        .map(|s| s.subject_name.as_str())
+        .unwrap_or(name);
+
+    let mut system = if scope.as_ref().map(|s| s.is_self).unwrap_or(true) {
+        format!(
+            "You are {subject}'s AI twin. You speak in first person as {subject}.\n\
+             Answer questions naturally and conversationally as if you are them.\n\
+             Ground your answers in the KNOWLEDGE CONTEXT below (persisted knowledge graph for {subject}).\n\
+             If something is not in the context, say so honestly in their voice.\n\n\
+             KNOWLEDGE CONTEXT:\n{knowledge}"
+        )
+    } else {
+        format!(
+            "The user you are assisting ({name}) is asking about {subject}.\n\
+             KNOWLEDGE CONTEXT below is {subject}'s ingested materials (PDF, video, notes, etc.) \
+             shared with {name} per your NFC connection zone — not {name}'s own uploads.\n\
+             Describe {subject} in third person. Do not pretend to be {subject} unless the user asks for a role-play.\n\
+             If the context does not support a claim, say so clearly.\n\n\
+             KNOWLEDGE CONTEXT:\n{knowledge}"
+        )
+    };
 
     if let Some(gc) = req.graph_context.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
         system.push_str("\n\nGRAPH VIEW (user's current selection):\n");
@@ -675,20 +853,9 @@ pub async fn post_twin_chat(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// True when this node was created via `POST /twin/ingest` (scoped to one twin graph).
-fn twin_owned_note(n: &Node, owner_graph_id: &str) -> bool {
-    if owner_graph_id.is_empty() {
-        return false;
-    }
-    n.metadata
-        .get("owner_graph_id")
-        .map(|v| v.as_str() == owner_graph_id)
-        .unwrap_or(false)
-}
 
-/// Workspace / Map pipeline chunks: PDF uploads, video, codebase, Gmail, architecture, etc.
-/// These live in the shared `pipeline.graph` but omit `owner_graph_id`, so twin chat previously ignored them.
-fn is_workspace_library_node(n: &Node) -> bool {
+/// PDF / Map ingests etc. — heuristic on persisted Surreal row (`domain` is `Debug` from ingest).
+fn surreal_row_workspace_library(n: &SurrealNodeRow) -> bool {
     let src = n
         .metadata
         .get("source")
@@ -700,13 +867,11 @@ fn is_workspace_library_node(n: &Node) -> bool {
     ) {
         return true;
     }
-    matches!(
-        &n.domain,
-        Domain::Pdf | Domain::Email | Domain::Codebase | Domain::Architecture
-    ) || matches!(&n.domain, Domain::Custom(s) if s == "video")
+    let d = n.domain.as_str();
+    matches!(d, "Pdf" | "Email" | "Codebase" | "Architecture") || d == r#"Custom("video")"#
 }
 
-fn knowledge_context_line(n: &Node, max_chars: usize) -> String {
+fn knowledge_context_line_surreal(n: &SurrealNodeRow, max_chars: usize) -> String {
     let kind = n
         .metadata
         .get("kind")
@@ -724,82 +889,225 @@ fn knowledge_context_line(n: &Node, max_chars: usize) -> String {
     format!("- [{kind}]{tag}\n  {excerpt}")
 }
 
-/// Build knowledge context: profile + workspace ingests (same graph as `/ingest/pdf`, Map) + twin-scoped notes.
-async fn build_knowledge_context(state: &AppState, user: Option<&User>) -> String {
-    let Some(user) = user else {
-        return "No profile data available.".to_string();
-    };
+fn surreal_row_dedup_key(r: &SurrealNodeRow) -> String {
+    format!("{}|{}", r.source_uri, r.domain)
+}
 
-    let graph_id = user
-        .graph_id
-        .map(|g| g.to_string())
-        .unwrap_or_default();
-
-    let pipeline = match state.pipeline.lock() {
-        Ok(p) => p,
-        Err(_) => return "Graph unavailable.".to_string(),
-    };
-
-    // Cap workspace text — many PDF chunks can exceed model limits.
+/// Primary path: read nodes for `scope.owner_id` from SurrealDB (embedding-ranked + anchors + breadth).
+async fn build_knowledge_from_surreal(
+    state:       &AppState,
+    scope:       &ChatKnowledgeScope,
+    query_hint:  Option<&str>,
+) -> Option<String> {
     const WS_MAX_NODES: usize = 64;
     const WS_CHARS_PER_NODE: usize = 720;
     const WS_CTX_CAP: usize = 28_000;
+    const SIM_TOP: usize = 36;
 
-    let mut workspace_lines: Vec<String> = pipeline
-        .graph
-        .nodes
-        .values()
-        .filter(|n| is_workspace_library_node(n) && !twin_owned_note(n, graph_id.as_str()))
-        .map(|n| knowledge_context_line(n, WS_CHARS_PER_NODE))
-        .collect();
+    let all_rows = match state
+        .surreal_storage
+        .get_user_nodes(scope.owner_id, None, scope.max_zone)
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!("[Twin chat] Surreal get_user_nodes failed: {e}");
+            return None;
+        }
+    };
 
-    workspace_lines.sort();
-    workspace_lines.truncate(WS_MAX_NODES);
-    while workspace_lines.join("\n\n").len() > WS_CTX_CAP && workspace_lines.len() > 8 {
-        workspace_lines.pop();
+    if all_rows.is_empty() {
+        return None;
     }
-    let workspace_block = workspace_lines.join("\n\n");
 
-    let twin_lines: Vec<String> = pipeline
-        .graph
-        .nodes
-        .values()
-        .filter(|n| twin_owned_note(n, graph_id.as_str()))
-        .map(|n| knowledge_context_line(n, 520))
+    let mut ordered: Vec<SurrealNodeRow> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+
+    let q = query_hint.map(str::trim).filter(|q| !q.is_empty());
+    if let Some(question) = q {
+        let qvec = (|| {
+            let pipeline = state.pipeline.lock().ok()?;
+            let mut ctx = pipeline.embed_ctx.lock().ok()?;
+            ctx.embed(question).ok()
+        })();
+        if let Some(vec) = qvec {
+            match state
+                .surreal_storage
+                .similarity_search_nodes(scope.owner_id, &vec, SIM_TOP, scope.max_zone)
+                .await
+            {
+                Ok(sim) => {
+                    for row in sim {
+                        let k = surreal_row_dedup_key(&row);
+                        if seen.insert(k) {
+                            ordered.push(row);
+                        }
+                    }
+                }
+                Err(e) => tracing::warn!("[Twin chat] Surreal similarity_search_nodes failed: {e}"),
+            }
+        }
+    }
+
+    for row in &all_rows {
+        if row.metadata.get("dashboard_doc_anchor").map(|s| s.as_str()) == Some("1") {
+            let k = surreal_row_dedup_key(row);
+            if seen.insert(k) {
+                ordered.push(row.clone());
+            }
+        }
+    }
+
+    if ordered.len() < 12 {
+        let mut rest: Vec<SurrealNodeRow> = all_rows
+            .iter()
+            .filter(|r| surreal_row_workspace_library(r))
+            .cloned()
+            .collect();
+        rest.sort_by(|a, b| a.source_uri.cmp(&b.source_uri));
+        for row in rest {
+            let k = surreal_row_dedup_key(&row);
+            if seen.insert(k) {
+                ordered.push(row);
+            }
+            if ordered.len() >= WS_MAX_NODES {
+                break;
+            }
+        }
+    }
+
+    if ordered.is_empty() {
+        ordered = all_rows;
+        ordered.sort_by(|a, b| a.source_uri.cmp(&b.source_uri));
+        ordered.truncate(WS_MAX_NODES);
+    } else {
+        ordered.truncate(WS_MAX_NODES);
+    }
+
+    let mut user_workspace: Vec<String> = ordered
+        .iter()
+        .filter(|n| surreal_row_workspace_library(n))
+        .map(|n| knowledge_context_line_surreal(n, WS_CHARS_PER_NODE))
+        .collect();
+    user_workspace.sort();
+    user_workspace.truncate(WS_MAX_NODES);
+    while user_workspace.join("\n\n").len() > WS_CTX_CAP && user_workspace.len() > 8 {
+        user_workspace.pop();
+    }
+
+    let twin_lines: Vec<String> = ordered
+        .iter()
+        .filter(|n| !surreal_row_workspace_library(n))
+        .map(|n| knowledge_context_line_surreal(n, 520))
         .collect();
 
-    let profile_block = format!(
-        "## Profile\n{}\nEmail: {}\nPhone: {}",
-        user.name,
-        user.email.as_deref().unwrap_or("not provided"),
-        user.phone.as_deref().unwrap_or("not provided"),
-    );
+    let workspace_block = user_workspace.join("\n\n");
 
-    let mut sections: Vec<String> = vec![profile_block];
+    if workspace_block.is_empty() && twin_lines.is_empty() {
+        return None;
+    }
 
+    let mut parts = Vec::new();
     if !workspace_block.is_empty() {
-        sections.push(format!(
-            "## Workspace (PDF/video/code/email ingests — feeds Map)\n{workspace_block}"
+        parts.push(format!(
+            "## {}'s workspace (PDF, video, code, email — from SurrealDB)\n{}",
+            scope.subject_name, workspace_block
+        ));
+    }
+    if !twin_lines.is_empty() {
+        parts.push(format!(
+            "## {} — notes & twin context (SurrealDB)\n{}",
+            scope.subject_name,
+            twin_lines.join("\n\n")
         ));
     }
 
-    if !twin_lines.is_empty() {
-        sections.push(format!("## Twin notes & NFC context\n{}", twin_lines.join("\n\n")));
+    Some(parts.join("\n\n"))
+}
+
+
+/// Profile + Surreal-backed knowledge only (no RAM fallback).
+async fn build_knowledge_context(
+    state:        &AppState,
+    viewer:       Option<&User>,
+    scope:        Option<&ChatKnowledgeScope>,
+    query_hint:   Option<&str>,
+) -> String {
+    let Some(viewer) = viewer else {
+        return "No profile data available.".to_string();
+    };
+
+    let Some(scope) = scope else {
+        return "Sign in to load a knowledge graph from SurrealDB.".to_string();
+    };
+
+    let profile_block = format!(
+        "## Your profile (signed-in account)\n{}\nEmail: {}\nPhone: {}",
+        viewer.name,
+        viewer.email.as_deref().unwrap_or("not provided"),
+        viewer.phone.as_deref().unwrap_or("not provided"),
+    );
+
+    if let Some(body) = build_knowledge_from_surreal(state, scope, query_hint).await {
+        return vec![profile_block, body].join("\n\n");
     }
 
-    if workspace_block.is_empty() && twin_lines.is_empty() {
-        sections.push(
-            "No ingested chunks yet. Add PDFs or video under Dashboard → Personal graph, or save notes on the Dashboard."
-                .to_string(),
-        );
+    // Surreal-only mode: if there are no rows, be explicit (do not fall back to RAM graph).
+    if let Ok(Some(ref peer)) = get_user_by_id(&state.pg_pool, scope.owner_id).await {
+        let about = if scope.is_self {
+            format!(
+                "## {} — account (from PostgreSQL)\n\
+                 No SurrealDB chunks were found for your account yet. Uploads may not have persisted.\n\
+                 - Name: {}\n\
+                 - Email: {}\n\
+                 - Phone: {}",
+                scope.subject_name,
+                peer.name,
+                peer.email.as_deref().unwrap_or("not provided"),
+                peer.phone.as_deref().unwrap_or("not provided"),
+            )
+        } else {
+            format!(
+                "## {} — account (from PostgreSQL)\n\
+                 No SurrealDB chunks were found for them in your current connection zone.\n\
+                 - Name: {}\n\
+                 - Email: {}\n\
+                 - Phone: {}",
+                scope.subject_name,
+                peer.name,
+                peer.email.as_deref().unwrap_or("not provided"),
+                peer.phone.as_deref().unwrap_or("not provided"),
+            )
+        };
+        return vec![profile_block, about].join("\n\n");
     }
 
-    sections.join("\n\n")
+    let missing = if scope.is_self {
+        "No Surreal-backed ingests were found for your account, and your user profile could not be loaded."
+            .to_string()
+    } else {
+        format!(
+            "No Surreal-backed ingests from {} were found in this zone, and we could not load their user profile.",
+            scope.subject_name
+        )
+    };
+    vec![profile_block, missing].join("\n\n")
+}
+
+/// Hide per-page PDF chunks and per-scene video rows from the Documents list (summary rows only).
+fn twin_document_visible(n: &Node) -> bool {
+    if n.metadata.get("kind").map(|s| s.as_str()) == Some("scene") {
+        return false;
+    }
+    if n.metadata.get("source").map(|s| s.as_str()) == Some("pdf") {
+        return n.metadata.get("dashboard_doc_anchor").map(|s| s.as_str()) == Some("1");
+    }
+    true
 }
 
 /// Get documents from graph for a user.
 async fn get_twin_documents(state: &AppState, user: &User) -> Vec<TwinDocument> {
-    let graph_id = user.graph_id.map(|g| g.to_string()).unwrap_or_default();
+    let scope = user_physical_scope(user);
 
     let pipeline = match state.pipeline.lock() {
         Ok(p)  => p,
@@ -808,16 +1116,35 @@ async fn get_twin_documents(state: &AppState, user: &User) -> Vec<TwinDocument> 
 
     pipeline.graph.nodes.values()
         .filter(|n| {
-            n.metadata.get("owner_graph_id")
-                .map(|v| v == &graph_id)
-                .unwrap_or(false)
+            node_physical_scope_matches(n, &scope)
+                && twin_document_visible(n)
         })
-        .map(|n| TwinDocument {
-            id:      n.source_uri.clone(),
-            title:   n.metadata.get("title").cloned().unwrap_or_else(|| "Note".to_string()),
-            kind:    n.metadata.get("kind").cloned().unwrap_or_else(|| "note".to_string()),
-            status:  "indexed".to_string(),
-            excerpt: n.source_text.chars().take(200).collect(),
+        .map(|n| {
+            let src = n.metadata.get("source").cloned().unwrap_or_default();
+            let kind = n
+                .metadata
+                .get("kind")
+                .cloned()
+                .unwrap_or_else(|| src.clone())
+                .to_ascii_lowercase();
+            let title = n
+                .metadata
+                .get("title")
+                .or_else(|| n.metadata.get("filename"))
+                .cloned()
+                .unwrap_or_else(|| match kind.as_str() {
+                    "pdf" => "PDF upload".into(),
+                    "video" => "Video upload".into(),
+                    "note" | "" => "Note".into(),
+                    _ => kind.clone(),
+                });
+            TwinDocument {
+                id:      n.source_uri.clone(),
+                title,
+                kind,
+                status:  "indexed".to_string(),
+                excerpt: n.source_text.chars().take(200).collect(),
+            }
         })
         .collect()
 }
@@ -831,16 +1158,21 @@ fn slugify(name: &str) -> String {
         .to_string()
 }
 
-// ── Router ────────────────────────────────────────────────────────────────────
+// ── Routers ────────────────────────────────────────────────────────────────────
+
+/// `POST /twin/setup` — creates a user outside email OTP (merged **without** `require_logged_in_session`).
+pub fn public_onboarding_routes() -> Router<AppState> {
+    Router::new().route("/twin/setup", post(post_twin_setup))
+}
 
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/twin/setup",              post(post_twin_setup))
         .route("/twin/me",                 get(get_twin_me))
         .route("/twin/me/profile",         post(post_twin_profile))
         .route("/twin/tap/{card_id}",      get(get_twin_tap))
         .route("/twin/network",            get(get_twin_network))
         .route("/twin/network/{id}",       get(get_twin_network_user))
+        .route("/twin/network/{id}/status", get(get_twin_network_user_status))
         .route("/twin/ingest",             post(post_twin_ingest))
         .route("/twin/chat",               post(post_twin_chat))
         .route("/twin/zone/{user_id}",     put(put_twin_zone))

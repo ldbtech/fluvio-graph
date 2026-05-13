@@ -1,0 +1,6 @@
+#V2
+SELECT id, owner_id, domain, source_text FROM nodes LIMIT 5;
+SELECT count() FROM nodes GROUP ALL;
+SELECT id, owner_id, source_text FROM nodes LIMIT 5;
+USE NS fluvio DB graph; SELECT count() FROM nodes GROUP ALL;
+SELECT id, owner_id, source_text FROM nodes LIMIT 5;

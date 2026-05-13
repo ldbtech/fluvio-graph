@@ -112,7 +112,7 @@ pub struct AuthVerifyResponse {
     pub token:    String,
     pub user_id:  Uuid,
     pub name:     String,
-    pub graph_id: Option<Uuid>,
+    pub physical_id: Option<Uuid>,
 }
 
 pub async fn post_auth_verify(
@@ -153,7 +153,7 @@ pub async fn post_auth_verify(
         token:    session.token,
         user_id:  user.id,
         name:     user.name,
-        graph_id: user.graph_id,
+        physical_id: user.physical_id,
     }))
 }
 
@@ -186,7 +186,7 @@ pub struct MeResponse {
     pub user_id:  Uuid,
     pub name:     String,
     pub email:    Option<String>,
-    pub graph_id: Option<Uuid>,
+    pub physical_id: Option<Uuid>,
 }
 
 pub async fn get_auth_me(
@@ -196,16 +196,25 @@ pub async fn get_auth_me(
         user_id:  user.id,
         name:     user.name,
         email:    user.email,
-        graph_id: user.graph_id,
+        physical_id: user.physical_id,
     })
 }
 
-// ── Router ────────────────────────────────────────────────────────────────────
+// ── Routers ───────────────────────────────────────────────────────────────────
+//
+// OTP bootstrap lives **outside** `require_logged_in_session` in `server.rs`.
+// Session/me require a valid Bearer token (and are still behind the global middleware).
 
-pub fn routes() -> Router<AppState> {
+/// `POST /twin/auth/request`, `POST /twin/auth/verify` — no session yet.
+pub fn public_auth_routes() -> Router<AppState> {
     Router::new()
         .route("/twin/auth/request", post(post_auth_request))
-        .route("/twin/auth/verify",  post(post_auth_verify))
+        .route("/twin/auth/verify", post(post_auth_verify))
+}
+
+/// `DELETE /twin/auth/session`, `GET /twin/auth/me` — Bearer enforced by handlers + global middleware.
+pub fn authenticated_auth_routes() -> Router<AppState> {
+    Router::new()
         .route("/twin/auth/session", delete(delete_auth_session))
-        .route("/twin/auth/me",      get(get_auth_me))
+        .route("/twin/auth/me", get(get_auth_me))
 }

@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@fluvio-tools/*": ["../../fluvio-tools/*"],
+      "@/features/*": ["./features/*"],
+      "@/shared/*": ["./shared/*"],
+      "@fluvio-tools/*": ["../../fluvio-tools/*"]
     }
   },
   "include": [

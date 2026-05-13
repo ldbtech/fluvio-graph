@@ -131,6 +131,33 @@ impl DomainGraph {
         }
     }
 
+    /// Copy only `subset` nodes and edges whose endpoints both lie in `subset` (no graph events).
+    pub fn subgraph_closed<I: IntoIterator<Item = NodeId>>(&self, subset: I) -> Self {
+        let ids: HashSet<NodeId> = subset.into_iter().collect();
+        let mut sub = DomainGraph::new(self.id.clone(), self.domain.clone());
+        for id in &ids {
+            if let Some(n) = self.nodes.get(id) {
+                sub.nodes.insert(*id, n.clone());
+                sub.adj.entry(*id).or_default();
+            }
+        }
+        for id in &ids {
+            let Some(edges) = self.adj.get(id) else {
+                continue;
+            };
+            for e in edges {
+                if !ids.contains(&e.to) {
+                    continue;
+                }
+                let vec = sub.adj.entry(e.from).or_default();
+                let idx = vec.len();
+                vec.push(e.clone());
+                sub.edge_index.insert(e.id, (e.from, idx));
+            }
+        }
+        sub
+    }
+
     // --- Internal traversal helpers --- 
     pub fn bfs_internal(&self, start: NodeId) -> Vec<NodeId> {
         if !self.nodes.contains_key(&start) {

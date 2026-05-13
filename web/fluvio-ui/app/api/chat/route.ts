@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
-import { getKgEngineUrl } from "@/lib/constants";
-import { TWIN_MODEL, TWIN_SYSTEM_PROMPT } from "@/lib/twinPrompt";
+import { getKgEngineUrl } from "@/shared/lib/constants";
+import { TWIN_MODEL, TWIN_SYSTEM_PROMPT } from "@/shared/lib/twinPrompt";
 
 export const runtime = "nodejs";
 
@@ -9,6 +9,8 @@ type Body = {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   /** Optional graph selection context (same field name as kg-engine). */
   graph_context?: string;
+  /** Optional — whose Surreal graph to load (connection user id). */
+  graph_owner_id?: string;
 };
 
 function toParams(msgs: Body["messages"]): MessageParam[] {
@@ -60,8 +62,13 @@ export async function POST(req: Request) {
       ? `\n\nGRAPH VIEW (user selection in the connections UI):\n${body.graph_context.trim()}\n`
       : "";
 
+  /** Twin UI always needs kg-engine for Surreal-backed knowledge — do not use local Anthropic only. */
+  const needsKgEngineTwin =
+    (typeof body.graph_owner_id === "string" && body.graph_owner_id.trim().length > 0) ||
+    (typeof body.graph_context === "string" && body.graph_context.trim().length > 0);
+
   const key = process.env.ANTHROPIC_API_KEY;
-  if (key) {
+  if (key && !needsKgEngineTwin) {
     const anthropic = new Anthropic({ apiKey: key });
     const stream = anthropic.messages.stream({
       model: TWIN_MODEL,
@@ -102,12 +109,19 @@ export async function POST(req: Request) {
   if (typeof body.graph_context === "string" && body.graph_context.trim()) {
     proxyPayload.graph_context = body.graph_context.trim();
   }
+  if (typeof body.graph_owner_id === "string" && body.graph_owner_id.trim()) {
+    proxyPayload.graph_owner_id = body.graph_owner_id.trim();
+  }
+
+  const auth = req.headers.get("authorization");
+  const fwdHeaders: Record<string, string> = { "Content-Type": "application/json" };
+  if (auth) fwdHeaders.Authorization = auth;
 
   try {
     const upstream = await fetch(`${kgBase.replace(/\/$/, "")}/twin/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(proxyPayload),
+      method:  "POST",
+      headers: fwdHeaders,
+      body:    JSON.stringify(proxyPayload),
     });
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => upstream.statusText);

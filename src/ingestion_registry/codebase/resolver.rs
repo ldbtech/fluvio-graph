@@ -23,7 +23,7 @@ use crate::ingestion_registry::connector::ConnectorError;
 
 use super::clone::{repo_path,RepoRef, CloneError};
 use super::normalizer::normalize_file;
-use super::parser::{parse_file, Language};
+use super::parser::parse_file;
 use super::tree::Language as TreeLanguage;
 
 // ── Errors Mapping ────────────────────────────────────────────────────────────────────

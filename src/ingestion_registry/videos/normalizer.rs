@@ -57,7 +57,6 @@ fn scene_chunk(
 ) -> NormalizedChunk {
 
     let video_id = &meta.video_id;
-    let video_id = &meta.video_id;
     let source_uri = scene_uri(video_id, scene.index);
     let i = scene.index;
 

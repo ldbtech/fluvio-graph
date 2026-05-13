@@ -6,6 +6,6 @@ pub mod server;
 pub mod query;
 pub mod ingestion_registry;
 pub mod routes;
-pub mod agents;
 pub mod database;
 pub mod authentication;
+pub mod storage;

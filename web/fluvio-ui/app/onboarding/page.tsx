@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { OnboardingClient } from "@/app/components/onboarding/OnboardingClient";
-import type { PathKind } from "@/app/components/onboarding/OnboardingClient";
-import { WIFI_NFC_PREORDER_ENABLED } from "@/lib/onboardingFlags";
+import { OnboardingClient } from "@/features/onboarding/components/OnboardingClient";
+import type { PathKind } from "@/features/onboarding/components/OnboardingClient";
+import { WIFI_NFC_PREORDER_ENABLED } from "@/shared/lib/onboardingFlags";
 
 export const metadata: Metadata = {
   title: "Set up · FluvioMe",

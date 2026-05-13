@@ -13,10 +13,21 @@ pub async fn setup_database() -> anyhow::Result<PgPool> {
     let pool = PgPool::connect(&db_url).await
                 .map_err(|e| anyhow::anyhow!("Failed to connect to database: {} : {}", db_url, e))?;
 
-    sqlx::migrate!("./migrations").run(&pool).await
-                .map_err(|e| anyhow::anyhow!("Failed to run migrations: {}", e))?;
+    let skip_migrate = std::env::var("SKIP_SQLX_MIGRATE").ok().as_deref() == Some("1");
+    if skip_migrate {
+        tracing::warn!(
+            "[DB] SKIP_SQLX_MIGRATE=1 — skipping embedded sqlx migrations (schema must already match ./migrations)"
+        );
+    } else {
+        sqlx::migrate!("./migrations").run(&pool).await
+                    .map_err(|e| anyhow::anyhow!("Failed to run migrations: {}", e))?;
+    }
 
-    tracing::info!("[DB] Connected and migrations run successfully");
+    if skip_migrate {
+        tracing::info!("[DB] Connected (migrations skipped)");
+    } else {
+        tracing::info!("[DB] Connected and migrations applied");
+    }
     
     Ok(pool)
 }

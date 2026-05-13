@@ -7,27 +7,28 @@
 //!   GET  /video/{id}/status   — LLaVA/Ollama progress (complete, failed, pending, processed %)
 
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-
+use std::sync::Arc;
 use axum::{
     Json,
-    extract::{Multipart, Path, State},
+    extract::{FromRequest, Multipart, Path, Request, State},
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use uuid::Uuid;
 
-use crate::graph::fluvio_graph::FluvioGraph;
 use crate::ingestion_registry::videos::{
     extractor::{SceneDetectionConfig, detect_scenes, extract_metadata},
     normalizer::{
         mark_scene_understanding_failed, scenes_to_chunks, update_scene_understanding, video_uri,
-        scene_uri,
     },
     frame::extract_frame_bytes,
     vision::{VisionConfig, describe_scene},
 };
 use crate::app_state::AppState;
+use crate::database::user_uploads::insert_user_upload;
+use crate::storage::surreal::SurrealStorage;
+use crate::authentication::upload_user_id_from_headers;
+use crate::database::users::{get_user_by_id, user_physical_scope};
 
 // ── Storage path ──────────────────────────────────────────────────────────────
 
@@ -40,6 +41,16 @@ fn video_dir(video_id: &str) -> PathBuf {
 
 fn video_file_path(video_id: &str) -> PathBuf {
     video_dir(video_id).join("original.mp4")
+}
+
+/// Best-effort removal of on-disk assets for an uploaded clip (used when the user deletes a library entry).
+pub fn remove_stored_video_bundle(video_id: &str) {
+    let dir = video_dir(video_id);
+    if dir.exists() {
+        if let Err(e) = std::fs::remove_dir_all(&dir) {
+            tracing::warn!("[Video] could not remove store dir {}: {e}", dir.display());
+        }
+    }
 }
 
 // ── POST /ingest/video ────────────────────────────────────────────────────────
@@ -60,17 +71,38 @@ pub struct IngestVideoResponse {
 
 pub async fn post_ingest_video(
     State(state): State<AppState>,
-    mut multipart: Multipart,
+    req: Request,
 ) -> Result<Json<IngestVideoResponse>, (StatusCode, String)> {
+    let uid = upload_user_id_from_headers(req.headers()).ok_or((
+        StatusCode::UNAUTHORIZED,
+        "missing upload authentication".to_string(),
+    ))?;
+
+    let user = get_user_by_id(&state.pg_pool, uid)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((
+            StatusCode::UNAUTHORIZED,
+            "session user not found".to_string(),
+        ))?;
+
+    let mut multipart = Multipart::from_request(req, &state)
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     // ── 1. Receive file from multipart ────────────────────────────────────────
     let mut file_bytes: Option<Vec<u8>> = None;
+    let mut client_file_name: Option<String> = None;
 
     while let Some(field) = multipart.next_field().await
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("multipart error: {e}")))? {
 
         let name = field.name().unwrap_or("").to_string();
         if name == "file" || name == "video" {
+            client_file_name = field
+                .file_name()
+                .map(|s| s.to_string())
+                .filter(|s| !s.trim().is_empty());
             let bytes = field.bytes().await
                 .map_err(|e| (StatusCode::BAD_REQUEST, format!("read error: {e}")))?;
             file_bytes = Some(bytes.to_vec());
@@ -80,6 +112,8 @@ pub async fn post_ingest_video(
 
     let bytes = file_bytes
         .ok_or((StatusCode::BAD_REQUEST, "no file field in multipart".to_string()))?;
+
+    let upload_label = client_file_name.unwrap_or_else(|| "video.mp4".to_string());
 
     if bytes.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "empty file".to_string()));
@@ -126,8 +160,68 @@ pub async fn post_ingest_video(
 
     tracing::info!("[Video] {video_id} — {nodes} nodes, {edges} edges ingested");
 
+    let vuri             = video_uri(&video_id);
+    let scope            = user_physical_scope(&user);
+    let owner_str        = user.id.to_string();
+    let surreal_snapshot = {
+        let mut pipeline = state
+            .pipeline
+            .lock()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let mut subgraph_ids = Vec::new();
+        for n in pipeline.graph.nodes.values_mut() {
+            if n.metadata.get("video_id").map(|v| v.as_str()) != Some(video_id.as_str()) {
+                continue;
+            }
+            n.metadata.insert("owner_id".into(), owner_str.clone());
+            n.metadata.insert("owner_physical_id".into(), scope.clone());
+            n.metadata.insert("zone".into(), "1".into());
+            subgraph_ids.push(n.id);
+            if n.source_uri == vuri {
+                n.metadata.insert("dashboard_doc_anchor".into(), "1".into());
+                n.metadata.entry("kind".into()).or_insert_with(|| "video".into());
+                n.metadata
+                    .entry("title".into())
+                    .or_insert_with(|| format!("Video {}", &video_id[..video_id.len().min(12)]));
+            }
+        }
+        pipeline.graph.subgraph_closed(subgraph_ids.into_iter())
+    };
+
+    if !surreal_snapshot.nodes.is_empty() {
+        if let Err(e) = state
+            .surreal_storage
+            .save_graph(user.id, &surreal_snapshot, 1)
+            .await
+        {
+            tracing::warn!("[SurrealDB] video ingest persist skipped: {e}");
+        }
+    }
+
+    let sub_nodes = surreal_snapshot.nodes.len() as i32;
+    let sub_edges: i32 = surreal_snapshot
+        .adj
+        .values()
+        .map(|e| e.len() as i32)
+        .sum();
+    if let Err(e) = insert_user_upload(
+        &state.pg_pool,
+        user.id,
+        "video",
+        &upload_label,
+        Some(video_id.as_str()),
+        sub_nodes,
+        sub_edges,
+    )
+    .await
+    {
+        tracing::warn!("[DB] user_uploads insert skipped: {e}");
+    }
+
     // ── 6. Spawn background LLaVA tasks per scene ─────────────────────────────
     let pipeline_arc  = state.pipeline.clone();
+    let surreal_arc: Arc<SurrealStorage> = state.surreal_storage.clone();
+    let owner_uuid    = user.id;
     let vision_config = VisionConfig::from_env();
     let vid_id        = video_id.clone();
     let fp            = file_path.clone();
@@ -213,6 +307,39 @@ pub async fn post_ingest_video(
                 scene.index,
                 &description[..description.len().min(60)]
             );
+        }
+
+        let vision_subgraph = (|| {
+            let Ok(pipeline) = pipeline_arc.lock() else {
+                return None;
+            };
+            let vuri = video_uri(&vid_id);
+            let ids: Vec<_> = pipeline
+                .graph
+                .nodes
+                .values()
+                .filter(|n| {
+                    n.metadata
+                        .get("video_id")
+                        .map(|v| v == vid_id.as_str())
+                        .unwrap_or(false)
+                        || n.source_uri == vuri
+                })
+                .map(|n| n.id)
+                .collect();
+            if ids.is_empty() {
+                None
+            } else {
+                Some(pipeline.graph.subgraph_closed(ids.into_iter()))
+            }
+        })();
+
+        if let Some(snap) = vision_subgraph {
+            if !snap.nodes.is_empty() {
+                if let Err(e) = surreal_arc.save_graph(owner_uuid, &snap, 1).await {
+                    tracing::warn!("[SurrealDB] video vision persist skipped: {e}");
+                }
+            }
         }
 
         tracing::info!("[Vision] all scenes processed for {vid_id}");

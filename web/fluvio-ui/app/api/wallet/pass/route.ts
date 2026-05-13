@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import crypto from "node:crypto";
 import { join } from "node:path";
 import { PKPass } from "passkit-generator";
-import { getKgEngineUrl } from "@/lib/constants";
+import { getKgEngineUrl } from "@/shared/lib/constants";
 
 export const runtime = "nodejs";
 

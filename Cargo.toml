@@ -38,6 +38,9 @@ bytes = "1"
 ffmpeg-next = "7.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg"] }
 sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "uuid", "chrono", "macros"] }
+# `kv-surrealkv` enables embedded `surrealkv://…` (pure Rust; no RocksDB C++ build).
+surrealdb = { version = "3.0.5", default-features = true, features = ["kv-surrealkv"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
