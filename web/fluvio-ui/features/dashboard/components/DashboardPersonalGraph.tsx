@@ -30,6 +30,15 @@ import {
 } from "@/shared/lib/fluvioDashboardApi";
 import { getKgEngineUrl } from "@/shared/lib/constants";
 import { GmailReplyAgentPanel } from "@/shared/components/GmailReplyAgentPanel";
+import { SpecializedAgentToolStudio } from "@/features/dashboard/components/SpecializedAgentToolStudio";
+import {
+  DEFAULT_WORK_PERSONA,
+  WORK_PERSONA_OPTIONS,
+  getStoredWorkPersona,
+  setStoredWorkPersona,
+  specializedSourcePreviewForPersona,
+  type WorkPersonaId,
+} from "@/shared/lib/workPersona";
 
 type Props = {
   /** Disable actions while profile is unavailable */
@@ -115,19 +124,21 @@ function SourcesPanel(props: {
   kicker: string;
   title: string;
   description: ReactNode;
-  /** Slightly richer header treatment for file workflows. */
-  variant?: "default" | "uploads";
+  /** Slightly richer header treatment for file / persona workflows. */
+  variant?: "default" | "uploads" | "specialized";
   children: ReactNode;
 }) {
   const v = props.variant ?? "default";
+  const headerBg =
+    v === "uploads"
+      ? "bg-[linear-gradient(110deg,rgba(244,63,94,0.07)_0%,rgba(249,115,22,0.04)_38%,transparent_62%),linear-gradient(-18deg,rgba(99,102,241,0.06)_0%,transparent_52%)]"
+      : v === "specialized"
+        ? "bg-[linear-gradient(105deg,rgba(245,158,11,0.08)_0%,rgba(14,165,233,0.05)_42%,transparent_68%)]"
+        : "";
   return (
     <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-zinc-950/40 shadow-[0_24px_48px_-32px_rgba(0,0,0,.85)] ring-1 ring-white/[0.03] backdrop-blur-xl sm:rounded-3xl">
       <header
-        className={`border-b border-white/[0.05] px-5 pb-5 pt-5 sm:px-7 sm:pb-6 sm:pt-6 ${
-          v === "uploads"
-            ? "bg-[linear-gradient(110deg,rgba(244,63,94,0.07)_0%,rgba(249,115,22,0.04)_38%,transparent_62%),linear-gradient(-18deg,rgba(99,102,241,0.06)_0%,transparent_52%)]"
-            : ""
-        }`}
+        className={`border-b border-white/[0.05] px-5 pb-5 pt-5 sm:px-7 sm:pb-6 sm:pt-6 ${headerBg}`}
       >
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">{props.kicker}</p>
         <h3 className="mt-2 text-xl font-semibold tracking-[-0.035em] text-white sm:text-[1.375rem]">
@@ -289,9 +300,11 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
   const [gmailFocusDraft, setGmailFocusDraft] = useState("");
   const [gmailFocusBusy, setGmailFocusBusy] = useState(false);
 
-  /** Toggle Connect vs Uploads so the page doesn’t stack both tall sections. */
-  const [sourcesSection, setSourcesSection] = useState<"connect" | "uploads">("connect");
+  /** Connect vs Uploads vs Specialized — one tall panel at a time. */
+  const [sourcesSection, setSourcesSection] = useState<"connect" | "uploads" | "specialized">("connect");
   const [gmailSettingsModalOpen, setGmailSettingsModalOpen] = useState(false);
+
+  const [workPersona, setWorkPersona] = useState<WorkPersonaId>(DEFAULT_WORK_PERSONA);
 
   const codebaseLibUpload = useMemo(
     () => uploads.find((u) => u.kind.toLowerCase() === "codebase"),
@@ -542,6 +555,16 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
     if (!blocked) void refreshUploads();
   }, [blocked, refreshUploads]);
 
+  useEffect(() => {
+    const stored = getStoredWorkPersona();
+    if (stored) setWorkPersona(stored);
+  }, []);
+
+  const specializedPreview = useMemo(
+    () => specializedSourcePreviewForPersona(workPersona),
+    [workPersona],
+  );
+
   const gmailSettingsModal =
     typeof document !== "undefined" && gmailSettingsModalOpen && gmailConnected === true
       ? createPortal(
@@ -700,7 +723,7 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
       <div className="flex flex-col gap-1">
         <h2 className="text-[1.65rem] font-semibold tracking-[-0.042em] text-white sm:text-[1.85rem]">Sources</h2>
         <p className="max-w-xl text-pretty text-[15px] leading-relaxed tracking-[-0.015em] text-zinc-400">
-          Sync connectors or upload files to FluvioMe.
+          Connect sources, upload files, or use Specialized for persona connectors and the agent and tool studio.
         </p>
       </div>
 
@@ -724,13 +747,26 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
           >
             Uploads
           </SourcesTab>
+          <SourcesTab
+            id="sources-tab-specialized"
+            selected={sourcesSection === "specialized"}
+            onClick={() => setSourcesSection("specialized")}
+          >
+            Specialized
+          </SourcesTab>
         </div>
       </div>
 
       <div
         className="mt-4 sm:mt-5"
         role="tabpanel"
-        aria-labelledby={sourcesSection === "connect" ? "sources-tab-connect" : "sources-tab-uploads"}
+        aria-labelledby={
+          sourcesSection === "connect"
+            ? "sources-tab-connect"
+            : sourcesSection === "uploads"
+              ? "sources-tab-uploads"
+              : "sources-tab-specialized"
+        }
       >
         {sourcesSection === "connect" ? (
         <SourcesPanel
@@ -738,8 +774,9 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
           title="Connect sources"
           description={
             <>
-              Link email and ingest a <span className="text-zinc-400">public</span> Git repository (e.g. this project on
-              GitHub). Clone and indexing run on the server.
+              Link <span className="text-zinc-400">Gmail</span> for inbox preview, optional sender focus, and the reply
+              assistant. Public Git repository ingest is under{" "}
+              <span className="text-zinc-400">Specialized</span> when you choose <span className="text-zinc-400">Software</span>.
             </>
           }
         >
@@ -790,77 +827,8 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
               </div>
             </div>
           </SourceRow>
-
-          <SourceRow
-            title="GitHub · codebase"
-            hint="Linked repo is listed in Library (Uploads tab). Ingesting another public repo replaces the previous codebase on your graph; you can also remove it there."
-          >
-            <div className="flex max-w-xl flex-col gap-3">
-              <TextField
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                disabled={blocked || codeBusy}
-                placeholder="Repository URL · https://github.com/org/repo.git"
-              />
-              <TextField
-                value={repoPath}
-                onChange={(e) => setRepoPath(e.target.value)}
-                disabled={blocked || codeBusy}
-                placeholder="Path inside repo · optional · e.g. apps/web"
-              />
-              <div className="flex flex-col gap-3 pt-0.5">
-                <BtnPrimary
-                  type="button"
-                  disabled={blocked || codeBusy}
-                  className="w-full sm:w-auto"
-                  onClick={onIngestRepo}
-                >
-                  {codeBusy ? "Working…" : "Clone & ingest"}
-                </BtnPrimary>
-                {codeBusy ? (
-                  <div className="max-w-lg space-y-2 rounded-2xl border border-white/[0.08] bg-black/25 px-3.5 py-3 ring-1 ring-black/30">
-                    <div className="flex items-center justify-between gap-3 text-[12px] text-zinc-400">
-                      <span className="font-medium text-zinc-300">
-                        {codeIngestPhase === "ingest" ? "Indexing codebase…" : "Cloning repository…"}
-                      </span>
-                      <span className="tabular-nums text-zinc-500">{Math.round(codeIngestPct)}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-zinc-800/90 ring-1 ring-white/[0.05]">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-violet-500/95 via-indigo-500/90 to-sky-400/95 transition-[width] duration-500 ease-out"
-                        style={{ width: `${Math.min(100, Math.max(3, codeIngestPct))}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-zinc-600">
-                      Step {codeIngestPhase === "ingest" ? "2" : "1"} of 2 · keep this tab open until finished.
-                    </p>
-                  </div>
-                ) : null}
-                {codebaseLibUpload && !codeBusy ? (
-                  <div className="max-w-xl space-y-2 rounded-2xl border border-white/[0.08] bg-black/30 px-3.5 py-3 text-[13px] leading-snug tracking-[-0.01em] text-zinc-200 ring-1 ring-white/[0.05]">
-                    <p className="font-semibold text-white/95">Current linked repository</p>
-                    <p className="break-all font-mono text-[12px] leading-relaxed text-zinc-400">{codebaseLibUpload.file_name}</p>
-                    {codebaseLibUpload.document_id ? (
-                      <p className="text-[12px] text-zinc-500">
-                        Scope <span className="font-mono text-zinc-400">{codebaseLibUpload.document_id}</span>
-                      </p>
-                    ) : null}
-                    <p className="pt-0.5 text-[12px] text-zinc-500">
-                      {codebaseLibUpload.graph_nodes != null && codebaseLibUpload.graph_edges != null
-                        ? `${codebaseLibUpload.graph_nodes} subgraph nodes · ${codebaseLibUpload.graph_edges} subgraph edges on record`
-                        : "Indexed into your personal graph"}
-                    </p>
-                    <p className="text-[11px] leading-relaxed text-zinc-600">
-                      Open the <span className="text-zinc-500">Uploads</span> tab → Library to remove it, or run{" "}
-                      <span className="font-medium text-zinc-500">Clone &amp; ingest</span> on a new URL to replace it.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </SourceRow>
         </SourcesPanel>
-        ) : (
+        ) : sourcesSection === "uploads" ? (
         <SourcesPanel
           variant="uploads"
           kicker="Files"
@@ -1009,7 +977,7 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
 
           <SourceRow
             title="Library"
-            hint="Synced catalog for PDF, video, and linked GitHub codebases. Removing an item clears matching graph nodes and Surreal records (and on-disk video when applicable)."
+            hint="Synced catalog for PDF, video, and linked GitHub codebases (linked under Specialized → Software). Removing an item clears matching graph nodes and Surreal records (and on-disk video when applicable)."
           >
             <div className="flex max-w-xl flex-col gap-4 lg:max-w-none">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-black/30 px-4 py-3 ring-1 ring-white/[0.03] backdrop-blur-sm">
@@ -1038,7 +1006,8 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
                 <div className="rounded-[22px] border border-dashed border-white/[0.1] bg-gradient-to-b from-white/[0.03] to-transparent px-6 py-10 text-center sm:py-12">
                   <p className="text-[15px] font-semibold tracking-[-0.02em] text-zinc-300">No imports yet</p>
                   <p className="mx-auto mt-2 max-w-xs text-[14px] leading-relaxed text-zinc-500">
-                    Bring in a PDF, video, or GitHub repo from Connect — items appear here automatically.
+                    Bring in a PDF or video from above, or link a public repo from{" "}
+                    <span className="text-zinc-400">Specialized</span> (choose Software) — items appear here automatically.
                   </p>
                 </div>
               ) : (
@@ -1111,6 +1080,187 @@ export function DashboardPersonalGraph({ locked, onDone, onError }: Props) {
                   })}
                 </ul>
               )}
+            </div>
+          </SourceRow>
+        </SourcesPanel>
+        ) : (
+        <SourcesPanel
+          variant="specialized"
+          kicker="Persona"
+          title="Specialized"
+          description={
+            <>
+              Role-specific integrations beyond Gmail. Public Git repository when{" "}
+              <span className="text-zinc-400">Software</span> is selected;{" "}
+              <span className="text-zinc-400">{"Yahoo Finance & business"}</span> when{" "}
+              <span className="text-zinc-400">Finance</span> is selected. Use{" "}
+              <span className="text-zinc-400">{"Agent & tool studio"}</span> where{" "}
+              <span className="text-zinc-400">your agents</span> draft tools built from graph-backed PDFs plus connector
+              data (UI only for now). Saved on this device for now; onboarding will sync to your account.
+            </>
+          }
+        >
+          <SourceRow
+            title="You work as"
+            hint="We use this to prioritize the right specialized integrations for your graph."
+          >
+            <div className="flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <label className="sr-only" htmlFor="dashboard-work-persona">
+                Discipline
+              </label>
+              <select
+                id="dashboard-work-persona"
+                disabled={blocked}
+                value={workPersona}
+                onChange={(e) => {
+                  const id = e.target.value as WorkPersonaId;
+                  setWorkPersona(id);
+                  setStoredWorkPersona(id);
+                }}
+                className={`min-h-[46px] w-full max-w-md cursor-pointer rounded-2xl border border-white/[0.08] bg-black/35 px-4 text-[15px] font-normal tracking-[-0.01em] text-white shadow-[inset_0_1px_2px_rgba(0,0,0,.2)] outline-none transition-[border-color,background-color] duration-150 focus:border-white/[0.16] focus:bg-black/45 disabled:cursor-not-allowed disabled:opacity-38 sm:flex-1 ${focusRing}`}
+              >
+                {WORK_PERSONA_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </SourceRow>
+
+          <SourceRow
+            title="Agent & tool studio"
+            hint="Pick connectors the agent may use (GitHub when a repo is linked; Yahoo and broker later), add PDFs for graph knowledge, and describe goals and tools. No server calls yet—everything below is local UI."
+          >
+            <SpecializedAgentToolStudio
+              disabled={blocked}
+              codebaseLinked={!!codebaseLibUpload}
+              codebaseFileLabel={codebaseLibUpload?.file_name ?? null}
+            />
+          </SourceRow>
+
+          {workPersona === "finance" ? (
+            <SourceRow
+              title="Yahoo Finance & business"
+              hint="Link Yahoo for watchlists, quotes, market news, and business headlines—OAuth and ingestion run here once the connector is live."
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="inline-flex items-center rounded-full bg-amber-500/12 px-3 py-1 text-[12px] font-semibold tracking-wide text-amber-200/95 ring-1 ring-amber-400/22">
+                    Coming soon
+                  </span>
+                  <span className="text-[12px] leading-relaxed text-zinc-500">
+                    Yahoo sign-in with scoped read—shipping after API review.
+                  </span>
+                </div>
+                <BtnPrimary
+                  type="button"
+                  disabled
+                  className="w-full opacity-45 sm:w-auto"
+                  aria-disabled="true"
+                  title="Connector not available yet"
+                >
+                  Connect Yahoo Finance & business
+                </BtnPrimary>
+              </div>
+            </SourceRow>
+          ) : null}
+
+          {workPersona === "software" ? (
+            <SourceRow
+              title="GitHub · codebase"
+              hint="Software workflow: shallow clone + ingest on the server. Linked repo is listed in Library (Uploads tab). Ingesting another public repo replaces the previous codebase on your graph; you can also remove it there."
+            >
+              <div className="flex max-w-xl flex-col gap-3">
+                <TextField
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  disabled={blocked || codeBusy}
+                  placeholder="Repository URL · https://github.com/org/repo.git"
+                />
+                <TextField
+                  value={repoPath}
+                  onChange={(e) => setRepoPath(e.target.value)}
+                  disabled={blocked || codeBusy}
+                  placeholder="Path inside repo · optional · e.g. apps/web"
+                />
+                <div className="flex flex-col gap-3 pt-0.5">
+                  <BtnPrimary
+                    type="button"
+                    disabled={blocked || codeBusy}
+                    className="w-full sm:w-auto"
+                    onClick={onIngestRepo}
+                  >
+                    {codeBusy ? "Working…" : "Clone & ingest"}
+                  </BtnPrimary>
+                  {codeBusy ? (
+                    <div className="max-w-lg space-y-2 rounded-2xl border border-white/[0.08] bg-black/25 px-3.5 py-3 ring-1 ring-black/30">
+                      <div className="flex items-center justify-between gap-3 text-[12px] text-zinc-400">
+                        <span className="font-medium text-zinc-300">
+                          {codeIngestPhase === "ingest" ? "Indexing codebase…" : "Cloning repository…"}
+                        </span>
+                        <span className="tabular-nums text-zinc-500">{Math.round(codeIngestPct)}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-zinc-800/90 ring-1 ring-white/[0.05]">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-violet-500/95 via-indigo-500/90 to-sky-400/95 transition-[width] duration-500 ease-out"
+                          style={{ width: `${Math.min(100, Math.max(3, codeIngestPct))}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-zinc-600">
+                        Step {codeIngestPhase === "ingest" ? "2" : "1"} of 2 · keep this tab open until finished.
+                      </p>
+                    </div>
+                  ) : null}
+                  {codebaseLibUpload && !codeBusy ? (
+                    <div className="max-w-xl space-y-2 rounded-2xl border border-white/[0.08] bg-black/30 px-3.5 py-3 text-[13px] leading-snug tracking-[-0.01em] text-zinc-200 ring-1 ring-white/[0.05]">
+                      <p className="font-semibold text-white/95">Current linked repository</p>
+                      <p className="break-all font-mono text-[12px] leading-relaxed text-zinc-400">{codebaseLibUpload.file_name}</p>
+                      {codebaseLibUpload.document_id ? (
+                        <p className="text-[12px] text-zinc-500">
+                          Scope <span className="font-mono text-zinc-400">{codebaseLibUpload.document_id}</span>
+                        </p>
+                      ) : null}
+                      <p className="pt-0.5 text-[12px] text-zinc-500">
+                        {codebaseLibUpload.graph_nodes != null && codebaseLibUpload.graph_edges != null
+                          ? `${codebaseLibUpload.graph_nodes} subgraph nodes · ${codebaseLibUpload.graph_edges} subgraph edges on record`
+                          : "Indexed into your personal graph"}
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-zinc-600">
+                        Open <span className="text-zinc-500">Uploads</span> → Library to remove it, or run{" "}
+                        <span className="font-medium text-zinc-500">Clone &amp; ingest</span> on a new URL to replace it.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </SourceRow>
+          ) : codebaseLibUpload ? (
+            <SourceRow
+              title="Linked repository"
+              hint="You have a codebase on your graph from when Software was selected. Choose Software above to replace it or run a new ingest."
+            >
+              <p className="max-w-xl rounded-2xl border border-white/[0.08] bg-black/30 px-3.5 py-3 font-mono text-[12px] leading-relaxed text-zinc-400 ring-1 ring-white/[0.05]">
+                {codebaseLibUpload.file_name}
+              </p>
+            </SourceRow>
+          ) : null}
+
+          <SourceRow title={specializedPreview.title} hint={specializedPreview.hint}>
+            <div className="flex max-w-xl flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-amber-500/12 px-3 py-1 text-[12px] font-semibold tracking-wide text-amber-200/95 ring-1 ring-amber-400/22">
+                  Coming soon
+                </span>
+                <span className="text-[12px] leading-relaxed text-zinc-500">
+                  OAuth + ingestion paths are persona-specific; nothing to connect yet.
+                </span>
+              </div>
+              <ul className="list-inside list-disc space-y-1.5 text-[13px] leading-relaxed text-zinc-400 marker:text-zinc-600">
+                {specializedPreview.planned.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
             </div>
           </SourceRow>
         </SourcesPanel>

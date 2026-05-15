@@ -8,7 +8,7 @@
 //!   POST /twin/setup                 — create account + NFC card
 //!   GET  /twin/tap/{card_id}         — NFC tap → connect two users
 //!   GET  /twin/network               — social graph (nodes + edges)
-//!   GET  /twin/network/{id}          — mini graph for one connection
+//!   GET  /twin/network/{id}          — mini graph for one connection (document nodes from SurrealDB)
 //!   POST /twin/ingest                — ingest notes/docs into graph
 //!   POST /twin/chat                  — streaming twin chat (Claude)
 //!   PUT  /twin/zone/{user_id}        — update zone for a connection
@@ -49,12 +49,6 @@ use crate::storage::surreal::SurrealNodeRow;
 // ── Owner resolution ──────────────────────────────────────────────────────────
 // `Authorization: Bearer <session>` only — session from POST /twin/auth/verify.
 // (`require_logged_in_session` guards the twin router globally; callers still use this for lookups.)
-
-/// Ingested nodes carry `metadata["owner_physical_id"]` (legacy: `owner_graph_id`).
-fn node_physical_scope_matches(n: &Node, scope: &str) -> bool {
-    matches!(n.metadata.get("owner_physical_id"), Some(v) if v == scope)
-        || matches!(n.metadata.get("owner_graph_id"), Some(v) if v == scope)
-}
 
 pub(crate) async fn resolve_owner(state: &AppState, headers: &axum::http::HeaderMap) -> Option<User> {
     let token = extract_bearer_headers(headers)?;
@@ -385,8 +379,13 @@ pub async fn get_twin_network(
 
 pub async fn get_twin_network_user(
     State(state): State<AppState>,
+    headers:      axum::http::HeaderMap,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<NetworkGraph>, (StatusCode, String)> {
+    let viewer = resolve_owner(&state, &headers)
+        .await
+        .ok_or((StatusCode::UNAUTHORIZED, "sign in required".into()))?;
+
     let user = get_user_by_id(&state.pg_pool, user_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
@@ -399,20 +398,42 @@ pub async fn get_twin_network_user(
         source: "connection".to_string(),
     };
 
-    // Show their graph nodes as mini-graph
-    let pipeline = state.pipeline.lock()
+    // Same zone rule as twin chat / status: self sees all own rows; connections see zone <= connection.zone.
+    let max_zone: i16 = if viewer.id == user_id {
+        2
+    } else {
+        match get_connection(&state.pg_pool, viewer.id, user_id)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        {
+            Some(c) if (1..=2).contains(&c.zone) => c.zone,
+            _ => {
+                return Ok(Json(NetworkGraph {
+                    nodes: vec![hub],
+                    edges: vec![],
+                }));
+            }
+        }
+    };
+
+    let surreal_rows = state
+        .surreal_storage
+        .get_user_nodes(user_id, None, max_zone)
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let scope_str = user_physical_scope(&user);
-
-    let doc_nodes: Vec<NetworkNode> = pipeline.graph.nodes.values()
-        .filter(|n| node_physical_scope_matches(n, &scope_str))
+    let doc_nodes: Vec<NetworkNode> = surreal_rows
+        .iter()
+        .filter(|r| twin_document_visible_surreal(r))
         .take(5)
-        .map(|n| NetworkNode {
-            id:     n.id.to_string(),
-            label:  n.source_text.chars().take(40).collect(),
-            page:   format!("{:?}", n.domain),
-            source: "ingest".to_string(),
+        .map(|r| {
+            let n = r.to_node();
+            NetworkNode {
+                id:     n.id.to_string(),
+                label:  n.source_text.chars().take(40).collect(),
+                page:   format!("{:?}", n.domain),
+                source: "ingest".to_string(),
+            }
         })
         .collect();
 
@@ -1095,57 +1116,65 @@ async fn build_knowledge_context(
 }
 
 /// Hide per-page PDF chunks and per-scene video rows from the Documents list (summary rows only).
-fn twin_document_visible(n: &Node) -> bool {
-    if n.metadata.get("kind").map(|s| s.as_str()) == Some("scene") {
+fn twin_document_visible_surreal(r: &SurrealNodeRow) -> bool {
+    if r.metadata.get("kind").map(|s| s.as_str()) == Some("scene") {
         return false;
     }
-    if n.metadata.get("source").map(|s| s.as_str()) == Some("pdf") {
-        return n.metadata.get("dashboard_doc_anchor").map(|s| s.as_str()) == Some("1");
+    if r.metadata.get("source").map(|s| s.as_str()) == Some("pdf") {
+        return r.metadata.get("dashboard_doc_anchor").map(|s| s.as_str()) == Some("1");
     }
     true
 }
 
-/// Get documents from graph for a user.
-async fn get_twin_documents(state: &AppState, user: &User) -> Vec<TwinDocument> {
-    let scope = user_physical_scope(user);
+fn twin_document_from_surreal_row(r: &SurrealNodeRow) -> TwinDocument {
+    let src = r.metadata.get("source").cloned().unwrap_or_default();
+    let kind = r
+        .metadata
+        .get("kind")
+        .cloned()
+        .unwrap_or_else(|| src.clone())
+        .to_ascii_lowercase();
+    let title = r
+        .metadata
+        .get("title")
+        .or_else(|| r.metadata.get("filename"))
+        .cloned()
+        .unwrap_or_else(|| match kind.as_str() {
+            "pdf" => "PDF upload".into(),
+            "video" => "Video upload".into(),
+            "note" | "" => "Note".into(),
+            _ => kind.clone(),
+        });
+    TwinDocument {
+        id:      r.source_uri.clone(),
+        title,
+        kind,
+        status:  "indexed".to_string(),
+        excerpt: r.source_text.chars().take(200).collect(),
+    }
+}
 
-    let pipeline = match state.pipeline.lock() {
-        Ok(p)  => p,
-        Err(_) => return vec![],
+/// Documents for the dashboard: **SurrealDB** rows for this user (`owner_id`), not the shared RAM graph.
+async fn get_twin_documents(state: &AppState, user: &User) -> Vec<TwinDocument> {
+    const MAX_ZONE_SELF: i16 = 2;
+    const MAX_DOCS: usize = 500;
+
+    let rows = match state
+        .surreal_storage
+        .get_user_nodes(user.id, None, MAX_ZONE_SELF)
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!("[Twin] get_user_nodes for documents list failed: {e}");
+            return vec![];
+        }
     };
 
-    pipeline.graph.nodes.values()
-        .filter(|n| {
-            node_physical_scope_matches(n, &scope)
-                && twin_document_visible(n)
-        })
-        .map(|n| {
-            let src = n.metadata.get("source").cloned().unwrap_or_default();
-            let kind = n
-                .metadata
-                .get("kind")
-                .cloned()
-                .unwrap_or_else(|| src.clone())
-                .to_ascii_lowercase();
-            let title = n
-                .metadata
-                .get("title")
-                .or_else(|| n.metadata.get("filename"))
-                .cloned()
-                .unwrap_or_else(|| match kind.as_str() {
-                    "pdf" => "PDF upload".into(),
-                    "video" => "Video upload".into(),
-                    "note" | "" => "Note".into(),
-                    _ => kind.clone(),
-                });
-            TwinDocument {
-                id:      n.source_uri.clone(),
-                title,
-                kind,
-                status:  "indexed".to_string(),
-                excerpt: n.source_text.chars().take(200).collect(),
-            }
-        })
+    rows.iter()
+        .filter(|r| twin_document_visible_surreal(r))
+        .take(MAX_DOCS)
+        .map(twin_document_from_surreal_row)
         .collect()
 }
 

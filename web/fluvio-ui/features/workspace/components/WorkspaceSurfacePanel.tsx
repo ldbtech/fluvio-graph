@@ -1021,7 +1021,7 @@ export function WorkspaceSurfacePanel({
 }: Props) {
   /** Public GitHub URL for shallow clone (`ingestion_registry::codebase::clone`). */
   const [githubPublicRepoUrl, setGithubPublicRepoUrl] = useState("");
-  /** Repo-relative path prefix for `POST /ingest { path }`, rules link filter, and security deploy `scope`. */
+  /** Repo-relative path prefix for `POST /ingest { path }`. */
   const [githubIngestPath, setGithubIngestPath] = useState("");
   /** Git network: shallow clone or pull into ~/.fluvio/repos/… */
   const [githubPullBusy, setGithubPullBusy] = useState(false);
@@ -1228,8 +1228,7 @@ export function WorkspaceSurfacePanel({
                       </label>
                       <p className="text-[11px] leading-relaxed text-zinc-600">
                         Sent as <span className="font-mono text-zinc-400">path</span> on{" "}
-                        <span className="font-mono text-zinc-500">POST /ingest</span>; also used for rules link filter and
-                        security agent <span className="font-mono text-zinc-500">scope</span> below.
+                        <span className="font-mono text-zinc-500">POST /ingest</span>.
                       </p>
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                         <button
@@ -1381,7 +1380,6 @@ export function WorkspaceSurfacePanel({
             <RustFootnote
               lines={[
                 "Codebase: POST /codebase/clone or /sync/codebase/clone { url } (git shallow clone or pull) then POST /ingest { url, path } from the local mirror.",
-                "Security rules + agent: use Workspace brain → GitHub (after PDF + repo are in the graph).",
                 "Verify X-Hub-Signature-256 for apps; map payload → PR / push / issue nodes; PAT for private API tree later.",
               ]}
             />

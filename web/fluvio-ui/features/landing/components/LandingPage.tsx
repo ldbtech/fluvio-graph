@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { WIFI_NFC_PREORDER_ENABLED } from "@/shared/lib/onboardingFlags";
+import { FluvioMark } from "./FluvioMark";
 import { LandingHeroVisual } from "./LandingHeroVisual";
 
 const steps = [
@@ -21,23 +22,6 @@ const steps = [
     body: "No hunting for an app. Lock screen or tap—conversation starts there.",
   },
 ] as const;
-
-function FluvioMark() {
-  return (
-    <span
-      className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md border border-violet-500/20 bg-violet-500/[0.08]"
-      aria-hidden
-    >
-      <svg viewBox="0 0 24 24" className="relative h-5 w-5 text-violet-200/90" fill="none">
-        <path d="M12 3.5 L4.5 8.2 L4.5 15.8 L12 20.5 L19.5 15.8 L19.5 8.2 Z" stroke="currentColor" strokeWidth="1.1" opacity="0.65" />
-        <circle cx="12" cy="7.7" r="1.5" className="fill-violet-100" />
-        <circle cx="8.3" cy="14.7" r="1.35" className="fill-violet-200/90" />
-        <circle cx="15.7" cy="14.7" r="1.35" className="fill-violet-200/80" />
-        <path d="M12 9.2 L8.3 13.3 M12 9.2 L15.7 13.3 M8.3 14.7 L15.7 14.7" stroke="currentColor" strokeWidth="1.05" opacity="0.8" />
-      </svg>
-    </span>
-  );
-}
 
 export function LandingPage() {
   return (
@@ -59,6 +43,12 @@ export function LandingPage() {
               className="hidden text-[15px] text-zinc-500 transition hover:text-zinc-300 sm:inline"
             >
               My Network
+            </Link>
+            <Link
+              href="/institutions"
+              className="hidden text-[15px] text-zinc-500 transition hover:text-zinc-300 sm:inline"
+            >
+              Institutions
             </Link>
             <Link
               href="/dashboard"
@@ -146,6 +136,29 @@ export function LandingPage() {
           </div>
         </section>
 
+        {/* Institutions — distribution, structured data, ML & GenAI */}
+        <section className="scroll-mt-24 border-t border-white/[0.06] py-20 sm:py-28">
+          <div className="mx-auto max-w-4xl px-5 sm:px-6">
+            <h2 className="text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-sky-400/90">
+              Institutions
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-[17px] leading-relaxed text-zinc-400 sm:text-[18px]">
+              Food and water distribution still lean on systems that do not talk to each other—so spoilage, leaks, and rework pile
+              up. We are building a path for{" "}
+              <span className="text-zinc-200">structured data, ML, deep learning, and generative AI</span> on one graph—not
+              another silo.
+            </p>
+            <div className="mt-10 flex justify-center">
+              <Link
+                href="/institutions"
+                className="inline-flex items-center justify-center rounded-full border border-sky-500/35 bg-sky-500/[0.08] px-8 py-3 text-[15px] font-semibold text-sky-100 transition hover:border-sky-400/50 hover:bg-sky-500/[0.14]"
+              >
+                Distribution and resources →
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Two paths — minimal cards */}
         <section className="border-t border-white/[0.06] py-20 sm:py-28">
           <div className="mx-auto max-w-4xl px-5 sm:px-6">
@@ -212,6 +225,9 @@ export function LandingPage() {
               </Link>
               <Link href="/graph" className="transition hover:text-zinc-400">
                 My Network
+              </Link>
+              <Link href="/institutions" className="transition hover:text-zinc-400">
+                Institutions
               </Link>
             </div>
           </div>

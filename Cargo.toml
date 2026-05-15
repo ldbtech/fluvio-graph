@@ -1,12 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
+    # Shared crates
     "crates/fluvio-types",
     "crates/fluvio-common",
     "crates/fluvio-auth",
     "crates/fluvio-embed",
-    
+
+    # Services
+    "services/fluvio-auth",
+    "services/fluvio-database",
     "services/fluvio-graph",
+    "services/fluvio-twin",
     "services/fluvio-collab",
     "services/fluvio-connectors",
     "services/fluvio-ingestion",
@@ -14,72 +19,54 @@ members = [
 ]
 
 [workspace.dependencies]
-# Internal crates
 fluvio-types  = { path = "crates/fluvio-types" }
 fluvio-common = { path = "crates/fluvio-common" }
 fluvio-auth   = { path = "crates/fluvio-auth" }
 fluvio-embed  = { path = "crates/fluvio-embed" }
 
-# Async
-tokio        = { version = "1",     features = ["full"] }
+tokio        = { version = "1",   features = ["full"] }
 tokio-util   = { version = "0.7" }
-tokio-stream = { version = "0.1",   features = ["sync"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
 futures-util = { version = "0.3" }
 async-trait  = { version = "0.1" }
 
-# Web
 axum       = { version = "0.8", features = ["multipart", "macros"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 
-# GraphQL
 async-graphql      = { version = "7", features = ["uuid", "chrono"] }
 async-graphql-axum = { version = "7" }
 
-# Serialization
 serde      = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 
-# Databases
 sqlx      = { version = "0.8", features = ["postgres", "runtime-tokio", "uuid", "chrono", "macros"] }
 surrealdb = { version = "3.0.5", default-features = true, features = ["kv-surrealkv"] }
 
-# Auth
 jsonwebtoken = { version = "9" }
 oauth2       = { version = "5" }
 
-# Embeddings
 fastembed = { version = "5.13.2" }
 ort       = { version = "2.0.0-rc.11" }
 ndarray   = { version = "0.15" }
 
-# IDs / hashing
 uuid   = { version = "1", features = ["v4", "serde"] }
 blake3 = { version = "1" }
 
-# Time
 chrono = { version = "0.4", features = ["serde"] }
 
-# HTTP client
 reqwest = { version = "0.13", features = ["json", "form", "stream"] }
 
-# Errors
 anyhow    = { version = "1" }
 thiserror = { version = "2" }
 
-# Observability
 tracing            = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-# Utilities
-dotenvy = { version = "0.15" }
-bytes   = { version = "1" }
-rand    = { version = "0.8" }
-base64  = { version = "0.22" }
-regex   = { version = "1" }
-
-# Document parsing
+dotenvy     = { version = "0.15" }
+bytes       = { version = "1" }
+rand        = { version = "0.8" }
+base64      = { version = "0.22" }
+regex       = { version = "1" }
 pdf-extract = { version = "0.10" }
 memmap2     = { version = "0.9" }
-
-# Media
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+image       = { version = "0.25", default-features = false, features = ["jpeg"] }

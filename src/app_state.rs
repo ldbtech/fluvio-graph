@@ -1,5 +1,4 @@
 //! Shared HTTP server state (extracted so route modules can depend on it without cycles with `server`).
-use crate::agent_jobs::AgentStore;
 use crate::ingestion::IngestionPipeline;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -38,7 +37,6 @@ pub struct AppState {
     pub pipeline: Arc<Mutex<IngestionPipeline>>,
     pub api_key: String,
     pub oauth_gmail: Arc<Mutex<Option<GmailOauthPending>>>,
-    pub agent_store: AgentStore,
 
     pub pg_pool: PgPool,
 

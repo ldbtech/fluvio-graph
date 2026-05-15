@@ -5,7 +5,6 @@ use axum::{
     middleware,
     routing::{get, post},
 };
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
@@ -17,10 +16,6 @@ use crate::{
 };
 
 use crate::routes::kg_chat::post_kg_chat;
-use crate::routes::rules::{
-    post_rules_link, post_security_deploy,
-    get_security_status, get_security_result,
-};
 use crate::routes::codebase::{
     get_codebase_parse, get_codebase_tree, post_codebase_clone, post_codebase_ingest, post_codebase_resolve,
 };
@@ -82,7 +77,6 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         pipeline,
         api_key,
         oauth_gmail: Arc::new(Mutex::new(None)),
-        agent_store:  Arc::new(Mutex::new(HashMap::new())),
 
         pg_pool,
 
@@ -138,10 +132,6 @@ pub async fn serve(api_key: String) -> anyhow::Result<()> {
         .route("/parse", get(get_codebase_parse))
         .route("/tree", get(get_codebase_tree))
         .route("/codebase/resolve", post(post_codebase_resolve))
-        .route("/rules/link", post(post_rules_link))
-        .route("/agents/security/deploy", post(post_security_deploy))
-        .route("/agents/security/{id}/status", get(get_security_status))
-        .route("/agents/security/{id}/result", get(get_security_result))
         .route("/video/{id}", get(get_video))
         .route("/video/{id}/scenes", get(get_video_scenes))
         .route("/video/{id}/status", get(get_video_status))
