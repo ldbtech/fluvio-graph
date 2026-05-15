@@ -1,0 +1,19 @@
+[package]
+name        = "fluvio-common"
+version     = "0.1.0"
+edition     = "2024"
+description = "Shared error types, tracing setup, and env helpers for Fluvio microservices"
+
+[lib]
+name = "fluvio_common"
+path = "src/lib.rs"
+
+[dependencies]
+thiserror          = { workspace = true }
+anyhow             = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+dotenvy            = { workspace = true }
+axum               = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }

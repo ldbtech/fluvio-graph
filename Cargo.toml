@@ -1,50 +1,85 @@
-[package]
-name = "kg-engine"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "2"
+members = [
+    "crates/fluvio-types",
+    "crates/fluvio-common",
+    "crates/fluvio-auth",
+    "crates/fluvio-embed",
+    
+    "services/fluvio-graph",
+    "services/fluvio-collab",
+    "services/fluvio-connectors",
+    "services/fluvio-ingestion",
+    "services/fluvio-tool-builder",
+]
 
-[dependencies]
-axum = { version = "0.8", features = ["multipart", "macros"] }
-tokio = { version = "1", features = ["full"] }
-tower-http = {version = "0.6.8", features = ["cors"]}
-pdf-extract = "0.10.0"
-memmap2 = "0.9"
-anyhow = "1.0"
-rand = "0.10.0"
-ort = "2.0.0-rc.11" # ONX runtime bindings
-tokenizers = "0.19" # Fast Rust Tokenization
-ndarray = "0.15" # For handling the resulting vectors
-fastembed = "5.13.2"
-uuid = { version = "1.23.0", features = ["v4", "serde"] }
-thiserror = "2.0.18"
-serde = {version = "1.0", features = ["derive"]}
-serde_json = "1.0"
-reqwest = { version = "0.13.2", features = ["json", "form", "query", "stream"] }
-blake3 = "1.8.4"
-dotenvy = "0.15.7"
+[workspace.dependencies]
+# Internal crates
+fluvio-types  = { path = "crates/fluvio-types" }
+fluvio-common = { path = "crates/fluvio-common" }
+fluvio-auth   = { path = "crates/fluvio-auth" }
+fluvio-embed  = { path = "crates/fluvio-embed" }
 
-# Needed for Gmail OAuth2 API.
-oauth2 = "5.0.0"
-base64 = "0.22"           # Gmail body is base64 encoded
-html2text = "0.6"         # strip HTML from email bodies
-chrono = { version = "0.4.31", features = ["serde"] }
-regex = "1"
-tracing = "0.1"
-async-trait = "0.1.89"
-tokio-util = "0.7.18"
-tokio-stream = { version = "0.1", features = ["sync"] }
-futures-util = "0.3"
-bytes = "1"
-ffmpeg-next = "7.0"
-image = { version = "0.25.10", default-features = false, features = ["jpeg"] }
-sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "uuid", "chrono", "macros"] }
-# `kv-surrealkv` enables embedded `surrealkv://…` (pure Rust; no RocksDB C++ build).
+# Async
+tokio        = { version = "1",     features = ["full"] }
+tokio-util   = { version = "0.7" }
+tokio-stream = { version = "0.1",   features = ["sync"] }
+futures-util = { version = "0.3" }
+async-trait  = { version = "0.1" }
+
+# Web
+axum       = { version = "0.8", features = ["multipart", "macros"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# GraphQL
+async-graphql      = { version = "7", features = ["uuid", "chrono"] }
+async-graphql-axum = { version = "7" }
+
+# Serialization
+serde      = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+
+# Databases
+sqlx      = { version = "0.8", features = ["postgres", "runtime-tokio", "uuid", "chrono", "macros"] }
 surrealdb = { version = "3.0.5", default-features = true, features = ["kv-surrealkv"] }
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
-[dev-dependencies]
-tempfile = "3.27.0"
+# Auth
+jsonwebtoken = { version = "9" }
+oauth2       = { version = "5" }
 
-# Video ingestion dependencies
-ffmpeg-next = "7.0"
-clip = "0.1.1"
+# Embeddings
+fastembed = { version = "5.13.2" }
+ort       = { version = "2.0.0-rc.11" }
+ndarray   = { version = "0.15" }
+
+# IDs / hashing
+uuid   = { version = "1", features = ["v4", "serde"] }
+blake3 = { version = "1" }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# HTTP client
+reqwest = { version = "0.13", features = ["json", "form", "stream"] }
+
+# Errors
+anyhow    = { version = "1" }
+thiserror = { version = "2" }
+
+# Observability
+tracing            = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+dotenvy = { version = "0.15" }
+bytes   = { version = "1" }
+rand    = { version = "0.8" }
+base64  = { version = "0.22" }
+regex   = { version = "1" }
+
+# Document parsing
+pdf-extract = { version = "0.10" }
+memmap2     = { version = "0.9" }
+
+# Media
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
