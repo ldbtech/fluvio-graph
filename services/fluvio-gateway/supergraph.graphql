@@ -20,6 +20,30 @@ directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on
 
 directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
+input GqlChatMessage
+  @join__type(graph: FLUVIO_TWIN)
+{
+  role: String!
+  content: String!
+}
+
+type GqlChatResponse
+  @join__type(graph: FLUVIO_TWIN)
+{
+  answer: String!
+  sources: [GqlSource!]!
+}
+
+type GqlDocument
+  @join__type(graph: FLUVIO_TWIN)
+{
+  id: String!
+  title: String!
+  kind: String!
+  domain: String!
+  excerpt: String!
+}
+
 enum GqlDomain
   @join__type(graph: FLUVIO_GRAPH)
 {
@@ -186,11 +210,21 @@ type GqlScoredNode
   score: Float!
 }
 
+type GqlSource
+  @join__type(graph: FLUVIO_TWIN)
+{
+  id: String!
+  page: String!
+  score: Float!
+  text: String!
+}
+
 scalar join__FieldSet
 
 enum join__Graph {
   FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://localhost:3001/graphql")
   FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://localhost:3004/graphql")
+  FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://localhost:3002/graphql")
 }
 
 scalar link__Import
@@ -233,6 +267,7 @@ type Mutation
 type Query
   @join__type(graph: FLUVIO_GRAPH)
   @join__type(graph: FLUVIO_INGESTION)
+  @join__type(graph: FLUVIO_TWIN)
 {
   """Fetch a single node by ID."""
   node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
@@ -268,6 +303,21 @@ type Query
 
   """Get the status of an ingestion job by ID."""
   ingestJob(jobId: String!): GqlIngestJob @join__field(graph: FLUVIO_INGESTION)
+
+  """
+  Ask a question over the user's knowledge graph.
+  
+  Pipeline:
+  1. Semantic search in fluvio-graph (top-K nodes)
+  2. BFS expansion for each seed (graph context)
+  3. Assemble knowledge context
+  4. Call Claude with context + question
+  5. Return grounded answer + sources
+  """
+  chat(question: String!, history: [GqlChatMessage!], topK: Int, zone: Int): GqlChatResponse! @join__field(graph: FLUVIO_TWIN)
+
+  """List all documents (graph nodes) in the user's knowledge graph."""
+  documents(zone: Int): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
 }
 
 """A multipart file upload"""

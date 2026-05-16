@@ -1,13 +1,12 @@
 # kg-engine
 
-Rust **HTTP service** for building a **multi-domain knowledge graph** from documents and connectors: PDF ingestion, **Gmail** sync, chunk embedding with [fastembed](https://github.com/qdrant/fastembed), **semantic similarity** edges, and **Anthropic Claude** chat over retrieved graph context. A **Next.js workspace UI** in `web/fluvio-ui` is the main way to drive ingestion, graph exploration, and chat (the old CLI has been removed; the binary only starts the API).
+Rust **HTTP service** for building a **multi-domain knowledge graph** from documents and connectors: PDF ingestion, **Gmail** sync, chunk embedding with [fastembed](https://github.com/qdrant/fastembed), **semantic similarity** edges, and **Anthropic Claude** chat over retrieved graph context. The binary only starts the API (the old CLI has been removed).
 
 ---
 
 ## What you get
 
-- **REST API (Axum)** on **http://0.0.0.0:8001** — PDF upload, Gmail connect/sync, paged graph endpoints for the UI, and chat. Durable graph storage is **SurrealDB** (no on-disk JSON snapshots).
-- **Web UI** — `web/fluvio-ui`: connectors, graph view, chat, workspace projects. Run it alongside the Rust server.
+- **REST API (Axum)** on **http://0.0.0.0:8001** — PDF upload, Gmail connect/sync, paged graph endpoints, and chat. Durable graph storage is **SurrealDB** (no on-disk JSON snapshots).
 
 ---
 
@@ -89,18 +88,6 @@ CORS is open for local UI development (`tower-http`).
 
 ---
 
-## Web UI
-
-```bash
-cd web/fluvio-ui
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [http://localhost:8001](http://localhost:8001) by default (`NEXT_PUBLIC_KG_URL` overrides this in `web/fluvio-ui/shared/lib/constants.ts`).
-
----
-
 ## Repository layout (high level)
 
 | Path | Role |
@@ -112,7 +99,6 @@ Open [http://localhost:3000](http://localhost:3000). The UI expects the API at [
 | `src/ingestion.rs` | Ingestion pipeline wiring (in-RAM working set). |
 | `src/query.rs` | RAG-style retrieval over the graph. |
 | `src/ingestion_registry/` | Connectors and document types (e.g. PDF, Gmail). |
-| `web/fluvio-ui/` | Next.js frontend. |
 
 ---
 

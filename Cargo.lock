@@ -1867,6 +1867,30 @@ version = "0.1.0"
 [[package]]
 name = "fluvio-twin"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-axum",
+ "axum",
+ "bytes",
+ "chrono",
+ "dotenvy",
+ "fastembed",
+ "fluvio-common",
+ "fluvio-embed",
+ "fluvio-types",
+ "futures-util",
+ "reqwest 0.13.3",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
 
 [[package]]
 name = "fluvio-types"
