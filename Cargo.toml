@@ -70,3 +70,5 @@ regex       = { version = "1" }
 pdf-extract = { version = "0.10" }
 memmap2     = { version = "0.9" }
 image       = { version = "0.25", default-features = false, features = ["jpeg"] }
+
+dashmap = { version = "6" }
