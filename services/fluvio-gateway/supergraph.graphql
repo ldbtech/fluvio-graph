@@ -60,6 +60,26 @@ input GqlEdgeInput
   relationshipProbability: Float
 }
 
+type GqlIngestJob
+  @join__type(graph: FLUVIO_INGESTION)
+{
+  id: String!
+  ownerId: String!
+  filename: String!
+  status: String!
+  chunkCount: Int!
+  nodeIds: [String!]!
+  error: String
+}
+
+type GqlIngestResult
+  @join__type(graph: FLUVIO_INGESTION)
+{
+  jobId: String!
+  status: String!
+  message: String!
+}
+
 """Key-value metadata pair (GraphQL can't return HashMap directly)."""
 type GqlMetadataEntry
   @join__type(graph: FLUVIO_GRAPH)
@@ -108,7 +128,6 @@ type GqlNode
 input GqlNodeInput
   @join__type(graph: FLUVIO_GRAPH)
 {
-  """Optional — if omitted a random UUID is generated."""
   id: String
   domain: GqlDomain!
   sourceUri: String!
@@ -116,6 +135,7 @@ input GqlNodeInput
   kind: GqlNodeKind!
   metadata: [GqlMetadataInput!]
   zone: Int
+  embeddings: [Float!]
 }
 
 enum GqlNodeKind
@@ -170,6 +190,7 @@ scalar join__FieldSet
 
 enum join__Graph {
   FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://localhost:3001/graphql")
+  FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://localhost:3004/graphql")
 }
 
 scalar link__Import
@@ -188,46 +209,67 @@ enum link__Purpose {
 
 type Mutation
   @join__type(graph: FLUVIO_GRAPH)
+  @join__type(graph: FLUVIO_INGESTION)
 {
-  upsertNode(input: GqlNodeInput!): GqlNode!
-  deleteNode(id: String!): Boolean!
-  upsertEdge(input: GqlEdgeInput!): GqlEdge!
-  saveGraph(zone: Int): GqlSaveResult!
-  deleteUserGraph: Boolean!
+  upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
+  deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
+  upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
+  saveGraph(zone: Int): GqlSaveResult! @join__field(graph: FLUVIO_GRAPH)
+  deleteUserGraph: Boolean! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Upload and ingest a file (PDF, TXT, MD).
+  Returns immediately with a jobId — processing runs in background.
+  """
+  ingestFile(file: Upload!, filename: String!, zone: Int): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+
+  """
+  Ingest raw text directly — no file upload needed.
+  Runs synchronously since text is small.
+  """
+  ingestRaw(text: String!, sourceUri: String!, domain: String, zone: Int): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
 }
 
 type Query
   @join__type(graph: FLUVIO_GRAPH)
+  @join__type(graph: FLUVIO_INGESTION)
 {
   """Fetch a single node by ID."""
-  node(id: String!): GqlNode
+  node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
 
   """
   Fetch all nodes for the authenticated user, optionally filtered by domain.
   """
-  nodes(domain: String, zone: Int): [GqlNode!]!
+  nodes(domain: String, zone: Int): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Semantic similarity search — returns top-K nodes closest to the query.
   Goes directly to SurrealDB — no in-memory subgraph needed.
   """
-  search(query: String!, config: GqlQueryConfig): [GqlScoredNode!]!
+  search(query: String!, config: GqlQueryConfig): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Cross-user semantic search — "who in my network knows about X?"
   Zone 1 required — searches across connected users' nodes.
   """
-  networkSearch(query: String!, userIds: [String!]!, topK: Int): [GqlScoredNode!]!
+  networkSearch(query: String!, userIds: [String!]!, topK: Int): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   BFS expansion — returns all nodes within `depth` hops of the given node.
   Served directly from SurrealDB for depth <= 3.
   """
-  neighbors(id: String!, depth: Int): [GqlNode!]!
+  neighbors(id: String!, depth: Int): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Dual-weight Dijkstra shortest path between two nodes.
   Builds a request-scoped QueryContext — dropped after this resolver returns.
   """
-  shortestPath(from: String!, to: String!): GqlPath!
+  shortestPath(from: String!, to: String!): GqlPath! @join__field(graph: FLUVIO_GRAPH)
+
+  """Get the status of an ingestion job by ID."""
+  ingestJob(jobId: String!): GqlIngestJob @join__field(graph: FLUVIO_INGESTION)
 }
+
+"""A multipart file upload"""
+scalar Upload
+  @join__type(graph: FLUVIO_INGESTION)
