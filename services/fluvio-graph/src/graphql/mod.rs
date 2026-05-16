@@ -27,9 +27,27 @@ pub fn graphql_router(schema: FluvioGraphSchema) -> Router {
     Router::new()
         .route(
             "/graphql",
-            get(graphiql).post_service(GraphQL::new(schema.clone())),
+            get(graphiql).post(
+                move |headers: axum::http::HeaderMap,
+                      req: async_graphql_axum::GraphQLRequest| {
+                    let schema = schema.clone();
+                    async move {
+                        let user_id = headers
+                            .get("x-user-id")
+                            .and_then(|v| v.to_str().ok())
+                            .and_then(|s| uuid::Uuid::parse_str(s).ok());
+
+                        let mut request = req.into_inner();
+                        if let Some(uid) = user_id {
+                            request = request.data(uid);
+                        }
+                        async_graphql_axum::GraphQLResponse::from(
+                            schema.execute(request).await
+                        )
+                    }
+                }
+            ),
         )
-        .route_service("/graphql/ws", GraphQLSubscription::new(schema))
 }
 
 async fn graphiql() -> impl axum::response::IntoResponse {

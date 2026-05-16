@@ -7,7 +7,7 @@ use async_graphql::*;
 use uuid::Uuid;
 
 use crate::server::AppState;
-use crate::query_context::{QueryContext, QueryConfig, QueryRoute};
+use crate::query_context::{QueryContext, QueryConfig};
 use crate::graphql::types::*;
 use fluvio_types::{NodeId, GraphQuery};
 
@@ -139,7 +139,7 @@ impl QueryRoot {
 
         // For network search we return scored nodes with owner info in metadata
         let nodes = results.into_iter().map(|(owner_id, node_id_str, score)| {
-            let mut metadata = vec![
+            let metadata = vec![
                 GqlMetadataEntry { key: "owner_id".into(), value: owner_id },
                 GqlMetadataEntry { key: "node_id".into(),  value: node_id_str },
             ];
@@ -228,7 +228,10 @@ impl QueryRoot {
 pub fn extract_user_id(ctx: &Context<'_>) -> Result<Uuid> {
     ctx.data::<Uuid>()
         .map(|u| *u)
-        .map_err(|_| Error::new("x-user-id header missing or invalid — request must go through the gateway"))
+        .map_err(|_| Error::new(
+            "x-user-id header missing — request must go through the gateway. \
+             In dev, set 'x-user-id: <uuid>' in GraphiQL headers."
+        ))
 }
 
 fn parse_node_id(s: &str) -> Result<NodeId> {

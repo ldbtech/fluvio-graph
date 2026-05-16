@@ -4,7 +4,6 @@
 //! These are what Apollo Router and clients see — never raw fluvio-types structs.
 
 use async_graphql::*;
-use std::collections::HashMap;
 
 // ── GqlDomain ─────────────────────────────────────────────────────────────────
 
