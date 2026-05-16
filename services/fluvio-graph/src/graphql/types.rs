@@ -174,7 +174,6 @@ pub struct GqlPath {
 /// Input for creating or updating a node.
 #[derive(InputObject, Clone, Debug)]
 pub struct GqlNodeInput {
-    /// Optional — if omitted a random UUID is generated.
     pub id:          Option<String>,
     pub domain:      GqlDomain,
     pub source_uri:  String,
@@ -182,6 +181,7 @@ pub struct GqlNodeInput {
     pub kind:        GqlNodeKind,
     pub metadata:    Option<Vec<GqlMetadataInput>>,
     pub zone:        Option<i32>,
+    pub embeddings:  Option<Vec<f32>>,   // ← add this
 }
 
 /// Input for creating or updating an edge.

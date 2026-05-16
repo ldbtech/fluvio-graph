@@ -13,7 +13,7 @@ use fluvio_types::{NodeId, GraphQuery};
 
 pub struct QueryRoot;
 
-#[Object]
+#[Object(name = "Query")]
 impl QueryRoot {
 
     // ── Single node ───────────────────────────────────────────────────────────

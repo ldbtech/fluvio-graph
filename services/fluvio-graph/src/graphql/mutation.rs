@@ -12,7 +12,7 @@ use crate::graphql::query::extract_user_id;
 
 pub struct MutationRoot;
 
-#[Object]
+#[Object(name = "Mutation")]
 impl MutationRoot {
 
     // ── Upsert node ───────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ impl MutationRoot {
             domain:      Domain::from(input.domain),
             source_uri:  input.source_uri,
             source_text: input.source_text.clone(),
-            embeddings:  vec![],
+            embeddings:  input.embeddings.unwrap_or_default(),
             metadata,
             kind:        NodeKind::from(input.kind),
         };
@@ -143,7 +143,7 @@ impl MutationRoot {
         ctx:  &Context<'_>,
         zone: Option<i32>,
     ) -> Result<GqlSaveResult> {
-        let state   = ctx.data::<AppState>()?;
+        let _state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
         let zone    = zone.unwrap_or(0) as i16;
 

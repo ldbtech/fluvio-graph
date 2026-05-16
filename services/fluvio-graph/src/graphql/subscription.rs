@@ -16,7 +16,7 @@ use crate::graphql::types::GqlNode;
 
 pub struct SubscriptionRoot;
 
-#[Subscription]
+#[Subscription(name = "Subscription")]
 impl SubscriptionRoot {
     /// Fires when a node is inserted for the given owner.
     /// Stubbed — returns empty stream until Day 5.

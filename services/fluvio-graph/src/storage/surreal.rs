@@ -59,8 +59,15 @@ impl SurrealNodeRow {
         let uuid = node_uuid_from_record_id_compat(&self.id);
         Node {
             id:          NodeId(uuid),
-            domain:      Domain::Custom(self.domain.clone()),
-            source_uri:  self.source_uri.clone(),
+            domain: match self.domain.as_str() {
+                "Pdf"          => Domain::Pdf,
+                "Email"        => Domain::Email,
+                "Whatsapp"     => Domain::Whatsapp,
+                "Calendar"     => Domain::Calendar,
+                "Codebase"     => Domain::Codebase,
+                "Web"          => Domain::Web,
+                other          => Domain::Custom(other.to_string()),
+            },            source_uri:  self.source_uri.clone(),
             source_text: self.source_text.clone(),
             embeddings:  self.embeddings.clone(),
             metadata:    self.metadata.clone(),
@@ -284,30 +291,13 @@ impl SurrealStorage {
         top_k:     usize,
         zone:      i16,
     ) -> anyhow::Result<Vec<(String, f32)>> {
-        let vec_json = serde_json::to_string(query_vec)
-            .map_err(|e| anyhow::anyhow!("vec serialize: {e}"))?;
-
-        let query = format!(
-            "SELECT id, vector::similarity::cosine(embeddings, {vec_json}) AS score \
-             FROM nodes \
-             WHERE owner_id = '{owner_id}' AND zone <= {zone} \
-             ORDER BY score DESC \
-             LIMIT {top_k}"
-        );
-
-        let mut result = self.db.query(query).await
-            .map_err(|e| anyhow::anyhow!("similarity_search: {e}"))?;
-
-        #[derive(Deserialize)]
-        struct ScoreRow {
-            id:    RecordId,
-            score: Option<f32>,
-        }
-
-        let rows: Vec<ScoreRow> = rows_from_json(&mut result, "similarity_search")?;
-
+        let rows = self.similarity_search_nodes(owner_id, query_vec, top_k, zone).await?;
         Ok(rows.into_iter()
-            .map(|r| (record_id_compact(&r.id), r.score.unwrap_or(0.0)))
+            .map(|r| {
+                let score  = cosine_sim(query_vec, &r.embeddings);
+                let id_str = format!("{:?}", r.id);
+                (id_str, score)
+            })
             .collect())
     }
 
@@ -319,23 +309,26 @@ impl SurrealStorage {
         top_k:     usize,
         max_zone:  i16,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
-        let vec_json = serde_json::to_string(query_vec)
-            .map_err(|e| anyhow::anyhow!("vec serialize: {e}"))?;
-
         let query = format!(
-            "SELECT * \
-             FROM nodes \
-             WHERE owner_id = '{owner_id}' AND zone <= {max_zone} \
-             ORDER BY vector::similarity::cosine(embeddings, {vec_json}) DESC \
-             LIMIT {top_k}"
+            "SELECT * FROM nodes \
+             WHERE owner_id = '{owner_id}' AND zone <= {max_zone}"
         );
-
+    
         let mut result = self.db.query(query).await
             .map_err(|e| anyhow::anyhow!("similarity_search_nodes: {e}"))?;
-
+    
         let rows: Vec<SurrealNodeRow> = rows_from_json(&mut result, "similarity_search_nodes")?;
-
-        Ok(rows)
+    
+        let mut scored: Vec<(f32, SurrealNodeRow)> = rows
+            .into_iter()
+            .filter(|r| !r.embeddings.is_empty())
+            .map(|r| (cosine_sim(query_vec, &r.embeddings), r))
+            .collect();
+    
+        scored.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        scored.truncate(top_k);
+    
+        Ok(scored.into_iter().map(|(_, row)| row).collect())
     }
 
     /// Cross-user similarity search — "who in my network works on X?"
@@ -346,41 +339,34 @@ impl SurrealStorage {
         top_k:     usize,
         max_zone:  i16,
     ) -> anyhow::Result<Vec<(String, String, f32)>> {
-        if user_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
+        if user_ids.is_empty() { return Ok(vec![]); }
+    
         let owners = user_ids.iter()
             .map(|u| format!("'{u}'"))
             .collect::<Vec<_>>()
             .join(", ");
-
-        let vec_json = serde_json::to_string(query_vec)
-            .map_err(|e| anyhow::anyhow!("vec serialize: {e}"))?;
-
+    
         let query = format!(
-            "SELECT id, owner_id, \
-                    vector::similarity::cosine(embeddings, {vec_json}) AS score \
-             FROM nodes \
-             WHERE owner_id IN [{owners}] AND zone <= {max_zone} \
-             ORDER BY score DESC \
-             LIMIT {top_k}"
+            "SELECT * FROM nodes \
+             WHERE owner_id IN [{owners}] AND zone <= {max_zone}"
         );
-
+    
         let mut result = self.db.query(query).await
             .map_err(|e| anyhow::anyhow!("network_similarity_search: {e}"))?;
-
-        #[derive(Deserialize)]
-        struct NetworkRow {
-            id:       RecordId,
-            owner_id: String,
-            score:    Option<f32>,
-        }
-
-        let rows: Vec<NetworkRow> = rows_from_json(&mut result, "network_similarity_search")?;
-
-        Ok(rows.into_iter()
-            .map(|r| (r.owner_id, record_id_compact(&r.id), r.score.unwrap_or(0.0)))
+    
+        let rows: Vec<SurrealNodeRow> = rows_from_json(&mut result, "network_similarity_search")?;
+    
+        let mut scored: Vec<(f32, SurrealNodeRow)> = rows
+            .into_iter()
+            .filter(|r| !r.embeddings.is_empty())
+            .map(|r| (cosine_sim(query_vec, &r.embeddings), r))
+            .collect();
+    
+        scored.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        scored.truncate(top_k);
+    
+        Ok(scored.into_iter()
+            .map(|(score, row)| (row.owner_id.clone(), format!("{:?}", row.id), score))
             .collect())
     }
 
@@ -506,4 +492,12 @@ fn sanitize_label(label: &str) -> String {
         .chars()
         .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
         .collect()
+}
+
+fn cosine_sim(a: &[f32], b: &[f32]) -> f32 {
+    if a.len() != b.len() || a.is_empty() { return 0.0; }
+    let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+    let na:  f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let nb:  f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
 }
