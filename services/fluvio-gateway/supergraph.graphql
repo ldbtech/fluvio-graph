@@ -1,0 +1,233 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+}
+
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+enum GqlDomain
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  PDF @join__enumValue(graph: FLUVIO_GRAPH)
+  EMAIL @join__enumValue(graph: FLUVIO_GRAPH)
+  WHATSAPP @join__enumValue(graph: FLUVIO_GRAPH)
+  CALENDAR @join__enumValue(graph: FLUVIO_GRAPH)
+  CODEBASE @join__enumValue(graph: FLUVIO_GRAPH)
+  WEB @join__enumValue(graph: FLUVIO_GRAPH)
+  CUSTOM @join__enumValue(graph: FLUVIO_GRAPH)
+}
+
+"""A directed, weighted relationship between two nodes."""
+type GqlEdge
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  id: String!
+  from: String!
+  to: String!
+  label: String!
+
+  """Approximate LLM token cost of this edge."""
+  token: Int!
+
+  """Confidence [0.0, 1.0] that the relationship is real."""
+  relationshipProbability: Float!
+  metadata: [GqlMetadataEntry!]!
+}
+
+"""Input for creating or updating an edge."""
+input GqlEdgeInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  from: String!
+  to: String!
+  label: String!
+  token: Int
+  relationshipProbability: Float
+}
+
+"""Key-value metadata pair (GraphQL can't return HashMap directly)."""
+type GqlMetadataEntry
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  key: String!
+  value: String!
+}
+
+"""Metadata key-value input."""
+input GqlMetadataInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  key: String!
+  value: String!
+}
+
+"""
+A node in the Fluvio knowledge graph.
+This is the primary entity — everything else references it.
+"""
+type GqlNode
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  """Stable UUID — content-addressed or random."""
+  id: String!
+  domain: GqlDomain!
+
+  """Opaque locator: file path, message-id, GitHub URL, etc."""
+  sourceUri: String!
+
+  """Canonical extractable text used for embedding + LLM context."""
+  sourceText: String!
+  kind: GqlNodeKind!
+
+  """Arbitrary key-value metadata."""
+  metadata: [GqlMetadataEntry!]!
+
+  """Number of embedding dimensions. 0 means not yet embedded."""
+  embeddingDimensions: Int!
+
+  """Whether this node has been embedded."""
+  isEmbedded: Boolean!
+}
+
+"""Input for creating or updating a node."""
+input GqlNodeInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  """Optional — if omitted a random UUID is generated."""
+  id: String
+  domain: GqlDomain!
+  sourceUri: String!
+  sourceText: String!
+  kind: GqlNodeKind!
+  metadata: [GqlMetadataInput!]
+  zone: Int
+}
+
+enum GqlNodeKind
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  ENTITY @join__enumValue(graph: FLUVIO_GRAPH)
+  TOPIC @join__enumValue(graph: FLUVIO_GRAPH)
+
+  """Preserved typo from SurrealDB records — do not rename"""
+  ARTIFCAT @join__enumValue(graph: FLUVIO_GRAPH)
+  EVENT @join__enumValue(graph: FLUVIO_GRAPH)
+  CONVERSATION @join__enumValue(graph: FLUVIO_GRAPH)
+  EXTERNAL_REF @join__enumValue(graph: FLUVIO_GRAPH)
+}
+
+"""A sequence of nodes representing a path through the graph."""
+type GqlPath
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  nodes: [GqlNode!]!
+  found: Boolean!
+}
+
+"""Query tuning config — mirrors QueryConfig."""
+input GqlQueryConfig
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  similarityTopK: Int
+  expansionDepth: Int
+  maxSubgraphNodes: Int
+
+  """0 = own data, 1 = network"""
+  maxZone: Int
+}
+
+type GqlSaveResult
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  nodesSaved: Int!
+  edgesSaved: Int!
+}
+
+"""A node with a similarity score — returned by search queries."""
+type GqlScoredNode
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  node: GqlNode!
+  score: Float!
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://localhost:3001/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+type Mutation
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  upsertNode(input: GqlNodeInput!): GqlNode!
+  deleteNode(id: String!): Boolean!
+  upsertEdge(input: GqlEdgeInput!): GqlEdge!
+  saveGraph(zone: Int): GqlSaveResult!
+  deleteUserGraph: Boolean!
+}
+
+type Query
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  """Fetch a single node by ID."""
+  node(id: String!): GqlNode
+
+  """
+  Fetch all nodes for the authenticated user, optionally filtered by domain.
+  """
+  nodes(domain: String, zone: Int): [GqlNode!]!
+
+  """
+  Semantic similarity search — returns top-K nodes closest to the query.
+  Goes directly to SurrealDB — no in-memory subgraph needed.
+  """
+  search(query: String!, config: GqlQueryConfig): [GqlScoredNode!]!
+
+  """
+  Cross-user semantic search — "who in my network knows about X?"
+  Zone 1 required — searches across connected users' nodes.
+  """
+  networkSearch(query: String!, userIds: [String!]!, topK: Int): [GqlScoredNode!]!
+
+  """
+  BFS expansion — returns all nodes within `depth` hops of the given node.
+  Served directly from SurrealDB for depth <= 3.
+  """
+  neighbors(id: String!, depth: Int): [GqlNode!]!
+
+  """
+  Dual-weight Dijkstra shortest path between two nodes.
+  Builds a request-scoped QueryContext — dropped after this resolver returns.
+  """
+  shortestPath(from: String!, to: String!): GqlPath!
+}

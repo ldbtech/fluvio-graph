@@ -1,0 +1,24 @@
+supergraph:
+  listen: 0.0.0.0:4000
+  introspection: true
+
+sandbox:
+  enabled: true
+
+homepage:
+  enabled: false
+
+cors:
+  allow_any_origin: true
+  allow_headers:
+    - content-type
+    - x-user-id
+
+include_subgraph_errors:
+  all: true
+
+headers:
+  all:
+    request:
+      - propagate:
+          named: x-user-id
