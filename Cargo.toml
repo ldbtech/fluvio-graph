@@ -16,6 +16,7 @@ members = [
     "services/fluvio-connectors",
     "services/fluvio-ingestion",
     "services/fluvio-tool-builder",
+    "services/fluvio-collab",
 ]
 
 [workspace.dependencies]

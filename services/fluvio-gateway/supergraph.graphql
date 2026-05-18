@@ -20,6 +20,44 @@ directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on
 
 directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
+input AddMemberInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  userId: String!
+  role: String!
+  invitedBy: String
+}
+
+input CreateGroupInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  name: String!
+  description: String
+  createdBy: String!
+}
+
+input CreateInviteInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  invitedBy: String!
+  role: String!
+  email: String
+
+  """Hours until expiry — default 72"""
+  expiresInHours: Int
+}
+
+input CreateUserInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  firebaseUid: String!
+  email: String
+  displayName: String
+  avatarUrl: String
+}
+
 input GqlChatMessage
   @join__type(graph: FLUVIO_TWIN)
 {
@@ -84,6 +122,17 @@ input GqlEdgeInput
   relationshipProbability: Float
 }
 
+type GqlGroup
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String!
+  description: String
+  graphId: String!
+  createdBy: String!
+  createdAt: String!
+}
+
 type GqlIngestJob
   @join__type(graph: FLUVIO_INGESTION)
 {
@@ -102,6 +151,31 @@ type GqlIngestResult
   jobId: String!
   status: String!
   message: String!
+}
+
+type GqlInvite
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  invitedBy: String!
+  token: String!
+  role: String!
+  email: String
+  expiresAt: String!
+  acceptedAt: String
+  createdAt: String!
+}
+
+type GqlMember
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  userId: String!
+  role: String!
+  invitedBy: String
+  joinedAt: String!
 }
 
 """Key-value metadata pair (GraphQL can't return HashMap directly)."""
@@ -195,6 +269,21 @@ input GqlQueryConfig
   maxZone: Int
 }
 
+type GqlQueueItem
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  contributedBy: String!
+  kind: String!
+  surrealNodeId: String!
+  status: String!
+  reviewedBy: String
+  reviewNote: String
+  createdAt: String!
+  reviewedAt: String
+}
+
 type GqlSaveResult
   @join__type(graph: FLUVIO_GRAPH)
 {
@@ -219,9 +308,21 @@ type GqlSource
   text: String!
 }
 
+type GqlUser
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  firebaseUid: String!
+  email: String
+  displayName: String
+  avatarUrl: String
+  createdAt: String!
+}
+
 scalar join__FieldSet
 
 enum join__Graph {
+  FLUVIO_DATABASE @join__graph(name: "fluvio-database", url: "http://localhost:3005/graphql")
   FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://localhost:3001/graphql")
   FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://localhost:3004/graphql")
   FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://localhost:3002/graphql")
@@ -242,9 +343,19 @@ enum link__Purpose {
 }
 
 type Mutation
+  @join__type(graph: FLUVIO_DATABASE)
   @join__type(graph: FLUVIO_GRAPH)
   @join__type(graph: FLUVIO_INGESTION)
 {
+  createUser(input: CreateUserInput!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  createGroup(input: CreateGroupInput!): GqlGroup! @join__field(graph: FLUVIO_DATABASE)
+  addMember(input: AddMemberInput!): GqlMember! @join__field(graph: FLUVIO_DATABASE)
+  updateMemberRole(groupId: String!, userId: String!, newRole: String!): GqlMember! @join__field(graph: FLUVIO_DATABASE)
+  removeMember(groupId: String!, userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  createInvite(input: CreateInviteInput!): GqlInvite! @join__field(graph: FLUVIO_DATABASE)
+  acceptInvite(token: String!, acceptedBy: String!): GqlInvite! @join__field(graph: FLUVIO_DATABASE)
+  submitToQueue(input: SubmitToQueueInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
+  updateQueueStatus(input: UpdateQueueStatusInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
   upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
   deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
   upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
@@ -265,10 +376,22 @@ type Mutation
 }
 
 type Query
+  @join__type(graph: FLUVIO_DATABASE)
   @join__type(graph: FLUVIO_GRAPH)
   @join__type(graph: FLUVIO_INGESTION)
   @join__type(graph: FLUVIO_TWIN)
 {
+  getUser(id: String!): GqlUser @join__field(graph: FLUVIO_DATABASE)
+  getUserByFirebaseUid(firebaseUid: String!): GqlUser @join__field(graph: FLUVIO_DATABASE)
+  getGroup(id: String!): GqlGroup @join__field(graph: FLUVIO_DATABASE)
+  getUserGroups(userId: String!): [GqlGroup!]! @join__field(graph: FLUVIO_DATABASE)
+  getMember(groupId: String!, userId: String!): GqlMember @join__field(graph: FLUVIO_DATABASE)
+  getGroupMembers(groupId: String!): [GqlMember!]! @join__field(graph: FLUVIO_DATABASE)
+  getInviteByToken(token: String!): GqlInvite @join__field(graph: FLUVIO_DATABASE)
+  getGroupInvites(groupId: String!): [GqlInvite!]! @join__field(graph: FLUVIO_DATABASE)
+  getPendingQueue(groupId: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
+  getUserContributions(groupId: String!, contributedBy: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
+
   """Fetch a single node by ID."""
   node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
 
@@ -318,6 +441,24 @@ type Query
 
   """List all documents (graph nodes) in the user's knowledge graph."""
   documents(zone: Int): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
+}
+
+input SubmitToQueueInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  contributedBy: String!
+  kind: String!
+  surrealNodeId: String!
+}
+
+input UpdateQueueStatusInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  status: String!
+  reviewedBy: String!
+  reviewNote: String
 }
 
 """A multipart file upload"""
