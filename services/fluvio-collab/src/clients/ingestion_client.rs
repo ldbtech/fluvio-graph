@@ -1,5 +1,4 @@
 //! HTTP client for fluvio-ingestion.
-//! File processing and embedding goes through here.
 
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -11,6 +10,8 @@ pub struct IngestResult {
     pub status:  String,
     pub message: String,
     pub job_id:  String,
+    /// Node ID written to fluvio-graph (if synchronous)
+    pub node_id: Option<String>,
 }
 
 #[derive(Clone)]
@@ -24,7 +25,7 @@ impl IngestionClient {
         Self { endpoint: endpoint.into(), client: Client::new() }
     }
 
-    /// Ingest raw text — returns immediately with status.
+    /// Ingest raw text for a personal twin (no group).
     pub async fn ingest_raw(
         &self,
         owner_id:   Uuid,
@@ -32,6 +33,42 @@ impl IngestionClient {
         source_uri: &str,
         domain:     &str,
     ) -> anyhow::Result<IngestResult> {
+        self.ingest_raw_inner(owner_id, text, source_uri, domain, None, None).await
+    }
+
+    /// Ingest raw text for a collab group.
+    /// group_id and status are stored as metadata on the node.
+    pub async fn ingest_raw_for_group(
+        &self,
+        owner_id:   Uuid,
+        text:       &str,
+        source_uri: &str,
+        group_id:   &str,
+        status:     &str,
+    ) -> anyhow::Result<IngestResult> {
+        self.ingest_raw_inner(
+            owner_id, text, source_uri, "custom",
+            Some(group_id), Some(status),
+        ).await
+    }
+
+    async fn ingest_raw_inner(
+        &self,
+        owner_id:   Uuid,
+        text:       &str,
+        source_uri: &str,
+        domain:     &str,
+        group_id:   Option<&str>,
+        status:     Option<&str>,
+    ) -> anyhow::Result<IngestResult> {
+        // Encode group metadata into source_uri so the node is tagged
+        // Format: original_uri|group=GROUP_ID|status=STATUS
+        let tagged_uri = match (group_id, status) {
+            (Some(gid), Some(s)) =>
+                format!("{source_uri}|group={gid}|status={s}"),
+            _ => source_uri.to_string(),
+        };
+
         let q = r#"mutation($text: String!, $sourceUri: String!, $domain: String) {
             ingestRaw(text: $text, sourceUri: $sourceUri, domain: $domain) {
                 jobId status message
@@ -40,7 +77,7 @@ impl IngestionClient {
 
         let body = self.post(owner_id, q, json!({
             "text":      text,
-            "sourceUri": source_uri,
+            "sourceUri": tagged_uri,
             "domain":    domain,
         })).await?;
 
@@ -49,6 +86,7 @@ impl IngestionClient {
             job_id:  r["jobId"].as_str().unwrap_or("").to_string(),
             status:  r["status"].as_str().unwrap_or("").to_string(),
             message: r["message"].as_str().unwrap_or("").to_string(),
+            node_id: None,
         })
     }
 
@@ -66,9 +104,12 @@ impl IngestionClient {
         Ok(body["data"]["ingestJob"]["status"].as_str().map(String::from))
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
-
-    async fn post(&self, owner_id: Uuid, query: &str, variables: Value) -> anyhow::Result<Value> {
+    async fn post(
+        &self,
+        owner_id:  Uuid,
+        query:     &str,
+        variables: Value,
+    ) -> anyhow::Result<Value> {
         let resp = self.client
             .post(&self.endpoint)
             .header("Content-Type", "application/json")

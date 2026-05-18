@@ -1,0 +1,13 @@
+[2m2026-05-18T18:29:09.745505Z[0m [32m INFO[0m [2mfluvio_graph[0m[2m:[0m fluvio-graph starting...
+[2m2026-05-18T18:29:09.745828Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Connecting to SurrealDB...
+[2m2026-05-18T18:29:09.839205Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Connected to ws://127.0.0.1:8000 ns=fluvio db=graph
+[2m2026-05-18T18:29:09.857895Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Schema initialized
+[2m2026-05-18T18:29:09.857931Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m SurrealDB ready.
+[2m2026-05-18T18:29:09.857941Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-18T18:29:10.118659Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-18T18:29:10.121097Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m fluvio-graph listening on http://0.0.0.0:3001
+[2m2026-05-18T18:29:10.121124Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3001/graphql
+[2m2026-05-18T18:29:34.121862Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m7eceeae5-a8ef-4d61-9e50-c99a955dbd11 [3mnode_id[0m[2m=[0m414c32fd-3fe0-fab4-dfe0-b0ca3ad94468
+[2m2026-05-18T18:29:34.137902Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m7eceeae5-a8ef-4d61-9e50-c99a955dbd11 [3mnode_id[0m[2m=[0m414c32fd-3fe0-fab4-dfe0-b0ca3ad94468
+[2m2026-05-18T18:29:34.250115Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m0b7103e8-e6bf-4908-889e-2f151d50e475 [3mnode_id[0m[2m=[0m4ad2b9ef-d367-a826-797f-b1d84bc4f5ae
+[2m2026-05-18T18:29:34.261954Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m0b7103e8-e6bf-4908-889e-2f151d50e475 [3mnode_id[0m[2m=[0m4ad2b9ef-d367-a826-797f-b1d84bc4f5ae

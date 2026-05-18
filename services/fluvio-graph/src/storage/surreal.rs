@@ -219,10 +219,9 @@ impl SurrealStorage {
         &self,
         node_id: &NodeId,
     ) -> anyhow::Result<Option<SurrealNodeRow>> {
-        let id = format!("nodes:{node_id}");
         let mut result = self.db
-            .query(format!("SELECT * FROM {id}"))
-            .await
+                .query(format!("SELECT * FROM nodes:`{node_id}`"))
+        .await
             .map_err(|e| anyhow::anyhow!("get_node: {e}"))?;
 
         let rows: Vec<SurrealNodeRow> = rows_from_json(&mut result, "get_node")?;

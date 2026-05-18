@@ -24,37 +24,53 @@ impl MutationRoot {
     ) -> Result<GqlNode> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
-
+    
         let node_id = match &input.id {
             Some(s) => Uuid::parse_str(s)
                 .map(NodeId)
                 .map_err(|_| Error::new(format!("Invalid node ID: {s}")))?,
             None => NodeId::random(),
         };
-
+    
         let metadata: HashMap<String, String> = input.metadata
             .unwrap_or_default()
             .into_iter()
             .map(|m| (m.key, m.value))
             .collect();
-
+    
+        // If updating an existing node and no embeddings provided,
+        // preserve the existing embeddings from SurrealDB.
+        // This prevents find_and_tag_node from wiping embeddings when
+        // adding group metadata to an already-embedded node.
+        let embeddings = match input.embeddings {
+            Some(ref e) if !e.is_empty() => e.clone(),
+            _ if input.id.is_some() => {
+                state.surreal.get_node(&node_id).await
+                    .ok()
+                    .flatten()
+                    .map(|r| r.embeddings)
+                    .unwrap_or_default()
+            }
+            _ => vec![],
+        };
+    
         let node = Node {
             id:          node_id,
             domain:      Domain::from(input.domain),
             source_uri:  input.source_uri,
             source_text: input.source_text.clone(),
-            embeddings:  input.embeddings.unwrap_or_default(),
+            embeddings,
             metadata,
             kind:        NodeKind::from(input.kind),
         };
-
+    
         let zone = input.zone.unwrap_or(0) as i16;
-
+    
         state.surreal.upsert_node(user_id, &node, zone).await
             .map_err(|e| Error::new(e.to_string()))?;
-
+    
         tracing::info!(user_id = %user_id, node_id = %node_id, "node upserted");
-
+    
         Ok(GqlNode {
             id:          node.id.to_string(),
             domain:      GqlDomain::from(&node.domain),
@@ -65,7 +81,8 @@ impl MutationRoot {
                 .map(|(k, v)| GqlMetadataEntry { key: k, value: v })
                 .collect(),
             embeddings:  node.embeddings,
-        })    }
+        })
+    }
 
     // ── Delete node ───────────────────────────────────────────────────────────
 
