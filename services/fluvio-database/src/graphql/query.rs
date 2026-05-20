@@ -6,6 +6,9 @@ use crate::server::AppState;
 use crate::db::{users, groups, members, invites, queue};
 use crate::graphql::types::*;
 
+use crate::graphql::connectors_type;
+use crate::graphql::connectors_query;
+
 pub struct QueryRoot;
 
 #[Object(name = "Query")]
@@ -131,6 +134,30 @@ impl QueryRoot {
         Ok(queue::get_user_contributions(&state.pool, group_id, contributed_by).await
             .map_err(|e| Error::new(e.to_string()))?
             .into_iter().map(GqlQueueItem::from).collect())
+    }
+
+    async fn get_user_connectors(
+        &self, ctx: &Context<'_>, group_id: Option<String>,
+    ) -> Result<Vec<connectors_type::GqlConnector>> {
+        connectors_query::get_user_connectors(ctx, group_id).await
+    }
+    
+    async fn get_connector_resources(
+        &self, ctx: &Context<'_>, connector_id: String,
+    ) -> Result<Vec<connectors_type::GqlConnectorResource>> {
+        connectors_query::get_connector_resources(ctx, connector_id).await
+    }
+    
+    async fn get_selected_resources(
+        &self, ctx: &Context<'_>, connector_id: String,
+    ) -> Result<Vec<connectors_type::GqlConnectorResource>> {
+        connectors_query::get_selected_resources(ctx, connector_id).await
+    }
+
+    async fn get_connector(
+        &self, ctx: &Context<'_>, connector_id: String,
+    ) -> Result<Option<connectors_type::GqlConnector>> {
+        connectors_query::get_connector(ctx, connector_id).await
     }
 }
 

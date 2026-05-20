@@ -266,3 +266,211 @@ pub mod queue {
         ORDER BY created_at DESC
     ";
 }
+
+// Add these two modules to your existing db/queries.rs file
+// Place them after the existing queue module
+
+pub mod connectors {
+    use uuid::Uuid;
+    use chrono::{DateTime, Utc};
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct Connector {
+        pub id:               Uuid,
+        pub user_id:          Uuid,
+        pub group_id:         Option<Uuid>,
+        pub kind:             String,
+        pub auth_method:      String,
+        pub access_token:     String,
+        pub refresh_token:    Option<String>,
+        pub token_expires_at: Option<DateTime<Utc>>,
+        pub status:           String,
+        pub error_message:    Option<String>,
+        pub created_at:       DateTime<Utc>,
+        pub updated_at:       DateTime<Utc>,
+        pub last_sync_at:     Option<DateTime<Utc>>,
+    }
+
+    pub const CREATE: &str = "
+        INSERT INTO connectors
+            (user_id, group_id, kind, auth_method, access_token,
+            refresh_token, token_expires_at)
+        VALUES ($1, $2, $3::connector_kind, $4::auth_method, $5, $6, $7)
+        ON CONFLICT (user_id, kind) WHERE group_id IS NULL
+            DO UPDATE SET
+                access_token  = EXCLUDED.access_token,
+                auth_method   = EXCLUDED.auth_method,
+                status        = 'connected'::connector_status,
+                error_message = NULL,
+                updated_at    = now()
+        RETURNING
+            id, user_id, group_id,
+            kind::text, auth_method::text,
+            access_token, refresh_token, token_expires_at,
+            status::text, error_message,
+            created_at, updated_at, last_sync_at
+    ";
+
+    pub const GET_BY_ID: &str = "
+        SELECT id, user_id, group_id,
+               kind::text, auth_method::text,
+               access_token, refresh_token, token_expires_at,
+               status::text, error_message,
+               created_at, updated_at, last_sync_at
+        FROM connectors WHERE id = $1
+    ";
+
+    pub const GET_USER_CONNECTORS: &str = "
+        SELECT id, user_id, group_id,
+               kind::text, auth_method::text,
+               access_token, refresh_token, token_expires_at,
+               status::text, error_message,
+               created_at, updated_at, last_sync_at
+        FROM connectors
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+    ";
+
+    pub const GET_GROUP_CONNECTORS: &str = "
+        SELECT id, user_id, group_id,
+               kind::text, auth_method::text,
+               access_token, refresh_token, token_expires_at,
+               status::text, error_message,
+               created_at, updated_at, last_sync_at
+        FROM connectors
+        WHERE group_id = $1
+        ORDER BY created_at DESC
+    ";
+
+    pub const UPDATE_STATUS: &str = "
+        UPDATE connectors
+        SET status        = $2::connector_status,
+            error_message = $3,
+            updated_at    = now()
+        WHERE id = $1
+        RETURNING
+            id, user_id, group_id,
+            kind::text, auth_method::text,
+            access_token, refresh_token, token_expires_at,
+            status::text, error_message,
+            created_at, updated_at, last_sync_at
+    ";
+
+    pub const UPDATE_LAST_SYNC: &str = "
+        UPDATE connectors
+        SET last_sync_at = now(),
+            status       = 'connected'::connector_status,
+            updated_at   = now()
+        WHERE id = $1
+        RETURNING
+            id, user_id, group_id,
+            kind::text, auth_method::text,
+            access_token, refresh_token, token_expires_at,
+            status::text, error_message,
+            created_at, updated_at, last_sync_at
+    ";
+
+    pub const UPDATE_TOKENS: &str = "
+        UPDATE connectors
+        SET access_token     = $2,
+            refresh_token    = $3,
+            token_expires_at = $4,
+            updated_at       = now()
+        WHERE id = $1
+        RETURNING
+            id, user_id, group_id,
+            kind::text, auth_method::text,
+            access_token, refresh_token, token_expires_at,
+            status::text, error_message,
+            created_at, updated_at, last_sync_at
+    ";
+
+    pub const DELETE: &str = "
+        DELETE FROM connectors WHERE id = $1
+    ";
+}
+
+pub mod resources {
+    use uuid::Uuid;
+    use chrono::{DateTime, Utc};
+    use serde_json::Value;
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct ConnectorResource {
+        pub id:            Uuid,
+        pub connector_id:  Uuid,
+        pub resource_kind: String,
+        pub external_id:   String,
+        pub name:          String,
+        pub description:   Option<String>,
+        pub selected:      bool,
+        pub last_sync_at:  Option<DateTime<Utc>>,
+        pub node_count:    i32,
+        pub meta:          Value,
+        pub created_at:    DateTime<Utc>,
+        pub updated_at:    DateTime<Utc>,
+    }
+
+    pub const UPSERT: &str = "
+        INSERT INTO connector_resources
+            (connector_id, resource_kind, external_id, name, description, meta)
+        VALUES ($1, $2::resource_kind, $3, $4, $5, $6)
+        ON CONFLICT (connector_id, external_id) DO UPDATE
+            SET name        = EXCLUDED.name,
+                description = EXCLUDED.description,
+                meta        = EXCLUDED.meta,
+                updated_at  = now()
+        RETURNING
+            id, connector_id, resource_kind::text,
+            external_id, name, description,
+            selected, last_sync_at, node_count, meta,
+            created_at, updated_at
+    ";
+
+    pub const GET_BY_CONNECTOR: &str = "
+        SELECT id, connector_id, resource_kind::text,
+               external_id, name, description,
+               selected, last_sync_at, node_count, meta,
+               created_at, updated_at
+        FROM connector_resources
+        WHERE connector_id = $1
+        ORDER BY name ASC
+    ";
+
+    pub const GET_SELECTED: &str = "
+        SELECT id, connector_id, resource_kind::text,
+               external_id, name, description,
+               selected, last_sync_at, node_count, meta,
+               created_at, updated_at
+        FROM connector_resources
+        WHERE connector_id = $1 AND selected = true
+        ORDER BY name ASC
+    ";
+
+    pub const SET_SELECTED: &str = "
+        UPDATE connector_resources
+        SET selected   = $2,
+            updated_at = now()
+        WHERE connector_id = $1 AND external_id = $3
+        RETURNING
+            id, connector_id, resource_kind::text,
+            external_id, name, description,
+            selected, last_sync_at, node_count, meta,
+            created_at, updated_at
+    ";
+
+    pub const UPDATE_SYNC_STATS: &str = "
+        UPDATE connector_resources
+        SET last_sync_at = now(),
+            node_count   = node_count + $2,
+            updated_at   = now()
+        WHERE connector_id = $1 AND external_id = $3
+    ";
+
+    pub const BULK_SET_SELECTED: &str = "
+        UPDATE connector_resources
+        SET selected   = (external_id = ANY($2)),
+            updated_at = now()
+        WHERE connector_id = $1
+    ";
+}

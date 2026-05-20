@@ -1,8 +1,6 @@
-[2m2026-05-18T18:29:12.942927Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
-[2m2026-05-18T18:29:12.943130Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-05-18T18:29:13.155448Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
-[2m2026-05-18T18:29:13.160618Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
-[2m2026-05-18T18:29:13.163313Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
-[2m2026-05-18T18:29:13.163330Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql
-[2m2026-05-18T18:29:34.124951Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
-[2m2026-05-18T18:29:34.250619Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-19T18:53:30.481138Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
+[2m2026-05-19T18:53:30.481324Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-19T18:53:30.695881Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-19T18:53:30.699014Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
+[2m2026-05-19T18:53:30.701732Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
+[2m2026-05-19T18:53:30.701747Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql

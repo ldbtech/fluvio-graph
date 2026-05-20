@@ -114,6 +114,7 @@ stop_all() {
   for entry in "${SERVICES[@]}"; do
     stop_service "$(cut -d: -f1 <<< "$entry")"
   done
+  pkill -f "uvicorn src.main:app" 2>/dev/null || true
   pkill -f "router --config" 2>/dev/null || true
   sleep 0.5
 }
@@ -202,6 +203,45 @@ for entry in "${SERVICES[@]}"; do
     exit 1
   fi
 done
+
+
+# ── Start fluvio-connectors (Python) ──────────────────────────────────────────
+
+section "Starting fluvio-connectors (Python)"
+
+CONNECTORS_DIR="$ROOT/services/fluvio-connectors"
+CONNECTORS_PORT="${FLUVIO_CONNECTORS_PORT:-3006}"
+
+if [[ ! -d "$CONNECTORS_DIR/.venv" ]]; then
+  warn "fluvio-connectors .venv not found — skipping"
+  warn "Run: cd services/fluvio-connectors && python3 -m venv .venv && source .venv/bin/activate && pip install fastapi uvicorn 'strawberry-graphql[fastapi]' httpx PyGithub notion-client apscheduler python-dotenv pydantic aiofiles"
+else
+  [[ -f "$LOG_DIR/fluvio-connectors.log" ]] && \
+    mv "$LOG_DIR/fluvio-connectors.log" "$LOG_DIR/fluvio-connectors.log.prev"
+
+  (
+    cd "$CONNECTORS_DIR"
+    source .venv/bin/activate
+    PORT="$CONNECTORS_PORT" \
+      python3 -m uvicorn src.main:app \
+        --host 0.0.0.0 \
+        --port "$CONNECTORS_PORT" \
+        >> "$LOG_DIR/fluvio-connectors.log" 2>&1 &
+    echo $! > "$ROOT/.pids/fluvio-connectors.pid"
+  )
+
+  local_i=0
+  until curl -sf "http://127.0.0.1:${CONNECTORS_PORT}/health" &>/dev/null; do
+    sleep 1
+    ((local_i++))
+  if ((local_i >= 30)); then
+      fail "fluvio-connectors failed to start"
+      tail -20 "$LOG_DIR/fluvio-connectors.log" >&2
+      exit 1
+    fi
+  done
+  ok "fluvio-connectors healthy"
+fi
 
 # ── Start subgraphs ────────────────────────────────────────────────────────────
 
@@ -306,6 +346,7 @@ for entry in "${SERVICES[@]}"; do
 done
 
 echo ""
+printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "fluvio-connectors:" "${FLUVIO_CONNECTORS_PORT:-3006}"
 echo -e "  ${CYAN}Logs  →  ${LOG_DIR}/${RESET}"
 echo -e "  ${CYAN}Ctrl+C to stop all services${RESET}"
 echo ""

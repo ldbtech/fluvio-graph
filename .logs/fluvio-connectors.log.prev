@@ -1,0 +1,55 @@
+INFO:     Started server process [81019]
+INFO:     Waiting for application startup.
+2026-05-19 14:53:21,729  INFO      src.main  fluvio-connectors starting...
+2026-05-19 14:53:21,729  INFO      apscheduler.scheduler  Scheduler started
+2026-05-19 14:53:21,729  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3006 (Press CTRL+C to quit)
+INFO:     127.0.0.1:63284 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63375 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63381 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63385 - "GET /oauth/github/callback?code=980af887681d34debb29&state=e4a219fb-56d9-4d5a-8d6c-2ec9be376119 HTTP/1.1" 200 OK
+2026-05-19 14:54:21,378  INFO      httpx  HTTP Request: POST https://github.com/login/oauth/access_token "HTTP/1.1 200 OK"
+2026-05-19 14:54:21,492  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-19 14:54:21,492  ERROR     strawberry.execution  fluvio-database error: [{'message': 'no rows returned by a query that expected to return at least one row', 'locations': [{'line': 3, 'column': 13}], 'path': ['createConnector']}]
+
+GraphQL request:1:12
+1 | mutation { connectOauth(input: { kind: "github", code: "980af887681d34debb29", s
+  |            ^
+  | tate: "e4a219fb-56d9-4d5a-8d6c-2ec9be376119" }) { id kind status } }
+Traceback (most recent call last):
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/.venv/lib/python3.13/site-packages/graphql/execution/execute.py", line 530, in await_result
+    return_type, field_nodes, info, path, await result
+                                          ^^^^^^^^^^^^
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/.venv/lib/python3.13/site-packages/strawberry/schema/schema_converter.py", line 789, in _async_resolver
+    return await await_maybe(
+           ^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/.venv/lib/python3.13/site-packages/strawberry/utils/await_maybe.py", line 13, in await_maybe
+    return await value
+           ^^^^^^^^^^^
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/graphql/mutation.py", line 102, in connect_oauth
+    result = await db_client.create_connector(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/clients/database_client.py", line 42, in create_connector
+    data = await self.post(q, {
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    }, user_id)
+    ^^^^^^^^^^^
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/clients/database_client.py", line 23, in post
+    raise Exception(f"fluvio-database error: {body['errors']}")
+Exception: fluvio-database error: [{'message': 'no rows returned by a query that expected to return at least one row', 'locations': [{'line': 3, 'column': 13}], 'path': ['createConnector']}]
+INFO:     127.0.0.1:63400 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-19 14:57:16,413  INFO      src.jobs.scheduler  Scheduler stopped
+2026-05-19 14:57:16,413  INFO      src.main  fluvio-connectors stopped
+2026-05-19 14:57:16,414  INFO      apscheduler.scheduler  Scheduler has been shut down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81019]

@@ -2,6 +2,10 @@ pub mod mutation;
 pub mod query;
 pub mod types;
 
+pub mod connectors_type;    
+pub mod connectors_query;     
+pub mod connectors_mutation;  
+
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};

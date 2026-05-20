@@ -13,7 +13,6 @@ members = [
     "services/fluvio-graph",
     "services/fluvio-twin",
     "services/fluvio-collab",
-    "services/fluvio-connectors",
     "services/fluvio-ingestion",
     "services/fluvio-tool-builder",
     "services/fluvio-collab",

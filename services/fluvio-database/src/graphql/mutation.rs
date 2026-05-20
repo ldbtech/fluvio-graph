@@ -8,6 +8,9 @@ use crate::server::AppState;
 use crate::db::{users, groups, members, invites, queue};
 use crate::graphql::types::*;
 
+use crate::graphql::connectors_type;
+use crate::graphql::connectors_mutation;
+
 pub struct MutationRoot;
 
 #[Object(name = "Mutation")]
@@ -181,6 +184,50 @@ impl MutationRoot {
             input.review_note.as_deref(),
         ).await.map_err(|e| Error::new(e.to_string()))
         .map(GqlQueueItem::from)?)
+    }
+
+    async fn create_connector(
+        &self, ctx: &Context<'_>, input: connectors_type::CreateConnectorInput,
+    ) -> Result<connectors_type::GqlConnector> {
+        connectors_mutation::create_connector(ctx, input).await
+    }
+    
+    async fn upsert_resource(
+        &self, ctx: &Context<'_>, input: connectors_type::UpsertResourceInput,
+    ) -> Result<connectors_type::GqlConnectorResource> {
+        connectors_mutation::upsert_resource(ctx, input).await
+    }
+    
+    async fn select_resources(
+        &self, ctx: &Context<'_>, input: connectors_type::SelectResourcesInput,
+    ) -> Result<Vec<connectors_type::GqlConnectorResource>> {
+        connectors_mutation::select_resources(ctx, input).await
+    }
+    
+    async fn update_connector_status(
+        &self, ctx: &Context<'_>, connector_id: String,
+        status: String, error: Option<String>,
+    ) -> Result<connectors_type::GqlConnector> {
+        connectors_mutation::update_connector_status(ctx, connector_id, status, error).await
+    }
+    
+    async fn mark_synced(
+        &self, ctx: &Context<'_>, connector_id: String,
+    ) -> Result<connectors_type::GqlConnector> {
+        connectors_mutation::mark_synced(ctx, connector_id).await
+    }
+    
+    async fn update_resource_sync_stats(
+        &self, ctx: &Context<'_>, connector_id: String,
+        external_id: String, nodes_added: i32,
+    ) -> Result<bool> {
+        connectors_mutation::update_resource_sync_stats(ctx, connector_id, external_id, nodes_added).await
+    }
+    
+    async fn disconnect_connector(
+        &self, ctx: &Context<'_>, connector_id: String,
+    ) -> Result<bool> {
+        connectors_mutation::disconnect_connector(ctx, connector_id).await
     }
 }
 

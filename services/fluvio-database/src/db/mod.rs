@@ -6,4 +6,7 @@ pub mod invites;
 pub mod queue;
 pub mod queries;
 
+pub mod connectors;
+pub mod resources;
+
 pub use pool::create_pool;
