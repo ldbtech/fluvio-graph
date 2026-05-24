@@ -108,8 +108,13 @@ impl IngestionPipeline {
         tracing::info!(filename, chars = text.len(), "PDF text extracted");
 
         // 2. Chunk
-        let chunks = chunk_text(&text);
+        let mut chunks = chunk_text(&text);
         tracing::info!(chunk_count = chunks.len(), "PDF chunked");
+
+        // Format each chunk text to include file context (essential for filename queries and LLM context)
+        for chunk in &mut chunks {
+            chunk.text = format!("Document: {filename}\n\n{}", chunk.text);
+        }
 
         // 3. Embed all chunks in one batch
         let texts: Vec<String> = chunks.iter().map(|c| c.text.clone()).collect();
@@ -173,7 +178,12 @@ impl IngestionPipeline {
         domain:     Domain,
         zone:       i16,
     ) -> anyhow::Result<IngestResult> {
-        let chunks = chunk_text(&text);
+        let mut chunks = chunk_text(&text);
+
+        // Format each chunk text to include source identifier context
+        for chunk in &mut chunks {
+            chunk.text = format!("Source: {source_uri}\n\n{}", chunk.text);
+        }
 
         let texts: Vec<String> = chunks.iter().map(|c| c.text.clone()).collect();
         let embeddings = {

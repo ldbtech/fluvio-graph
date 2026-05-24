@@ -25,10 +25,11 @@ impl MutationRoot {
         let user_id = extract_user_id(ctx)?;
         let zone    = zone.unwrap_or(0) as i16;
 
-        let upload  = file.value(ctx)?;
-        let bytes   = tokio::fs::read(&upload.filename)
-            .await
-            .unwrap_or_else(|_| upload.filename.as_bytes().to_vec());
+        let mut upload = file.value(ctx)?;
+        let mut bytes = Vec::new();
+        use std::io::Read;
+        upload.content.read_to_end(&mut bytes)
+            .map_err(|e| Error::new(format!("Failed to read uploaded file: {e}")))?;
 
         let job_id = state.pipeline
             .ingest_pdf_async(user_id, bytes, filename.clone(), zone)

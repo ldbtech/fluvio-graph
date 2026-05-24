@@ -29,6 +29,15 @@ input AddMemberInput
   invitedBy: String
 }
 
+input CreateConnectorInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  kind: String!
+  authMethod: String!
+  accessToken: String!
+  groupId: String
+}
+
 input CreateGroupInput
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -72,6 +81,37 @@ type GqlChatResponse
   sources: [GqlSource!]!
 }
 
+type GqlConnector
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  userId: String!
+  groupId: String
+  kind: String!
+  authMethod: String!
+  status: String!
+  errorMessage: String
+  accessToken: String!
+  createdAt: String!
+  updatedAt: String!
+  lastSyncAt: String
+}
+
+type GqlConnectorResource
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  connectorId: String!
+  resourceKind: String!
+  externalId: String!
+  name: String!
+  description: String
+  selected: Boolean!
+  lastSyncAt: String
+  nodeCount: Int!
+  createdAt: String!
+}
+
 type GqlDocument
   @join__type(graph: FLUVIO_TWIN)
 {
@@ -80,6 +120,7 @@ type GqlDocument
   kind: String!
   domain: String!
   excerpt: String!
+  zone: Int!
 }
 
 enum GqlDomain
@@ -214,6 +255,9 @@ type GqlNode
 
   """Arbitrary key-value metadata."""
   metadata: [GqlMetadataEntry!]!
+
+  """Zone level of this node."""
+  zone: Int!
 
   """Number of embedding dimensions. 0 means not yet embedded."""
   embeddingDimensions: Int!
@@ -356,6 +400,13 @@ type Mutation
   acceptInvite(token: String!, acceptedBy: String!): GqlInvite! @join__field(graph: FLUVIO_DATABASE)
   submitToQueue(input: SubmitToQueueInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
   updateQueueStatus(input: UpdateQueueStatusInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
+  createConnector(input: CreateConnectorInput!): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  upsertResource(input: UpsertResourceInput!): GqlConnectorResource! @join__field(graph: FLUVIO_DATABASE)
+  selectResources(input: SelectResourcesInput!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  updateConnectorStatus(connectorId: String!, status: String!, error: String): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  markSynced(connectorId: String!): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  updateResourceSyncStats(connectorId: String!, externalId: String!, nodesAdded: Int!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  disconnectConnector(connectorId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
   deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
   upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
@@ -391,6 +442,10 @@ type Query
   getGroupInvites(groupId: String!): [GqlInvite!]! @join__field(graph: FLUVIO_DATABASE)
   getPendingQueue(groupId: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
   getUserContributions(groupId: String!, contributedBy: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
+  getUserConnectors(groupId: String): [GqlConnector!]! @join__field(graph: FLUVIO_DATABASE)
+  getConnectorResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  getSelectedResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  getConnector(connectorId: String!): GqlConnector @join__field(graph: FLUVIO_DATABASE)
 
   """Fetch a single node by ID."""
   node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
@@ -443,6 +498,15 @@ type Query
   documents(zone: Int): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
 }
 
+input SelectResourcesInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  connectorId: String!
+
+  """List of external_ids to select — all others deselected"""
+  externalIds: [String!]!
+}
+
 input SubmitToQueueInput
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -464,3 +528,13 @@ input UpdateQueueStatusInput
 """A multipart file upload"""
 scalar Upload
   @join__type(graph: FLUVIO_INGESTION)
+
+input UpsertResourceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  connectorId: String!
+  resourceKind: String!
+  externalId: String!
+  name: String!
+  description: String
+}

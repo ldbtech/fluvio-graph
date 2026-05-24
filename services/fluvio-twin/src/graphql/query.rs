@@ -123,10 +123,12 @@ impl QueryRoot {
             .map_err(|e| Error::new(e.to_string()))?;
 
         let docs = nodes.into_iter().map(|n| {
-            let title = n.metadata.iter()
-                .find(|(k, _)| k == "filename" || k == "title")
+            let title_raw = n.metadata.iter()
+                .find(|(k, _)| k == "repo" || k == "filename" || k == "title")
                 .map(|(_, v)| v.clone())
                 .unwrap_or_else(|| n.domain.clone());
+
+            let title = get_clean_title(&n.domain, &title_raw, &n.source_uri);
 
             let kind = n.metadata.iter()
                 .find(|(k, _)| k == "kind")
@@ -139,10 +141,28 @@ impl QueryRoot {
                 kind,
                 domain:  n.domain,
                 excerpt: n.source_text.chars().take(200).collect(),
+                zone:    n.zone,
             }
         }).collect();
 
         Ok(docs)
+    }
+}
+
+fn get_clean_title(domain: &str, title: &str, source_uri: &str) -> String {
+    if domain.to_uppercase() == "CODEBASE" {
+        if let Some(github_idx) = source_uri.find("github://") {
+            let sub = &source_uri[github_idx..];
+            let parts: Vec<&str> = sub.split('/').collect();
+            if parts.len() >= 4 {
+                return format!("{}/{}", parts[2], parts[3]);
+            }
+        }
+    }
+    if title != "CODEBASE" && title != "CUSTOM" && !title.is_empty() {
+        title.to_string()
+    } else {
+        domain.to_string()
     }
 }
 

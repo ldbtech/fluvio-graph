@@ -152,6 +152,7 @@ impl QueryRoot {
                     kind:        GqlNodeKind::Artifcat,
                     metadata,
                     embeddings:  vec![],
+                    zone:        1,
                 },
                 score: score as f64,
             }

@@ -1,8 +1,5 @@
-[2m2026-05-19T18:57:35.507221Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-19T18:57:35.544701Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-19T18:57:35.552546Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-19T18:57:35.557908Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-19T18:57:35.558010Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
-[2m2026-05-19T18:58:15.255279Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m7eceeae5-a8ef-4d61-9e50-c99a955dbd11 [3mkind[0m[2m=[0mgithub
-[2m2026-05-19T19:47:34.707687Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m7eceeae5-a8ef-4d61-9e50-c99a955dbd11 [3mkind[0m[2m=[0mgithub
-[2m2026-05-19T19:52:08.233463Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m7eceeae5-a8ef-4d61-9e50-c99a955dbd11 [3mkind[0m[2m=[0mgithub
+[2m2026-05-24T02:27:57.881742Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-05-24T02:27:57.911739Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-24T02:27:57.924002Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-24T02:27:57.927432Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-05-24T02:27:57.927455Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql

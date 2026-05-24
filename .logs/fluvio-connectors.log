@@ -1,84 +1,22 @@
-INFO:     Started server process [82442]
+INFO:     Started server process [61420]
 INFO:     Waiting for application startup.
-2026-05-19 14:57:23,109  INFO      src.main  fluvio-connectors starting...
-2026-05-19 14:57:23,109  INFO      apscheduler.scheduler  Scheduler started
-2026-05-19 14:57:23,109  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
+2026-05-23 22:27:45,024  INFO      src.main  fluvio-connectors starting...
+2026-05-23 22:27:45,024  INFO      apscheduler.scheduler  Scheduler started
+2026-05-23 22:27:45,024  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3006 (Press CTRL+C to quit)
-INFO:     127.0.0.1:63613 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63709 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63715 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63719 - "GET /oauth/github/callback?code=ebe9a8e8027173e1bf8e&state=26125f0e-81c8-462f-938b-8fbdee2d4328 HTTP/1.1" 200 OK
-2026-05-19 14:58:15,174  INFO      httpx  HTTP Request: POST https://github.com/login/oauth/access_token "HTTP/1.1 200 OK"
-2026-05-19 14:58:15,260  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,196  INFO      src.connectors.github.connector  GitHub: found 50 repos
-2026-05-19 14:58:17,207  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,212  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,218  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,222  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,227  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,231  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,235  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,239  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,242  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,246  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,250  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,253  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,257  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,261  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,264  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,268  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,271  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,274  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,278  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,283  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,286  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,289  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,292  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,295  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,298  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,302  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,304  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,307  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,310  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,313  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,316  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,319  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,321  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,324  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,327  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,330  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,333  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,336  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,338  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,341  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,344  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,347  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,355  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,358  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,360  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,363  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,366  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,369  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,371  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,374  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:17,375  INFO      src.graphql.mutation  Stored 50 resources for connector 32c486c3-291f-468a-8e05-5b8691dfbe8c
-2026-05-19 14:58:17,375  INFO      src.graphql.mutation  Connected github via OAuth for user 7eceeae5-a8ef-4d61-9e50-c99a955dbd11
-INFO:     127.0.0.1:63726 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-19 14:58:17,458  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63735 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-19 14:58:23,342  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63741 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-19 14:58:23,359  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63746 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-19 14:58:23,364  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-19 14:58:23,364  ERROR     src.graphql.mutation  Sync failed: connector=32c486c3-291f-468a-8e05-5b8691dfbe8c error=string indices must be integers, not 'str'
-2026-05-19 14:58:23,367  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63750 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2026-05-19 15:41:52,130  INFO      src.jobs.scheduler  Scheduler stopped
-2026-05-19 15:41:52,131  INFO      src.main  fluvio-connectors stopped
-2026-05-19 15:41:52,132  INFO      apscheduler.scheduler  Scheduler has been shut down
-INFO:     Application shutdown complete.
-INFO:     Finished server process [82442]
+INFO:     127.0.0.1:63697 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63860 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63861 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-05-23 22:29:26,089  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-23 22:29:26,090  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63860 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63861 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-23 22:30:16,848  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-23 22:30:16,850  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63936 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63937 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-23 22:30:35,382  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-23 22:30:35,383  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63970 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63969 - "POST /graphql HTTP/1.1" 200 OK

@@ -1,0 +1,5 @@
+id,firebase_uid,email,display_name,avatar_url,created_at,updated_at
+e09c6116-6a9d-422b-920a-93f1082a01a8,firebase-test-001,ali@fluvio.ai,Ali,,2026-05-18 00:00:12.564213-04:00,2026-05-18 00:00:12.564213-04:00
+554bcda1-7a33-497d-ac1f-19b60af4e876,owner-001,owner@fluvio.ai,Owner,,2026-05-18 13:46:18.545781-04:00,2026-05-18 13:46:18.545781-04:00
+7eceeae5-a8ef-4d61-9e50-c99a955dbd11,test-owner-001,owner@fluvio.ai,Alice Owner,,2026-05-18 14:15:55.592791-04:00,2026-05-18 14:31:05.915150-04:00
+0b7103e8-e6bf-4908-889e-2f151d50e475,test-contrib-001,bob@fluvio.ai,Bob Contributor,,2026-05-18 14:15:55.699762-04:00,2026-05-18 14:31:06.001532-04:00

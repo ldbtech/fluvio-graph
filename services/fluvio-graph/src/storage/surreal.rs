@@ -67,11 +67,13 @@ impl SurrealNodeRow {
                 "Codebase"     => Domain::Codebase,
                 "Web"          => Domain::Web,
                 other          => Domain::Custom(other.to_string()),
-            },            source_uri:  self.source_uri.clone(),
+            },
+            source_uri:  self.source_uri.clone(),
             source_text: self.source_text.clone(),
             embeddings:  self.embeddings.clone(),
             metadata:    self.metadata.clone(),
             kind:        NodeKind::Artifcat,
+            zone:        self.zone,
         }
     }
 }
@@ -412,14 +414,13 @@ impl SurrealStorage {
         Ok(())
     }
 
-    /// Delete persisted node records (same record ids as `upsert_node`).
     pub async fn delete_node_records(&self, node_ids: &[NodeId]) -> anyhow::Result<()> {
         for id in node_ids {
-            let rid = format!("nodes:{id}");
             self.db
-                .query(format!("DELETE {rid}"))
+                .query("DELETE type::record('nodes', $id)")
+                .bind(("id", id.to_string()))
                 .await
-                .map_err(|e| anyhow::anyhow!("delete_node_records {rid}: {e}"))?;
+                .map_err(|e| anyhow::anyhow!("delete_node_records {id}: {e}"))?;
         }
         if !node_ids.is_empty() {
             tracing::info!("[SurrealDB] Deleted {} node record(s)", node_ids.len());

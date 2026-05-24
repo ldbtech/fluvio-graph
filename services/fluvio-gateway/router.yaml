@@ -13,6 +13,8 @@ cors:
   allow_headers:
     - content-type
     - x-user-id
+    - apollo-require-preflight
+    - x-apollo-operation-name
 
 include_subgraph_errors:
   all: true

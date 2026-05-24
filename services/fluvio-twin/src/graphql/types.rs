@@ -23,6 +23,7 @@ pub struct GqlDocument {
     pub kind:    String,
     pub domain:  String,
     pub excerpt: String,
+    pub zone:    i32,
 }
 
 #[derive(InputObject, Clone, Debug)]

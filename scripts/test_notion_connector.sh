@@ -17,11 +17,13 @@
 # Usage:
 #   bash scripts/test_notion_connector.sh
 #   bash scripts/test_notion_connector.sh --group-id GROUP_ID
+#   bash scripts/test_notion_connector.sh --user-id USER_UUID
 # =============================================================================
 
 set -euo pipefail
 
 CONNECTORS_URL="http://localhost:3006/graphql"
+DATABASE_URL="http://localhost:3005/graphql"
 COLLAB_URL="http://localhost:3003/graphql"
 TWIN_URL="http://localhost:3002/graphql"
 
@@ -37,26 +39,15 @@ section() { echo -e "\n${BOLD}${CYAN}── $* ──${RESET}"; }
 # ── Parse flags ───────────────────────────────────────────────────────────────
 
 GROUP_ID=""
+USER_ID=""
 for i in "$@"; do
   case $i in
     --group-id=*) GROUP_ID="${i#*=}" ;;
     --group-id)   shift; GROUP_ID="$1" ;;
+    --user-id=*)  USER_ID="${i#*=}" ;;
+    --user-id)    shift; USER_ID="$1" ;;
   esac
 done
-
-# ── Get user ID ───────────────────────────────────────────────────────────────
-
-section "Setup"
-ask "Enter your Fluvio user ID:"
-read -r USER_ID
-[[ -z "$USER_ID" ]] && fail "user ID required"
-pass "User ID: $USER_ID"
-
-if [[ -n "$GROUP_ID" ]]; then
-  info "Syncing into group: $GROUP_ID"
-else
-  info "Syncing into personal twin"
-fi
 
 # ── Health checks ─────────────────────────────────────────────────────────────
 
@@ -65,13 +56,40 @@ curl -sf "http://localhost:3006/health" &>/dev/null && pass "fluvio-connectors :
 curl -sf "http://localhost:3005/health" &>/dev/null && pass "fluvio-database :3005"   || fail "fluvio-database not running"
 curl -sf "http://localhost:3001/health" &>/dev/null && pass "fluvio-graph :3001"       || fail "fluvio-graph not running"
 
+# ── Fluvio user (not Notion — browser opens in Step 1 for Notion OAuth) ────────
+
+section "Setup"
+if [[ -z "$USER_ID" ]]; then
+  info "Creating a test Fluvio user (fluvio-database)..."
+  USER_RESP=$(curl -s -X POST "$DATABASE_URL" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "query": "mutation { createUser(input: { firebaseUid: \"test-notion-001\", email: \"notion-test@fluvio.ai\", displayName: \"Notion Test User\" }) { id displayName } }"
+    }')
+  USER_ID=$(echo "$USER_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['createUser']['id'])" 2>/dev/null)
+  [[ -z "$USER_ID" ]] && {
+    echo "$USER_RESP" | python3 -m json.tool 2>/dev/null || echo "$USER_RESP"
+    fail "failed to create test user — pass --user-id YOUR_UUID if you have one"
+  }
+  pass "Test user: $USER_ID"
+else
+  pass "Using user ID: $USER_ID"
+fi
+
+if [[ -n "$GROUP_ID" ]]; then
+  info "Syncing into group: $GROUP_ID"
+else
+  info "Syncing into personal twin"
+fi
+
 # ── Step 1: Get OAuth URL ─────────────────────────────────────────────────────
 
 section "Step 1: Notion OAuth"
+info "Your browser will open to authorize Notion (not for Fluvio user ID)."
 info "Before this works you need a Notion OAuth app:"
 info "  → https://www.notion.so/my-integrations → New integration → OAuth"
 info "  → Set redirect URI: http://localhost:3006/oauth/notion/callback"
-info "  → Add NOTION_CLIENT_ID and NOTION_CLIENT_SECRET to .env"
+info "  → Add NOTION_CLIENT_ID and NOTION_CLIENT_SECRET to services/fluvio-connectors/.env"
 echo ""
 
 OAUTH_RESP=$(curl -s -X POST "$CONNECTORS_URL" \
@@ -94,10 +112,11 @@ echo ""
 # ── Step 2: Get callback code ─────────────────────────────────────────────────
 
 section "Step 2: Authorization"
-info "After authorizing on Notion, you'll be redirected to:"
+info "After authorizing on Notion, your browser redirects to:"
 info "http://localhost:3006/oauth/notion/callback?code=...&state=..."
+info "Copy the code= value from that URL (shown in the browser address bar or JSON response)."
 echo ""
-ask "Paste the 'code' value from the callback URL:"
+ask "Paste the OAuth 'code' from the callback URL:"
 read -r CODE
 [[ -z "$CODE" ]] && fail "code required"
 pass "Code received"

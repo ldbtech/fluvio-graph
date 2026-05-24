@@ -16,7 +16,7 @@ subgraphs:
     schema:
       subgraph_url: http://localhost:3002/graphql
 
-  fluvio-collab:
-    routing_url: http://localhost:3003/graphql
+  fluvio-database:
+    routing_url: http://localhost:3005/graphql
     schema:
-      subgraph_url: http://localhost:3003/graphql
+      subgraph_url: http://localhost:3005/graphql

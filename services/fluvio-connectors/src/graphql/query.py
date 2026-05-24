@@ -3,9 +3,17 @@ import strawberry
 from typing import Optional
 from strawberry.types import Info
 
-from src.graphql.types import ConnectorType, ResourceType, SyncJobType
+from src.graphql.types import ConnectorType, DBSchemaResult, ResourceType, SyncJobType
 from src.clients import db_client
 from src.jobs import job_store
+
+import sys 
+from pathlib import Path
+_DB_CONNECTOR_PATH = Path(__file__).parent.parent / "database-connectors"
+sys.path.insert(0, str(_DB_CONNECTOR_PATH))
+
+from database_types.sql_connector import DBConfig, DatabaseConnector, SchemaFunctions
+from .types import DBSchemaTable, DBSchemaResult, DBConnectorInput
 
 
 @strawberry.type
@@ -57,6 +65,42 @@ class Query:
             nodes_added=  job.nodes_added,
             error=        job.error,
         )
+    
+    @strawberry.field
+    async def db_schema(
+        self,
+        info: Info,
+        input: "DBConnectorInput",
+    ) -> "DBSchemaResult":
+
+        """
+            Get a schema for a database - called in wizard step 3 ,
+            returns: table names and columns names.
+        """
+        config = DBConfig(
+            dialect   = input.dialect,
+            host      = input.host,
+            port      = input.port,
+            database  = input.database,
+            username  = input.username,
+            password  = input.password,
+        )
+
+        connector  = DatabaseConnector(config)
+        schema     = SchemaFunctions(connector.get_engine())
+        db_meta    = schema.extract()
+
+        connector.get_engine().dispose()
+
+        tables = [
+            DBSchemaTable(
+                name            = t.name,
+                columns         = [c.name for c in t.columns],
+                row_estimate    = 0, 
+            ) for t in db_meta.tables
+        ]
+
+        return DBSchemaResult(tables = tables) 
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

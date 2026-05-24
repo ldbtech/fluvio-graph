@@ -35,6 +35,7 @@ pub fn build_node(
         embeddings,
         metadata,
         kind: NodeKind::Artifcat,
+        zone: 0,
     }
 }
 

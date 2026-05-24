@@ -75,6 +75,8 @@ pub struct GqlNode {
     pub kind:        GqlNodeKind,
     /// Arbitrary key-value metadata.
     pub metadata:    Vec<GqlMetadataEntry>,
+    /// Zone level of this node.
+    pub zone:        i32,
     /// Embedding vector is omitted from default responses — too large.
     /// Use embeddingDimensions to check if embedded.
     #[graphql(skip)]
@@ -106,6 +108,7 @@ impl From<fluvio_types::Node> for GqlNode {
                 .map(|(k, v)| GqlMetadataEntry { key: k, value: v })
                 .collect(),
             embeddings:  n.embeddings,
+            zone:        n.zone as i32,
         }
     }
 }

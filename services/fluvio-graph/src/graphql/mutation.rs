@@ -54,6 +54,8 @@ impl MutationRoot {
             _ => vec![],
         };
     
+        let zone = input.zone.unwrap_or(0) as i16;
+    
         let node = Node {
             id:          node_id,
             domain:      Domain::from(input.domain),
@@ -62,9 +64,8 @@ impl MutationRoot {
             embeddings,
             metadata,
             kind:        NodeKind::from(input.kind),
+            zone,
         };
-    
-        let zone = input.zone.unwrap_or(0) as i16;
     
         state.surreal.upsert_node(user_id, &node, zone).await
             .map_err(|e| Error::new(e.to_string()))?;
@@ -81,6 +82,7 @@ impl MutationRoot {
                 .map(|(k, v)| GqlMetadataEntry { key: k, value: v })
                 .collect(),
             embeddings:  node.embeddings,
+            zone:        node.zone as i32,
         })
     }
 

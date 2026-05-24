@@ -7,7 +7,7 @@ from typing import Optional
 from strawberry.types import Info
 
 from src.graphql.types import (
-    ConnectorType, ResourceType, SyncJobType, OAuthUrlType,
+    ConnectionTestResult, ConnectorType, ResourceType, SyncJobType, OAuthUrlType,
     ConnectTokenInput, ConnectOAuthInput, SelectResourcesInput,
 )
 from src.clients import db_client, ingestion_client
@@ -15,7 +15,24 @@ from src.connectors.github import GitHubConnector, get_auth_url as gh_auth_url, 
 from src.connectors.notion import NotionConnector, get_auth_url as notion_auth_url, exchange_code as notion_exchange
 from src.jobs import job_store
 
+import sys 
+import asyncio
+from pathlib import Path
+_DB_CONNECTOR_PATH = Path(__file__).parent.parent / "database-connectors"
+sys.path.insert(0, str(_DB_CONNECTOR_PATH))
+
+from database_types.sql_connector import DBConfig, DatabaseConnector, SchemaFunctions
+from storage.local import LocalStorage
+from sync import sync_tables
+from .types import DBSyncResult, TableSyncResult, ConnectionTestResult, DBConnectorInput, SyncTablesInput
+
+
 logger = logging.getLogger(__name__)
+
+# Singleton storage - same instance used everywhere.
+_storage = LocalStorage(base_path=str(
+    Path(__file__).parent.parent / "s3"
+))
 
 
 @strawberry.type
@@ -198,6 +215,113 @@ class Mutation:
             status=       "disconnected",
         )
         return True
+    
+    # Database Connectors 
+    @strawberry.mutation
+    async def test_db_connection(
+        self,
+        info: Info,
+        input: "DBConnectorInput",
+    ) -> "ConnectionTestResult":
+        """
+            wizard step 2 - test credentials before saving anything. 
+            Returns success + table count.
+        """
+        try:
+            config = DBConfig(
+                dialect = input.dialect,
+                host = input.host,
+                port = input.port,
+                database = input.database,
+                username = input.username,
+                password = input.password,
+            )
+
+            connector = DatabaseConnector(config)
+            schema = SchemaFunctions(connector.get_engine())
+            db_meta = schema.extract()
+            connector.get_engine().dispose()
+
+            return ConnectionTestResult(
+                success = True,
+                message = f"Connected. Found {len(db_meta.tables)} tables",
+                tables = len(db_meta.tables),
+            )
+
+        except Exception as e:
+            return ConnectionTestResult(
+                success = True,
+                message = str(e),
+                tables = 0,
+            )
+    
+    @strawberry.mutation 
+    async def sync_db_tables(
+        self,
+        info: Info,
+        input: "SyncTablesInput",
+    ) -> "DBSyncResult":
+        """
+        Wizard Step 7 / manual sync — fetch rows and save CSVs.
+        Runs in background, returns immediately with job status.
+        """
+
+        user_id = _get_user_id(info)
+
+        # Build config directly from input
+        config = DBConfig(
+            dialect=  input.dialect,
+            host=     input.host,
+            port=     input.port,
+            database= input.database,
+            username= input.username,
+            password= input.password,
+        )
+        
+        # Run sync
+        try:
+            results = await sync_tables(
+                org_id = input.org_id,
+                connector_id = input.connector_id,
+                config = config,
+                table_names = input.table_names,
+                storage = _storage,
+            )
+
+            table_results = [
+                TableSyncResult(
+                    table   = table,
+                    rows    = tinfo.get("rows", 0),
+                    columns = tinfo.get("columns", 0),
+                    path    = tinfo.get("path", ""),
+                    error   = tinfo.get("error"),
+                )
+                for table, tinfo in results.items()
+            ]
+
+            total_rows = sum(
+                r.rows for r in table_results if r.error is None
+            )
+            try:
+                await db_client.mark_synced(user_id, input.connector_id)
+            except Exception:
+                pass
+
+            return DBSyncResult(
+                connector_id = input.connector_id,
+                tables = table_results,
+                total_rows = total_rows,
+                status = "complete",
+            )
+
+        except Exception as e:
+            return DBSyncResult(
+                connector_id    = input.connector_id,
+                tables          = [],
+                total_rows      = 0,
+                status          = "failed",
+                error           = str(e),
+            )
 
 
 # ── Background sync task ─────────────────────────────────────────────────────
@@ -255,7 +379,10 @@ async def _run_sync(connector_id: str, user_id: str, job_id: str):
                 total_nodes += result.nodes_added
 
         # Mark complete
-        await db_client.mark_synced(user_id, connector_id)
+        try:
+            await db_client.mark_synced(user_id, connector_id)
+        except Exception:
+            pass
         job_store.finish(job_id, total_nodes)
         logger.info(f"Sync complete: connector={connector_id} nodes={total_nodes}")
 

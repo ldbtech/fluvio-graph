@@ -43,6 +43,7 @@ pub struct Node {
     pub embeddings:  Vec<f32>,
     pub metadata:    HashMap<String, String>,
     pub kind:        NodeKind,
+    pub zone:        i16,
 }
 
 impl Node {
@@ -63,6 +64,7 @@ impl Node {
             embeddings:  Vec::new(),
             metadata:    HashMap::new(),
             kind,
+            zone:        0,
         }
     }
 

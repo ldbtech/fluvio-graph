@@ -19,6 +19,7 @@ pub struct GraphNode {
     pub kind:        String,
     pub metadata:    Vec<(String, String)>,
     pub score:       f32,
+    pub zone:        i32,
 }
 
 #[derive(Clone)]
@@ -53,6 +54,7 @@ impl GraphClient {
                         sourceUri: sourceUri
                         domain
                         kind
+                        zone
                         metadata { key value }
                     }
                 }
@@ -94,6 +96,7 @@ impl GraphClient {
                     })
                     .collect(),
                 score,
+                zone:        n["zone"].as_i64().unwrap_or(0) as i32,
             }
         }).collect())
     }
@@ -112,6 +115,7 @@ impl GraphClient {
                     sourceText
                     domain
                     kind
+                    zone
                     metadata { key value }
                 }
             }
@@ -146,6 +150,7 @@ impl GraphClient {
                 })
                 .collect(),
             score: 0.0,
+            zone:        n["zone"].as_i64().unwrap_or(0) as i32,
         }).collect())
     }
 
@@ -160,9 +165,11 @@ impl GraphClient {
                 nodes(zone: $zone) {
                     id
                     sourceText
+                    sourceUri: sourceUri
                     domain
                     kind
                     isEmbedded
+                    zone
                     metadata { key value }
                 }
             }
@@ -179,7 +186,7 @@ impl GraphClient {
         Ok(nodes.into_iter().map(|n| GraphNode {
             id:          n["id"].as_str().unwrap_or("").to_string(),
             source_text: n["sourceText"].as_str().unwrap_or("").to_string(),
-            source_uri:  String::new(),
+            source_uri:  n["sourceUri"].as_str().unwrap_or("").to_string(),
             domain:      n["domain"].as_str().unwrap_or("").to_string(),
             kind:        n["kind"].as_str().unwrap_or("").to_string(),
             metadata:    n["metadata"].as_array()
@@ -193,6 +200,7 @@ impl GraphClient {
                 })
                 .collect(),
             score: 0.0,
+            zone:        n["zone"].as_i64().unwrap_or(0) as i32,
         }).collect())
     }
 

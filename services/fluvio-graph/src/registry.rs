@@ -72,6 +72,7 @@ impl GraphRegistry {
                     node_id: node_a.clone(),
                     domain: domain_a.clone(),
                 }),
+                zone: 0,
             });
         }
 
@@ -88,6 +89,7 @@ impl GraphRegistry {
                     node_id: node_b.clone(),
                     domain: domain_b.clone(),
                 }),
+                zone: 0,
             });
         }
 

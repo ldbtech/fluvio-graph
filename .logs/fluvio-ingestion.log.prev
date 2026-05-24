@@ -1,6 +1,120 @@
-[2m2026-05-19T18:53:30.481138Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
-[2m2026-05-19T18:53:30.481324Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-05-19T18:53:30.695881Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
-[2m2026-05-19T18:53:30.699014Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
-[2m2026-05-19T18:53:30.701732Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
-[2m2026-05-19T18:53:30.701747Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql
+[2m2026-05-24T02:14:25.099232Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
+[2m2026-05-24T02:14:25.099431Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-24T02:14:25.304576Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-24T02:14:25.307584Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
+[2m2026-05-24T02:14:25.310125Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
+[2m2026-05-24T02:14:25.310143Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql
+[2m2026-05-24T02:15:02.757747Z[0m [32m INFO[0m [2mfluvio_ingestion::graphql::mutation[0m[2m:[0m ingestion job queued [3muser_id[0m[2m=[0mdf9ab20f-5851-4150-85d2-aa7002f922c7 [3mfilename[0m[2m=[0mmoh_Ali_larbi_daho_bachir_resume.pdf [3mjob_id[0m[2m=[0m33f8b615-8743-4330-bb15-f2d9473d7e05
+[2m2026-05-24T02:15:02.828901Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF text extracted [3mfilename[0m[2m=[0m"moh_Ali_larbi_daho_bachir_resume.pdf" [3mchars[0m[2m=[0m3466
+[2m2026-05-24T02:15:02.829337Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF chunked [3mchunk_count[0m[2m=[0m1
+[2m2026-05-24T02:15:03.066372Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m nodes written to fluvio-graph [3mnode_count[0m[2m=[0m1
+[2m2026-05-24T02:15:03.066411Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:03.066423Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:03.066453Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF ingestion complete [3mjob_id[0m[2m=[0m33f8b615-8743-4330-bb15-f2d9473d7e05
+[2m2026-05-24T02:15:34.038880Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:34.862175Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:41.021506Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:41.402590Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:42.304665Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:43.148468Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:43.642770Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:44.010187Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:45.094805Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:45.903268Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:47.042691Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:48.729872Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:50.564818Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:50.963896Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:52.624506Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:53.829739Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m30
+[2m2026-05-24T02:15:54.267167Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:15:56.071209Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:15:56.377371Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:56.996225Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:57.317186Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:58.394725Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:15:58.954945Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m6
+[2m2026-05-24T02:15:59.201501Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:15:59.694050Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:00.300859Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:00.609797Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:01.188983Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:02.566318Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:03.223616Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m6
+[2m2026-05-24T02:16:03.946173Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:05.032677Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:05.539295Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:06.230038Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:08.176728Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:08.983184Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:10.422034Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:10.822929Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:11.295843Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:11.684815Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:12.206078Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:12.631832Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:13.397300Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:13.895461Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:14.825966Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:15.379319Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:15.606114Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:16.538770Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:16.883568Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:17.379027Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:17.845802Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:21.120021Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:21.845049Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:22.283475Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:22.612383Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:23.878399Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:24.329179Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:24.722106Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:25.125681Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:25.503850Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:25.902000Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:26.897363Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:28.112597Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m30
+[2m2026-05-24T02:16:31.571676Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:33.678060Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:35.412538Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:37.886685Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:39.756324Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m60
+[2m2026-05-24T02:16:40.111081Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:41.300586Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m30
+[2m2026-05-24T02:16:41.762245Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:42.113132Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:42.588050Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:43.147049Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:43.463145Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:43.847212Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:44.667313Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m6
+[2m2026-05-24T02:16:44.951433Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:45.508507Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:46.021015Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:46.433923Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:47.173909Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m12
+[2m2026-05-24T02:16:47.707847Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m6
+[2m2026-05-24T02:16:49.883050Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m78
+[2m2026-05-24T02:16:50.313153Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:50.636338Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:51.152324Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:51.520557Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:51.923783Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:52.302302Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:52.852184Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:54.745479Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:55.750337Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m20
+[2m2026-05-24T02:16:56.165971Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:56.419221Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:16:57.405585Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:16:58.466833Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:17:00.606045Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:17:01.009951Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:17:01.598796Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-24T02:17:01.866708Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
+[2m2026-05-24T02:27:33.932810Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
+[2m2026-05-24T02:27:33.933118Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-24T02:27:34.312130Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-24T02:27:34.346264Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
+[2m2026-05-24T02:27:34.349989Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
+[2m2026-05-24T02:27:34.350022Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql

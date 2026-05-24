@@ -1,18 +1,19 @@
 """Notion OAuth flow."""
 import httpx
 import base64
+from urllib.parse import urlencode
 from src.config import NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, NOTION_REDIRECT_URI
 
 
 def get_auth_url(state: str) -> str:
     """Generate Notion OAuth authorization URL."""
-    params = "&".join([
-        f"client_id={NOTION_CLIENT_ID}",
-        f"redirect_uri={NOTION_REDIRECT_URI}",
-        "response_type=code",
-        "owner=user",
-        f"state={state}",
-    ])
+    params = urlencode({
+        "client_id":     NOTION_CLIENT_ID,
+        "redirect_uri":  NOTION_REDIRECT_URI,
+        "response_type": "code",
+        "owner":         "user",
+        "state":         state,
+    })
     return f"https://api.notion.com/v1/oauth/authorize?{params}"
 
 

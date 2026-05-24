@@ -1,4 +1,8 @@
-[2m2026-05-19T18:53:32.317539Z[0m [32m INFO[0m [2mfluvio_twin[0m[2m:[0m fluvio-twin starting...
-[2m2026-05-19T18:53:32.320921Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m Graph client → http://127.0.0.1:3001/graphql
-[2m2026-05-19T18:53:32.323591Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m fluvio-twin listening on http://0.0.0.0:3002
-[2m2026-05-19T18:53:32.323604Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3002/graphql
+[2m2026-05-24T02:14:26.901100Z[0m [32m INFO[0m [2mfluvio_twin[0m[2m:[0m fluvio-twin starting...
+[2m2026-05-24T02:14:26.904656Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m Graph client → http://127.0.0.1:3001/graphql
+[2m2026-05-24T02:14:26.907221Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m fluvio-twin listening on http://0.0.0.0:3002
+[2m2026-05-24T02:14:26.907255Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3002/graphql
+[2m2026-05-24T02:27:31.673017Z[0m [32m INFO[0m [2mfluvio_twin[0m[2m:[0m fluvio-twin starting...
+[2m2026-05-24T02:27:31.678478Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m Graph client → http://127.0.0.1:3001/graphql
+[2m2026-05-24T02:27:31.681613Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m fluvio-twin listening on http://0.0.0.0:3002
+[2m2026-05-24T02:27:31.681629Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3002/graphql
