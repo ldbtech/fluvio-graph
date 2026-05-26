@@ -1,0 +1,16 @@
+{
+  "table": "_sqlx_migrations",
+  "row_count": 10,
+  "columns": [
+    "version",
+    "description",
+    "installed_on",
+    "success",
+    "checksum",
+    "execution_time"
+  ],
+  "nodes_created": 10,
+  "synced_at": "2026-05-25T22:03:46.376850+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/87b4850a-debc-406a-81c1-c26d9213aca0/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/_sqlx_migrations/snapshots/2026-05-25T22-03-45.csv"
+}

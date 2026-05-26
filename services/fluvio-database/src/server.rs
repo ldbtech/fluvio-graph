@@ -11,6 +11,7 @@ use crate::graphql::{build_schema, graphql_router};
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
+    pub company_pool: PgPool,
 }
 
 pub async fn serve() -> anyhow::Result<()> {
@@ -23,11 +24,17 @@ pub async fn serve() -> anyhow::Result<()> {
             "DATABASE_URL not set — e.g. postgres://localhost/fluvio_collab"
         ))?;
 
+    let company_database_url = std::env::var("COMPANY_DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://localhost/fluvio_company".to_string());
+
     // Connect + migrate
     let pool = create_pool(&database_url).await?;
     run_migrations(&pool).await?;
 
-    let state  = AppState { pool };
+    let company_pool = create_pool(&company_database_url).await?;
+    run_migrations(&company_pool).await?;
+
+    let state  = AppState { pool, company_pool };
     let schema = build_schema(state.clone());
 
     let cors = CorsLayer::new()

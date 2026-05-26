@@ -22,6 +22,7 @@ class ResourceType:
     selected:      bool
     node_count:    int
     last_sync_at:  Optional[str]
+    meta:          Optional[str] = None
 
 
 @strawberry.type
@@ -93,6 +94,7 @@ class TableSyncResult:
     columns:            int
     path:               str
     error:              Optional[str] = None
+    columns_list:       list[str] = strawberry.field(default_factory=list)
 
 @strawberry.type
 class DBSyncResult:

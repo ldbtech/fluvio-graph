@@ -1,0 +1,15 @@
+{
+  "table": "workspaces",
+  "row_count": 1,
+  "columns": [
+    "id",
+    "owner_id",
+    "name",
+    "is_public",
+    "created_at"
+  ],
+  "nodes_created": 1,
+  "synced_at": "2026-05-25T22:04:00.303095+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/87b4850a-debc-406a-81c1-c26d9213aca0/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/workspaces/snapshots/2026-05-25T22-04-00.csv"
+}

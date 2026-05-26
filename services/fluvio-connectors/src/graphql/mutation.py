@@ -13,6 +13,7 @@ from src.graphql.types import (
 from src.clients import db_client, ingestion_client
 from src.connectors.github import GitHubConnector, get_auth_url as gh_auth_url, exchange_code as gh_exchange
 from src.connectors.notion import NotionConnector, get_auth_url as notion_auth_url, exchange_code as notion_exchange
+from src.connectors.local_drive.connector import LocalDriveConnector
 from src.jobs import job_store
 
 import sys 
@@ -50,9 +51,11 @@ class Mutation:
         user_id = _get_user_id(info)
 
         # Validate token works before storing
-        connector_cls = _get_connector_class(input.kind)
-        conn = connector_cls(access_token=input.access_token, owner_id=user_id)
-        await conn.list_resources()  # raises if token is invalid
+        is_db = input.kind in ["postgresql", "mysql", "mongodb", "redis", "snowflake", "bigquery"]
+        if not is_db:
+            connector_cls = _get_connector_class(input.kind)
+            conn = connector_cls(access_token=input.access_token, owner_id=user_id)
+            await conn.list_resources()  # raises if token is invalid
 
         # Store in fluvio-database
         result = await db_client.create_connector(
@@ -64,7 +67,8 @@ class Mutation:
         )
 
         # Fetch and store available resources
-        await _fetch_and_store_resources(conn, result["id"], user_id)
+        if not is_db:
+            await _fetch_and_store_resources(conn, result["id"], user_id)
 
         logger.info(f"Connected {input.kind} via token for user {user_id}")
 
@@ -163,6 +167,7 @@ class Mutation:
             selected=     r["selected"],
             node_count=   0,
             last_sync_at= None,
+            meta=         r.get("meta"),
         ) for r in items]
 
     # ── Sync ──────────────────────────────────────────────────────────────────
@@ -286,6 +291,7 @@ class Mutation:
                 config = config,
                 table_names = input.table_names,
                 storage = _storage,
+                owner_id = user_id,
             )
 
             table_results = [
@@ -295,6 +301,7 @@ class Mutation:
                     columns = tinfo.get("columns", 0),
                     path    = tinfo.get("path", ""),
                     error   = tinfo.get("error"),
+                    columns_list = tinfo.get("columns_list", []),
                 )
                 for table, tinfo in results.items()
             ]
@@ -304,8 +311,39 @@ class Mutation:
             )
             try:
                 await db_client.mark_synced(user_id, input.connector_id)
-            except Exception:
-                pass
+                
+                # Automatically upsert resources and update sync stats for successfully synced tables
+                synced_table_names = [res.table for res in table_results if res.error is None]
+                if synced_table_names:
+                    import json
+                    for res in table_results:
+                        if res.error is None:
+                            meta_json = json.dumps({
+                                "columns": res.columns_list,
+                                "all_columns": res.columns_list
+                            })
+                            await db_client.upsert_resource(
+                                user_id=user_id,
+                                connector_id=input.connector_id,
+                                resource_kind="database_table",
+                                external_id=res.table,
+                                name=res.table,
+                                description=f"Table {res.table} with {res.columns} columns",
+                                meta=meta_json,
+                            )
+                            await db_client.update_resource_sync_stats(
+                                user_id=user_id,
+                                connector_id=input.connector_id,
+                                external_id=res.table,
+                                nodes_added=res.rows,
+                            )
+                    await db_client.select_resources(
+                        user_id=user_id,
+                        connector_id=input.connector_id,
+                        external_ids=synced_table_names,
+                    )
+            except Exception as e:
+                logger.error(f"Failed to update connector resources for {input.connector_id}: {e}")
 
             return DBSyncResult(
                 connector_id = input.connector_id,
@@ -409,6 +447,8 @@ def _get_connector_class(kind: str):
         return GitHubConnector
     elif kind == "notion":
         return NotionConnector
+    elif kind == "local_drive":
+        return LocalDriveConnector
     raise Exception(f"unsupported connector kind: {kind}")
 
 async def _fetch_and_store_resources(connector, connector_id: str, user_id: str):

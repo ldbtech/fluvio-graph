@@ -1,0 +1,19 @@
+{
+  "table": "users",
+  "row_count": 8,
+  "columns": [
+    "id",
+    "firebase_uid",
+    "email",
+    "display_name",
+    "avatar_url",
+    "created_at",
+    "updated_at",
+    "company_id",
+    "company_email"
+  ],
+  "nodes_created": 8,
+  "synced_at": "2026-05-25T22:14:42.938552+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/org-7eceeae5/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/users/snapshots/2026-05-25T22-14-42.csv"
+}

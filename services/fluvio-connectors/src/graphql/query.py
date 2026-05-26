@@ -120,4 +120,5 @@ def _to_resource_type(r: dict) -> ResourceType:
         selected=     r["selected"],
         node_count=   r["nodeCount"],
         last_sync_at= r.get("lastSyncAt"),
+        meta=         r.get("meta"),
     )

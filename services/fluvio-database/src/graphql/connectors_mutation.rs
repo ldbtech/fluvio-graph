@@ -52,6 +52,11 @@ pub async fn upsert_resource(
     let connector_id = Uuid::parse_str(&input.connector_id)
         .map_err(|_| Error::new("invalid connector_id"))?;
 
+    let meta_value = match input.meta {
+        Some(ref m) => serde_json::from_str(m).unwrap_or(json!({})),
+        None => json!({}),
+    };
+
     let resource = resources::upsert_resource(
         &state.pool,
         connector_id,
@@ -59,7 +64,7 @@ pub async fn upsert_resource(
         &input.external_id,
         &input.name,
         input.description.as_deref(),
-        json!({}),
+        meta_value,
     ).await.map_err(|e| Error::new(e.to_string()))?;
 
     Ok(GqlConnectorResource::from(resource))

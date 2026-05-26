@@ -1,22 +1,164 @@
-INFO:     Started server process [61420]
+INFO:     Started server process [23472]
 INFO:     Waiting for application startup.
-2026-05-23 22:27:45,024  INFO      src.main  fluvio-connectors starting...
-2026-05-23 22:27:45,024  INFO      apscheduler.scheduler  Scheduler started
-2026-05-23 22:27:45,024  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
+2026-05-26 14:02:06,399  INFO      src.main  fluvio-connectors starting...
+2026-05-26 14:02:06,399  INFO      apscheduler.scheduler  Scheduler started
+2026-05-26 14:02:06,399  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3006 (Press CTRL+C to quit)
-INFO:     127.0.0.1:63697 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63860 - "OPTIONS /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63861 - "OPTIONS /graphql HTTP/1.1" 200 OK
-2026-05-23 22:29:26,089  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-23 22:29:26,090  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63860 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63861 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-23 22:30:16,848  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-23 22:30:16,850  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63936 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63937 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-23 22:30:35,382  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-2026-05-23 22:30:35,383  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63970 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63969 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49234 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49489 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49490 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-05-26 14:04:28,905  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:04:28,906  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49489 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49490 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51605 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-05-26 14:36:33,326  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:36:33,328  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51605 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:20,163  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51730 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:20,659  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51729 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:29,938  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51763 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:30,227  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:37:30,231  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:37:30,231  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51766 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51767 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51763 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:55,527  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51804 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:55,547  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51804 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:55,553  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51808 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:55,555  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51807 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:59,447  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51804 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:59,473  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:37:59,475  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51808 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:37:59,477  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51807 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:22,672  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:38:22,673  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51865 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51866 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:22,690  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:38:22,691  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51865 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51866 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:22,699  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51871 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:22,701  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:38:22,701  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51872 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51873 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:22,732  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51874 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:24,408  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:38:24,409  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51865 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51866 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,468  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51872 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,470  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51871 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,498  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:38:27,499  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51873 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51865 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,504  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51874 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,506  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51866 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,508  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51871 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:38:27,510  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:51872 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53050 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53051 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:24,606  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53051 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:24,610  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53050 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:36,154  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53077 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:36,180  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53075 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:36,362  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53075 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:36,366  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:54:36,366  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:54:36,369  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:54:36,370  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53077 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53094 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:54:36,373  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53093 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53096 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53095 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:57:42,112  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:57:42,115  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53344 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53343 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 14:58:16,940  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 14:58:16,942  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53432 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53434 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56803 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56804 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-05-26 15:49:11,216  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 15:49:11,217  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56804 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56803 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:49:11,252  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56804 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:49:11,254  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 15:49:11,254  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56803 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56810 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:49:11,256  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56809 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,830  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 15:50:17,833  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56935 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56936 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,877  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56936 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,881  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56935 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,888  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 15:50:17,888  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56952 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56955 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,891  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56953 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:17,894  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56954 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:21,965  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56935 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:21,970  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56936 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:24,097  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-05-26 15:50:24,100  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56935 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56936 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:24,125  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56936 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:24,131  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56935 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:24,138  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56982 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:24,143  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56981 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:30,317  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56993 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-26 15:50:30,319  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56994 - "POST /graphql HTTP/1.1" 200 OK

@@ -49,6 +49,7 @@ pub struct GqlConnectorResource {
     pub last_sync_at:  Option<String>,
     pub node_count:    i32,
     pub created_at:    String,
+    pub meta:          String,
 }
 
 impl From<ConnectorResource> for GqlConnectorResource {
@@ -64,6 +65,7 @@ impl From<ConnectorResource> for GqlConnectorResource {
             last_sync_at:  r.last_sync_at.map(|t| t.to_rfc3339()),
             node_count:    r.node_count,
             created_at:    r.created_at.to_rfc3339(),
+            meta:          r.meta.to_string(),
         }
     }
 }
@@ -85,6 +87,7 @@ pub struct UpsertResourceInput {
     pub external_id:   String,
     pub name:          String,
     pub description:   Option<String>,
+    pub meta:          Option<String>,
 }
 
 #[derive(InputObject)]

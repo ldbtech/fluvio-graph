@@ -1,0 +1,17 @@
+{
+  "table": "flights",
+  "row_count": 200,
+  "columns": [
+    "id",
+    "flight_number",
+    "carrier",
+    "origin",
+    "destination",
+    "destination_country",
+    "price"
+  ],
+  "nodes_created": 200,
+  "synced_at": "2026-05-26T04:34:40.399879+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/5f7258bc-4a09-45de-87e1-05ec40573408/d6b683dc-1f7b-405c-8369-c3bef5f67364/flights/snapshots/2026-05-26T04-34-30.csv"
+}

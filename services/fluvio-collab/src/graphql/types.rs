@@ -84,3 +84,55 @@ pub struct GqlChatMessage {
     pub role:    String,
     pub content: String,
 }
+
+// ── Company & Teams ──────────────────────────────────────────────────────────
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlCompany {
+    pub id:           String,
+    pub name:         String,
+    pub website:      String,
+    pub linkedin_url: String,
+    pub twitter_url:  Option<String>,
+    pub github_url:   Option<String>,
+    pub created_by:   String,
+}
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlCompanyInvite {
+    pub id:          String,
+    pub company_id:  String,
+    pub invited_by:  String,
+    pub email:       String,
+    pub token:       String,
+    pub role:        String,
+    pub expires_at:  String,
+    pub accepted_at: Option<String>,
+}
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlTeam {
+    pub id:          String,
+    pub company_id:  String,
+    pub name:        String,
+    pub description: Option<String>,
+}
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlTeamMember {
+    pub id:        String,
+    pub team_id:   String,
+    pub user_id:   String,
+    pub role:      String,
+    pub joined_at: String,
+}
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlTeamWorkflow {
+    pub id:          String,
+    pub team_id:     String,
+    pub name:        String,
+    pub description: Option<String>,
+    pub steps:       String,
+    pub created_by:  String,
+}

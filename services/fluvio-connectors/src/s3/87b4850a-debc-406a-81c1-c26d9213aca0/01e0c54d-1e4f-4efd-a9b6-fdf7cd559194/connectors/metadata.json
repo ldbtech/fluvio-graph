@@ -1,0 +1,23 @@
+{
+  "table": "connectors",
+  "row_count": 8,
+  "columns": [
+    "id",
+    "user_id",
+    "group_id",
+    "kind",
+    "auth_method",
+    "access_token",
+    "refresh_token",
+    "token_expires_at",
+    "status",
+    "error_message",
+    "created_at",
+    "updated_at",
+    "last_sync_at"
+  ],
+  "nodes_created": 8,
+  "synced_at": "2026-05-25T22:03:48.740733+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/87b4850a-debc-406a-81c1-c26d9213aca0/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/connectors/snapshots/2026-05-25T22-03-48.csv"
+}

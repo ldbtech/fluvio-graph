@@ -182,6 +182,20 @@ impl MutationRoot {
         tracing::info!(user_id = %user_id, "user graph deleted");
         Ok(true)
     }
+
+    async fn delete_workspace_nodes(
+        &self,
+        ctx:          &Context<'_>,
+        workspace_id: String,
+    ) -> Result<bool> {
+        let state   = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+
+        state.surreal.delete_workspace_nodes(user_id, &workspace_id).await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(true)
+    }
 }
 
 // ── Result types ──────────────────────────────────────────────────────────────

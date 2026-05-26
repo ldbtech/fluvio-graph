@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::server::AppState;
 use crate::graphql::types::*;
 use crate::graphql::query::extract_user_id;
-use crate::workflows::{group, invite, contribution, approval};
+use crate::workflows::{group, invite, contribution, approval, company, team_workflow};
 use crate::workflows::contribution::{ContributionInput};
 
 pub struct MutationRoot;
@@ -215,6 +215,141 @@ impl MutationRoot {
             surreal_node_id: item.surreal_node_id,
             status:          item.status,
             review_note:     item.review_note,
+        })
+    }
+
+    // ── Company & Teams Mutations ──────────────────────────────────────────────────
+
+    /// Set/link the company email for the authenticated user.
+    async fn update_company_email(
+        &self,
+        ctx:   &Context<'_>,
+        email: String,
+    ) -> Result<bool> {
+        let state     = ctx.data::<AppState>()?;
+        let caller_id = extract_user_id(ctx)?;
+
+        company::link_company_email(
+            &state.db,
+            &caller_id.to_string(),
+            &email,
+        ).await.map_err(|e: anyhow::Error| Error::new(e.to_string()))?;
+
+        Ok(true)
+    }
+
+    /// Create a new company. Sets caller's company_id and creates a General team.
+    async fn create_company(
+        &self,
+        ctx:          &Context<'_>,
+        name:         String,
+        website:      String,
+        linkedin_url: String,
+        twitter_url:  Option<String>,
+        github_url:   Option<String>,
+    ) -> Result<GqlCompany> {
+        let state     = ctx.data::<AppState>()?;
+        let caller_id = extract_user_id(ctx)?;
+
+        let c = company::create_company(
+            &state.db,
+            &name,
+            &website,
+            &linkedin_url,
+            twitter_url.as_deref(),
+            github_url.as_deref(),
+            &caller_id.to_string(),
+        ).await.map_err(|e: anyhow::Error| Error::new(e.to_string()))?;
+
+        Ok(GqlCompany {
+            id:           c.id,
+            name:         c.name,
+            website:      c.website,
+            linkedin_url: c.linkedin_url,
+            twitter_url:  c.twitter_url,
+            github_url:   c.github_url,
+            created_by:   c.created_by,
+        })
+    }
+
+    /// Accept a company invitation and join the company.
+    async fn accept_company_invite(
+        &self,
+        ctx:       &Context<'_>,
+        invite_id: String,
+    ) -> Result<GqlCompanyInvite> {
+        let state     = ctx.data::<AppState>()?;
+        let caller_id = extract_user_id(ctx)?;
+
+        let inv = company::accept_company_invite(
+            &state.db,
+            &invite_id,
+            &caller_id.to_string(),
+        ).await.map_err(|e: anyhow::Error| Error::new(e.to_string()))?;
+
+        Ok(GqlCompanyInvite {
+            id:          inv.id,
+            company_id:  inv.company_id,
+            invited_by:  inv.invited_by,
+            email:       inv.email,
+            token:       inv.token,
+            role:        inv.role,
+            expires_at:  inv.expires_at,
+            accepted_at: inv.accepted_at,
+        })
+    }
+
+    /// Create a team/squad inside the company.
+    async fn create_team(
+        &self,
+        ctx:         &Context<'_>,
+        company_id:  String,
+        name:        String,
+        description: Option<String>,
+    ) -> Result<GqlTeam> {
+        let state = ctx.data::<AppState>()?;
+        let t = state.db.create_team(
+            &company_id,
+            &name,
+            description.as_deref(),
+        ).await.map_err(|e: anyhow::Error| Error::new(e.to_string()))?;
+
+        Ok(GqlTeam {
+            id:          t.id,
+            company_id:  t.company_id,
+            name:        t.name,
+            description: t.description,
+        })
+    }
+
+    /// Create a custom AI automation workflow for a team.
+    async fn create_workflow(
+        &self,
+        ctx:         &Context<'_>,
+        team_id:     String,
+        name:        String,
+        description: Option<String>,
+        steps:       String,
+    ) -> Result<GqlTeamWorkflow> {
+        let state     = ctx.data::<AppState>()?;
+        let caller_id = extract_user_id(ctx)?;
+
+        let w = team_workflow::create_team_workflow(
+            &state.db,
+            &team_id,
+            &name,
+            description.as_deref(),
+            &steps,
+            &caller_id.to_string(),
+        ).await.map_err(|e: anyhow::Error| Error::new(e.to_string()))?;
+
+        Ok(GqlTeamWorkflow {
+            id:          w.id,
+            team_id:     w.team_id,
+            name:        w.name,
+            description: w.description,
+            steps:       w.steps,
+            created_by:  w.created_by,
         })
     }
 }

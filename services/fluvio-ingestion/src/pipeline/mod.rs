@@ -55,10 +55,11 @@ impl IngestionPipeline {
     /// Returns immediately with a job_id — processing runs in background.
     pub async fn ingest_pdf_async(
         &self,
-        owner_id: Uuid,
-        bytes:    Vec<u8>,
-        filename: String,
-        zone:     i16,
+        owner_id:     Uuid,
+        bytes:        Vec<u8>,
+        filename:     String,
+        zone:         i16,
+        workspace_id: Option<String>,
     ) -> String {
         let job = job_store::IngestJob::new(owner_id, &filename);
         let job_id = job.id.clone();
@@ -67,11 +68,12 @@ impl IngestionPipeline {
         // Clone what we need for the background task
         let pipeline    = self.clone();
         let job_id_bg   = job_id.clone();
+        let ws_id       = workspace_id.clone();
 
         tokio::spawn(async move {
             pipeline.job_store.update_status(&job_id_bg, JobStatus::Running);
 
-            match pipeline.run_pdf_pipeline(owner_id, bytes, &filename, zone).await {
+            match pipeline.run_pdf_pipeline(owner_id, bytes, &filename, zone, ws_id).await {
                 Ok(result) => {
                     pipeline.job_store.complete(
                         &job_id_bg,
@@ -93,10 +95,11 @@ impl IngestionPipeline {
     /// Run the full PDF pipeline synchronously (called from background task).
     async fn run_pdf_pipeline(
         &self,
-        owner_id: Uuid,
-        bytes:    Vec<u8>,
-        filename: &str,
-        zone:     i16,
+        owner_id:     Uuid,
+        bytes:        Vec<u8>,
+        filename:     &str,
+        zone:         i16,
+        workspace_id: Option<String>,
     ) -> anyhow::Result<IngestResult> {
         // 1. Extract text from PDF
         let text = PdfExtractor::extract(&bytes)?;
@@ -129,15 +132,20 @@ impl IngestionPipeline {
 
         for (chunk, embedding) in chunks.iter().zip(embeddings.iter()) {
             let source_uri = pdf_chunk_uri(owner_id, filename, chunk.chunk_index);
+            let mut extra_meta = std::collections::HashMap::from([
+                ("filename".into(), filename.to_string()),
+            ]);
+            if let Some(ref ws_id) = workspace_id {
+                extra_meta.insert("workspace_id".into(), ws_id.clone());
+            }
+
             let node = build_node(
                 owner_id,
                 chunk,
                 &source_uri,
                 Domain::Pdf,
                 embedding.clone(),
-                Some(std::collections::HashMap::from([
-                    ("filename".into(), filename.to_string()),
-                ])),
+                Some(extra_meta),
             );
 
             let node_id = self.graph_client
@@ -172,11 +180,12 @@ impl IngestionPipeline {
     /// Ingest plain text synchronously — text is small enough to not need async.
     pub async fn ingest_text(
         &self,
-        owner_id:   Uuid,
-        text:       String,
-        source_uri: String,
-        domain:     Domain,
-        zone:       i16,
+        owner_id:     Uuid,
+        text:         String,
+        source_uri:   String,
+        domain:       Domain,
+        zone:         i16,
+        workspace_id: Option<String>,
     ) -> anyhow::Result<IngestResult> {
         let mut chunks = chunk_text(&text);
 
@@ -196,13 +205,18 @@ impl IngestionPipeline {
 
         for (chunk, embedding) in chunks.iter().zip(embeddings.iter()) {
             let uri  = text_chunk_uri(owner_id, &source_uri, chunk.chunk_index);
+            let mut extra_meta = std::collections::HashMap::new();
+            if let Some(ref ws_id) = workspace_id {
+                extra_meta.insert("workspace_id".into(), ws_id.clone());
+            }
+
             let node = build_node(
                 owner_id,
                 chunk,
                 &uri,
                 domain.clone(),
                 embedding.clone(),
-                None,
+                Some(extra_meta),
             );
 
             let node_id = self.graph_client

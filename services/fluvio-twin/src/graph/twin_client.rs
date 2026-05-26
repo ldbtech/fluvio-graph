@@ -43,10 +43,11 @@ impl GraphClient {
         query:    &str,
         top_k:    usize,
         zone:     i16,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Vec<GraphNode>> {
         let gql = r#"
-            query Search($query: String!, $config: GqlQueryConfig) {
-                search(query: $query, config: $config) {
+            query Search($query: String!, $config: GqlQueryConfig, $workspaceId: String) {
+                search(query: $query, config: $config, workspaceId: $workspaceId) {
                     score
                     node {
                         id
@@ -66,7 +67,8 @@ impl GraphClient {
             "config": {
                 "similarityTopK": top_k as i32,
                 "maxZone":        zone as i32,
-            }
+            },
+            "workspaceId": workspace_id,
         });
 
         let body: Value = self.post(owner_id, gql, variables).await?;
@@ -159,10 +161,11 @@ impl GraphClient {
         &self,
         owner_id: Uuid,
         zone:     i16,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Vec<GraphNode>> {
         let gql = r#"
-            query Nodes($zone: Int) {
-                nodes(zone: $zone) {
+            query Nodes($zone: Int, $workspaceId: String) {
+                nodes(zone: $zone, workspaceId: $workspaceId) {
                     id
                     sourceText
                     sourceUri: sourceUri
@@ -175,7 +178,10 @@ impl GraphClient {
             }
         "#;
 
-        let variables = json!({ "zone": zone as i32 });
+        let variables = json!({
+            "zone": zone as i32,
+            "workspaceId": workspace_id,
+        });
         let body: Value = self.post(owner_id, gql, variables).await?;
 
         let nodes = body["data"]["nodes"]

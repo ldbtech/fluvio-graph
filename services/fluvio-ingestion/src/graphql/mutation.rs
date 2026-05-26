@@ -13,13 +13,14 @@ pub struct MutationRoot;
 impl MutationRoot {
 
     /// Upload and ingest a file (PDF, TXT, MD).
-    /// Returns immediately with a jobId — processing runs in background.
+    /// Returns immediately with a job_id — processing runs in background.
     async fn ingest_file(
         &self,
-        ctx:      &Context<'_>,
-        file:     Upload,
-        filename: String,
-        zone:     Option<i32>,
+        ctx:          &Context<'_>,
+        file:         Upload,
+        filename:     String,
+        zone:         Option<i32>,
+        workspace_id: Option<String>,
     ) -> Result<GqlIngestResult> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
@@ -32,7 +33,7 @@ impl MutationRoot {
             .map_err(|e| Error::new(format!("Failed to read uploaded file: {e}")))?;
 
         let job_id = state.pipeline
-            .ingest_pdf_async(user_id, bytes, filename.clone(), zone)
+            .ingest_pdf_async(user_id, bytes, filename.clone(), zone, workspace_id)
             .await;
 
         tracing::info!(
@@ -53,11 +54,12 @@ impl MutationRoot {
     /// Runs synchronously since text is small.
     async fn ingest_raw(
         &self,
-        ctx:        &Context<'_>,
-        text:       String,
-        source_uri: String,
-        domain:     Option<String>,
-        zone:       Option<i32>,
+        ctx:          &Context<'_>,
+        text:         String,
+        source_uri:   String,
+        domain:       Option<String>,
+        zone:         Option<i32>,
+        workspace_id: Option<String>,
     ) -> Result<GqlIngestResult> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
@@ -65,7 +67,7 @@ impl MutationRoot {
         let domain  = parse_domain(domain.as_deref());
 
         let result = state.pipeline
-            .ingest_text(user_id, text, source_uri, domain, zone)
+            .ingest_text(user_id, text, source_uri, domain, zone, workspace_id)
             .await
             .map_err(|e| Error::new(e.to_string()))?;
 

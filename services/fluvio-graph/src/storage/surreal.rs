@@ -237,18 +237,26 @@ impl SurrealStorage {
         owner_id: Uuid,
         domain:   Option<&str>,
         zone:     i16,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
+        let ws_clause = match workspace_id {
+            Some(ws_id) if !ws_id.is_empty() => format!("metadata.workspace_id = '{ws_id}'"),
+            _ => "metadata.workspace_id = NONE".to_string(),
+        };
+
         let query = match domain {
             Some(d) => format!(
                 "SELECT * FROM nodes \
                  WHERE owner_id = '{owner_id}' \
                    AND domain = '{d}' \
-                   AND zone <= {zone}"
+                   AND zone <= {zone} \
+                   AND {ws_clause}"
             ),
             None => format!(
                 "SELECT * FROM nodes \
                  WHERE owner_id = '{owner_id}' \
-                   AND zone <= {zone}"
+                   AND zone <= {zone} \
+                   AND {ws_clause}"
             ),
         };
 
@@ -291,8 +299,9 @@ impl SurrealStorage {
         query_vec: &[f32],
         top_k:     usize,
         zone:      i16,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Vec<(String, f32)>> {
-        let rows = self.similarity_search_nodes(owner_id, query_vec, top_k, zone).await?;
+        let rows = self.similarity_search_nodes(owner_id, query_vec, top_k, zone, workspace_id).await?;
         Ok(rows.into_iter()
             .map(|r| {
                 let score  = cosine_sim(query_vec, &r.embeddings);
@@ -309,10 +318,16 @@ impl SurrealStorage {
         query_vec: &[f32],
         top_k:     usize,
         max_zone:  i16,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
+        let ws_clause = match workspace_id {
+            Some(ws_id) if !ws_id.is_empty() => format!("metadata.workspace_id = '{ws_id}'"),
+            _ => "metadata.workspace_id = NONE".to_string(),
+        };
+
         let query = format!(
             "SELECT * FROM nodes \
-             WHERE owner_id = '{owner_id}' AND zone <= {max_zone}"
+             WHERE owner_id = '{owner_id}' AND zone <= {max_zone} AND {ws_clause}"
         );
     
         let mut result = self.db.query(query).await
@@ -330,6 +345,19 @@ impl SurrealStorage {
         scored.truncate(top_k);
     
         Ok(scored.into_iter().map(|(_, row)| row).collect())
+    }
+
+    /// Delete all nodes associated with a workspace.
+    pub async fn delete_workspace_nodes(&self, owner_id: Uuid, workspace_id: &str) -> anyhow::Result<()> {
+        self.db
+            .query(format!(
+                "DELETE nodes WHERE owner_id = '{owner_id}' AND metadata.workspace_id = '{workspace_id}'"
+            ))
+            .await
+            .map_err(|e| anyhow::anyhow!("delete_workspace_nodes: {e}"))?;
+
+        tracing::info!("[SurrealDB] Deleted workspace {workspace_id} nodes for owner {owner_id}");
+        Ok(())
     }
 
     /// Cross-user similarity search — "who in my network works on X?"

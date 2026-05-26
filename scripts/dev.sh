@@ -114,7 +114,11 @@ stop_all() {
   for entry in "${SERVICES[@]}"; do
     stop_service "$(cut -d: -f1 <<< "$entry")"
   done
+  stop_service "fluvio-auth"
+  stop_service "agent-planner"
+  pkill -f "node services/fluvio-auth/src/index.js" 2>/dev/null || true
   pkill -f "uvicorn src.main:app" 2>/dev/null || true
+  pkill -f "uvicorn app.main:app" 2>/dev/null || true
   pkill -f "router --config" 2>/dev/null || true
   sleep 0.5
 }
@@ -183,7 +187,7 @@ ok "Clean"
 if [[ $SKIP_BUILD -eq 0 ]]; then
   section "Building (${PROFILE})"
 
-  PKGS="-p fluvio-graph -p fluvio-ingestion -p fluvio-twin -p fluvio-database"
+  PKGS="-p fluvio-graph -p fluvio-ingestion -p fluvio-twin -p fluvio-database -p fluvio-collab"
 
   if [[ "$PROFILE" == "release" ]]; then
     cargo build --release $PKGS
@@ -204,6 +208,41 @@ for entry in "${SERVICES[@]}"; do
   fi
 done
 
+
+# ── Start fluvio-auth (Node.js) ────────────────────────────────────────────────
+
+section "Starting fluvio-auth (Node.js)"
+
+AUTH_DIR="$ROOT/services/fluvio-auth"
+AUTH_PORT="${FLUVIO_AUTH_PORT:-4000}"
+
+if [[ ! -d "$AUTH_DIR/node_modules" ]]; then
+  log "Installing dependencies for fluvio-auth..."
+  (cd "$AUTH_DIR" && npm install)
+fi
+
+[[ -f "$LOG_DIR/fluvio-auth.log" ]] && \
+  mv "$LOG_DIR/fluvio-auth.log" "$LOG_DIR/fluvio-auth.log.prev"
+
+(
+  cd "$AUTH_DIR"
+  PORT="$AUTH_PORT" \
+    node src/index.js \
+      >> "$LOG_DIR/fluvio-auth.log" 2>&1 &
+  echo $! > "$ROOT/.pids/fluvio-auth.pid"
+)
+
+local_i=0
+until curl -sf "http://127.0.0.1:${AUTH_PORT}/health" &>/dev/null; do
+  sleep 0.5
+  ((local_i++))
+  if ((local_i >= 60)); then
+    fail "fluvio-auth failed to start"
+    tail -30 "$LOG_DIR/fluvio-auth.log" >&2
+    exit 1
+  fi
+done
+ok "fluvio-auth healthy"
 
 # ── Start fluvio-connectors (Python) ──────────────────────────────────────────
 
@@ -241,6 +280,44 @@ else
     fi
   done
   ok "fluvio-connectors healthy"
+fi
+
+# ── Start agent-planner (Python) ──────────────────────────────────────────────
+
+section "Starting agent-planner (Python)"
+
+PLANNER_DIR="$ROOT/services/agent-planner"
+PLANNER_PORT="${FLUVIO_AGENT_PLANNER_PORT:-3007}"
+
+if [[ ! -d "$PLANNER_DIR/.venv" ]]; then
+  warn "agent-planner .venv not found — skipping"
+  warn "Run: cd services/agent-planner && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
+else
+  [[ -f "$LOG_DIR/agent-planner.log" ]] && \
+    mv "$LOG_DIR/agent-planner.log" "$LOG_DIR/agent-planner.log.prev"
+
+  (
+    cd "$PLANNER_DIR"
+    source .venv/bin/activate
+    PORT="$PLANNER_PORT" \
+      python3 -m uvicorn app.main:app \
+        --host 0.0.0.0 \
+        --port "$PLANNER_PORT" \
+        >> "$LOG_DIR/agent-planner.log" 2>&1 &
+    echo $! > "$ROOT/.pids/agent-planner.pid"
+  )
+
+  local_i=0
+  until curl -sf "http://127.0.0.1:${PLANNER_PORT}/health" &>/dev/null; do
+    sleep 1
+    ((local_i++))
+    if ((local_i >= 30)); then
+      fail "agent-planner failed to start"
+      tail -20 "$LOG_DIR/agent-planner.log" >&2
+      exit 1
+    fi
+  done
+  ok "agent-planner healthy"
 fi
 
 # ── Start subgraphs ────────────────────────────────────────────────────────────
@@ -347,6 +424,8 @@ done
 
 echo ""
 printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "fluvio-connectors:" "${FLUVIO_CONNECTORS_PORT:-3006}"
+printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "agent-planner:" "${FLUVIO_AGENT_PLANNER_PORT:-3007}"
+printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "fluvio-auth (proxy):" "${FLUVIO_AUTH_PORT:-4000}"
 echo -e "  ${CYAN}Logs  →  ${LOG_DIR}/${RESET}"
 echo -e "  ${CYAN}Ctrl+C to stop all services${RESET}"
 echo ""

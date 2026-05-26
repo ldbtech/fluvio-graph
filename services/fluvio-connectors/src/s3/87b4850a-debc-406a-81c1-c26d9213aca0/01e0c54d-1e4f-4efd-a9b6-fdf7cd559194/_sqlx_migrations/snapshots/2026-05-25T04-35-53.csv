@@ -1,0 +1,10 @@
+version,description,installed_on,success,checksum,execution_time
+1,users,2026-05-17 00:44:17.670405-04:00,true,<memory at 0x10fe7b400>,22636125
+2,groups,2026-05-17 00:44:17.695732-04:00,true,<memory at 0x10fe7b280>,11166958
+3,group members,2026-05-17 00:44:17.708090-04:00,true,<memory at 0x10fe7b4c0>,20225500
+4,invites,2026-05-17 00:44:17.728642-04:00,true,<memory at 0x10fe7b580>,13193666
+5,approval queue,2026-05-17 00:44:17.742361-04:00,true,<memory at 0x10fe7b640>,17914750
+6,connectors,2026-05-18 16:08:45.426897-04:00,true,<memory at 0x10fe7b700>,79339792
+7,connector resources,2026-05-18 16:08:45.508095-04:00,true,<memory at 0x10fe7b7c0>,14978208
+8,workspaces,2026-05-24 16:01:36.677645-04:00,true,<memory at 0x10fe7b880>,54154041
+9,company brain schema,2026-05-24 22:22:27.874632-04:00,true,<memory at 0x10fe7b940>,80791167

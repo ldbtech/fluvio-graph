@@ -1,12 +1,10 @@
-[2m2026-05-24T02:27:49.516169Z[0m [32m INFO[0m [2mfluvio_graph[0m[2m:[0m fluvio-graph starting...
-[2m2026-05-24T02:27:49.516419Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Connecting to SurrealDB...
-[2m2026-05-24T02:27:49.583109Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Connected to ws://127.0.0.1:8000 ns=fluvio db=graph
-[2m2026-05-24T02:27:49.587788Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Schema initialized
-[2m2026-05-24T02:27:49.588042Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m SurrealDB ready.
-[2m2026-05-24T02:27:49.588318Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-05-24T02:27:49.956617Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Embedding model ready.
-[2m2026-05-24T02:27:49.963284Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m fluvio-graph listening on http://0.0.0.0:3001
-[2m2026-05-24T02:27:49.963331Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3001/graphql
-[2m2026-05-24T02:30:15.514484Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Deleted 1 node record(s)
-[2m2026-05-24T02:30:15.515409Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node deleted [3mnode_id[0m[2m=[0m2a7ef6f1-d966-4743-4412-7252b09964fd
-[2m2026-05-24T02:30:21.666140Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0mdf9ab20f-5851-4150-85d2-aa7002f922c7 [3mnode_id[0m[2m=[0m0926e1f4-67cf-d02e-a3c2-5fd97a6d7334
+[2m2026-05-26T18:02:08.359498Z[0m [32m INFO[0m [2mfluvio_graph[0m[2m:[0m fluvio-graph starting...
+[2m2026-05-26T18:02:08.362232Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Connecting to SurrealDB...
+[2m2026-05-26T18:02:08.841843Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Connected to ws://127.0.0.1:8000 ns=fluvio db=graph
+[2m2026-05-26T18:02:08.914816Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Schema initialized
+[2m2026-05-26T18:02:08.915164Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m SurrealDB ready.
+[2m2026-05-26T18:02:08.915180Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-26T18:02:09.339656Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-26T18:02:09.369215Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m fluvio-graph listening on http://0.0.0.0:3001
+[2m2026-05-26T18:02:09.369263Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3001/graphql
+[2m2026-05-26T19:50:12.094509Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mnode_id[0m[2m=[0m0b7b4e61-6760-4940-7486-5e350dd332bd

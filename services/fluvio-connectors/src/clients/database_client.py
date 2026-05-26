@@ -96,6 +96,7 @@ class DatabaseClient:
         external_id:   str,
         name:          str,
         description:   Optional[str] = None,
+        meta:          Optional[str] = None,
     ) -> dict:
         q = """
         mutation($input: UpsertResourceInput!) {
@@ -111,6 +112,7 @@ class DatabaseClient:
                 "externalId":   external_id,
                 "name":         name,
                 "description":  description,
+                "meta":         meta,
             }
         }, user_id)
         return data["upsertResource"]
@@ -119,7 +121,7 @@ class DatabaseClient:
         q = """
         query($connectorId: String!) {
             getConnectorResources(connectorId: $connectorId) {
-                id externalId name description selected nodeCount lastSyncAt
+                id externalId name description selected nodeCount lastSyncAt meta
             }
         }
         """
@@ -130,7 +132,7 @@ class DatabaseClient:
         q = """
         query($connectorId: String!) {
             getSelectedResources(connectorId: $connectorId) {
-                id externalId name selected nodeCount
+                id externalId name selected nodeCount meta
             }
         }
         """
@@ -143,7 +145,7 @@ class DatabaseClient:
         q = """
         mutation($input: SelectResourcesInput!) {
             selectResources(input: $input) {
-                id externalId name selected
+                id externalId name selected meta
             }
         }
         """

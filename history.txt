@@ -1,6 +1,6 @@
-#V2
-SELECT id, owner_id, domain, source_text FROM nodes LIMIT 5;
-SELECT count() FROM nodes GROUP ALL;
-SELECT id, owner_id, source_text FROM nodes LIMIT 5;
-USE NS fluvio DB graph; SELECT count() FROM nodes GROUP ALL;
-SELECT id, owner_id, source_text FROM nodes LIMIT 5;
+Host: localhost (or 127.0.0.1)
+Port: 5432
+Database Name: vowayage
+Username: alidaho
+Password: 
+Connection URI: postgres://localhost/vowayage or postgresql://alidaho@localhost:5432/vowayage

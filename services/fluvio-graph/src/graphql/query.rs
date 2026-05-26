@@ -38,16 +38,17 @@ impl QueryRoot {
     /// Fetch all nodes for the authenticated user, optionally filtered by domain.
     async fn nodes(
         &self,
-        ctx:    &Context<'_>,
-        domain: Option<String>,
-        zone:   Option<i32>,
+        ctx:          &Context<'_>,
+        domain:       Option<String>,
+        zone:         Option<i32>,
+        workspace_id: Option<String>,
     ) -> Result<Vec<GqlNode>> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
         let zone    = zone.unwrap_or(0) as i16;
 
         let rows = state.surreal
-            .get_user_nodes(user_id, domain.as_deref(), zone)
+            .get_user_nodes(user_id, domain.as_deref(), zone, workspace_id.as_deref())
             .await
             .map_err(|e| Error::new(e.to_string()))?;
 
@@ -60,9 +61,10 @@ impl QueryRoot {
     /// Goes directly to SurrealDB — no in-memory subgraph needed.
     async fn search(
         &self,
-        ctx:    &Context<'_>,
-        query:  String,
-        config: Option<GqlQueryConfig>,
+        ctx:          &Context<'_>,
+        query:        String,
+        config:       Option<GqlQueryConfig>,
+        workspace_id: Option<String>,
     ) -> Result<Vec<GqlScoredNode>> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
@@ -82,6 +84,7 @@ impl QueryRoot {
                 &embedding,
                 config.similarity_top_k,
                 config.max_zone,
+                workspace_id.as_deref(),
             )
             .await
             .map_err(|e| Error::new(e.to_string()))?;

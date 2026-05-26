@@ -1,0 +1,9 @@
+id,firebase_uid,email,display_name,avatar_url,created_at,updated_at,company_id,company_email
+e09c6116-6a9d-422b-920a-93f1082a01a8,firebase-test-001,ali@fluvio.ai,Ali,,2026-05-18 00:00:12.564213-04:00,2026-05-18 00:00:12.564213-04:00,,
+554bcda1-7a33-497d-ac1f-19b60af4e876,owner-001,owner@fluvio.ai,Owner,,2026-05-18 13:46:18.545781-04:00,2026-05-18 13:46:18.545781-04:00,,
+7eceeae5-a8ef-4d61-9e50-c99a955dbd11,test-owner-001,owner@fluvio.ai,Alice Owner,,2026-05-18 14:15:55.592791-04:00,2026-05-18 14:31:05.915150-04:00,,
+0b7103e8-e6bf-4908-889e-2f151d50e475,test-contrib-001,bob@fluvio.ai,Bob Contributor,,2026-05-18 14:15:55.699762-04:00,2026-05-18 14:31:06.001532-04:00,,
+df9ab20f-5851-4150-85d2-aa7002f922c7,ali.moh.ldb@gmail.com,ali.moh.ldb@gmail.com,Ali Daho,,2026-05-23 12:40:38.434071-04:00,2026-05-23 12:40:38.434071-04:00,,
+9bb8d5e7-a798-49ee-93eb-e49c3eecea3e,ari.dahoa@gmail.com,ari.dahoa@gmail.com,Ali Daho Bachir,,2026-05-23 14:01:41.603233-04:00,2026-05-23 14:01:41.603233-04:00,,
+9e71420b-d020-4d87-ac05-63800c3137c6,test-notion-001,notion-test@fluvio.ai,Notion Test User,,2026-05-23 20:40:35.960264-04:00,2026-05-23 20:42:30.218741-04:00,,
+2a638162-449f-436c-9a45-a0669f57fe4a,NmSkGLFa7vYg5XGYXPwttY7GSiD3,ali.moh.ldb@gmail.com,Ali Moh,,2026-05-24 15:50:42.040966-04:00,2026-05-24 22:53:14.407681-04:00,87b4850a-debc-406a-81c1-c26d9213aca0,mlarbida@buffalo.edu

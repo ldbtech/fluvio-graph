@@ -28,11 +28,12 @@ impl QueryRoot {
     ///   5. Return grounded answer + sources
     async fn chat(
         &self,
-        ctx:      &Context<'_>,
-        question: String,
-        history:  Option<Vec<GqlChatMessage>>,
-        top_k:    Option<i32>,
-        zone:     Option<i32>,
+        ctx:          &Context<'_>,
+        question:     String,
+        history:      Option<Vec<GqlChatMessage>>,
+        top_k:        Option<i32>,
+        zone:         Option<i32>,
+        workspace_id: Option<String>,
     ) -> Result<GqlChatResponse> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
@@ -45,7 +46,7 @@ impl QueryRoot {
 
         // 1. Semantic search
         let search_results = state.graph_client
-            .search(user_id, &question, top_k, zone)
+            .search(user_id, &question, top_k, zone, workspace_id.as_deref())
             .await
             .map_err(|e| Error::new(format!("search failed: {e}")))?;
 
@@ -110,15 +111,16 @@ impl QueryRoot {
     /// List all documents (graph nodes) in the user's knowledge graph.
     async fn documents(
         &self,
-        ctx:  &Context<'_>,
-        zone: Option<i32>,
+        ctx:          &Context<'_>,
+        zone:         Option<i32>,
+        workspace_id: Option<String>,
     ) -> Result<Vec<GqlDocument>> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
         let zone    = zone.unwrap_or(0) as i16;
 
         let nodes = state.graph_client
-            .nodes(user_id, zone)
+            .nodes(user_id, zone, workspace_id.as_deref())
             .await
             .map_err(|e| Error::new(e.to_string()))?;
 

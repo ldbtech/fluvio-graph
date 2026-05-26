@@ -12,19 +12,21 @@ pub mod users {
         pub email:        Option<String>,
         pub display_name: Option<String>,
         pub avatar_url:   Option<String>,
+        pub company_email: Option<String>,
+        pub company_id:   Option<Uuid>,
         pub created_at:   DateTime<Utc>,
         pub updated_at:   DateTime<Utc>,
     }
 
     // ── Queries ───────────────────────────────────────────────────
     pub const GET_BY_ID: &str = "
-        SELECT id, firebase_uid, email, display_name, avatar_url,
+        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
                created_at, updated_at
         FROM users WHERE id = $1
     ";
 
     pub const GET_BY_FIREBASE_UID: &str = "
-        SELECT id, firebase_uid, email, display_name, avatar_url,
+        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
                created_at, updated_at
         FROM users WHERE firebase_uid = $1
     ";
@@ -37,19 +39,27 @@ pub mod users {
               display_name = EXCLUDED.display_name,
               avatar_url   = EXCLUDED.avatar_url,
               updated_at   = now()
-        RETURNING id, firebase_uid, email, display_name, avatar_url,
+        RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
                   created_at, updated_at
     ";
 
     pub const UPDATE: &str = "
         UPDATE users
-        SET email        = COALESCE($2, email),
-            display_name = COALESCE($3, display_name),
-            avatar_url   = COALESCE($4, avatar_url),
-            updated_at   = now()
+        SET email         = COALESCE($2, email),
+            display_name  = COALESCE($3, display_name),
+            avatar_url    = COALESCE($4, avatar_url),
+            company_email = COALESCE($5, company_email),
+            company_id    = COALESCE($6, company_id),
+            updated_at    = now()
         WHERE id = $1
-        RETURNING id, firebase_uid, email, display_name, avatar_url,
+        RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
                   created_at, updated_at
+    ";
+
+    pub const GET_BY_EMAIL: &str = "
+        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+               created_at, updated_at
+        FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(company_email) = LOWER($1)
     ";
 }
 
@@ -472,5 +482,88 @@ pub mod resources {
         SET selected   = (external_id = ANY($2)),
             updated_at = now()
         WHERE connector_id = $1
+    ";
+}
+
+pub mod workspaces {
+    use uuid::Uuid;
+    use chrono::{DateTime, Utc};
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct Workspace {
+        pub id:          Uuid,
+        pub owner_id:    Uuid,
+        pub name:        String,
+        pub is_public:   bool,
+        pub created_at:  DateTime<Utc>,
+    }
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct WorkspaceShare {
+        pub id:           Uuid,
+        pub workspace_id: Uuid,
+        pub user_id:      Uuid,
+        pub shared_at:    DateTime<Utc>,
+    }
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct WorkspaceShareWithUser {
+        pub id:           Uuid,
+        pub workspace_id: Uuid,
+        pub user_id:      Uuid,
+        pub shared_at:    DateTime<Utc>,
+        pub email:        Option<String>,
+        pub display_name: Option<String>,
+    }
+
+    pub const CREATE: &str = "
+        INSERT INTO workspaces (owner_id, name, is_public)
+        VALUES ($1, $2, $3)
+        RETURNING id, owner_id, name, is_public, created_at
+    ";
+
+    pub const GET_BY_ID: &str = "
+        SELECT id, owner_id, name, is_public, created_at
+        FROM workspaces WHERE id = $1
+    ";
+
+    pub const GET_USER_WORKSPACES: &str = "
+        SELECT DISTINCT w.id, w.owner_id, w.name, w.is_public, w.created_at
+        FROM workspaces w
+        LEFT JOIN workspace_shares s ON s.workspace_id = w.id
+        WHERE w.owner_id = $1 OR s.user_id = $1
+        ORDER BY w.created_at DESC
+    ";
+
+    pub const UPDATE: &str = "
+        UPDATE workspaces
+        SET name      = COALESCE($2, name),
+            is_public = COALESCE($3, is_public)
+        WHERE id = $1
+        RETURNING id, owner_id, name, is_public, created_at
+    ";
+
+    pub const DELETE: &str = "
+        DELETE FROM workspaces WHERE id = $1
+    ";
+
+    pub const SHARE: &str = "
+        INSERT INTO workspace_shares (workspace_id, user_id)
+        VALUES ($1, $2)
+        ON CONFLICT (workspace_id, user_id) DO NOTHING
+        RETURNING id, workspace_id, user_id, shared_at
+    ";
+
+    pub const UNSHARE: &str = "
+        DELETE FROM workspace_shares
+        WHERE workspace_id = $1 AND user_id = $2
+    ";
+
+    pub const GET_SHARES: &str = "
+        SELECT s.id, s.workspace_id, s.user_id, s.shared_at, u.email, u.display_name
+        FROM workspace_shares s
+        INNER JOIN users u ON u.id = s.user_id
+        WHERE s.workspace_id = $1
+        ORDER BY s.shared_at ASC
     ";
 }

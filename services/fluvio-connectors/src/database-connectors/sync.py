@@ -147,6 +147,7 @@ async def sync_tables(
             "columns":       len(columns),
             "path":          str(path),
             "nodes_created": nodes_created if owner_id else 0,
+            "columns_list":  columns,
         }
 
         print(f"  ✓ {table_name}: {csv_result.row_count} rows → CSV + {nodes_created} KG nodes")

@@ -8,7 +8,6 @@ members = [
     "crates/fluvio-embed",
 
     # Services
-    "services/fluvio-auth",
     "services/fluvio-database",
     "services/fluvio-graph",
     "services/fluvio-twin",

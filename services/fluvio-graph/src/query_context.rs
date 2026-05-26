@@ -62,10 +62,11 @@ impl QueryContext {
         config:   &QueryConfig,
         surreal:  &Arc<SurrealStorage>,
         embedder: &mut EmbeddingContext,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Self> {
         let embedding = embedder.embed(query)
             .map_err(|e| anyhow::anyhow!("embed failed: {e:?}"))?;
-        Self::from_embedding(user_id, &embedding, config, surreal).await
+        Self::from_embedding(user_id, &embedding, config, surreal, workspace_id).await
     }
 
     /// Build from a pre-computed embedding vector.
@@ -74,6 +75,7 @@ impl QueryContext {
         embedding: &[f32],
         config:    &QueryConfig,
         surreal:   &Arc<SurrealStorage>,
+        workspace_id: Option<&str>,
     ) -> anyhow::Result<Self> {
         // Step 1: similarity search → seed nodes
         let seeds = surreal.similarity_search_nodes(
@@ -81,6 +83,7 @@ impl QueryContext {
             embedding,
             config.similarity_top_k,
             config.max_zone,
+            workspace_id,
         ).await?;
 
         let fetched_count = seeds.len();

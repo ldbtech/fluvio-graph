@@ -1819,10 +1819,6 @@ name = "fluvio-auth"
 version = "0.1.0"
 
 [[package]]
-name = "fluvio-auth-service"
-version = "0.1.0"
-
-[[package]]
 name = "fluvio-collab"
 version = "0.1.0"
 dependencies = [

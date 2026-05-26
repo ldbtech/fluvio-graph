@@ -29,6 +29,36 @@ input AddMemberInput
   invitedBy: String
 }
 
+input AddTeamMemberInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  teamId: String!
+  userId: String!
+  role: String!
+}
+
+input CreateCompanyInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  name: String!
+  website: String!
+  linkedinUrl: String!
+  twitterUrl: String
+  githubUrl: String
+  createdBy: String!
+}
+
+input CreateCompanyInviteInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  companyId: String!
+  invitedBy: String!
+  email: String!
+  token: String!
+  role: String!
+  expiresAt: String!
+}
+
 input CreateConnectorInput
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -58,6 +88,24 @@ input CreateInviteInput
   expiresInHours: Int
 }
 
+input CreateTeamInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  companyId: String!
+  name: String!
+  description: String
+}
+
+input CreateTeamWorkflowInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  teamId: String!
+  name: String!
+  description: String
+  steps: String!
+  createdBy: String!
+}
+
 input CreateUserInput
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -65,6 +113,30 @@ input CreateUserInput
   email: String
   displayName: String
   avatarUrl: String
+}
+
+input CreateWorkspaceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  ownerId: String!
+  name: String!
+  isPublic: Boolean!
+}
+
+type GqlActionAuthorization
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  actionType: String!
+  description: String!
+  severity: String!
+  initiatedByUserId: String!
+  status: String!
+  authorizedByUserId: String
+  notes: String
+  createdAt: String!
+  resolvedAt: String
 }
 
 input GqlChatMessage
@@ -79,6 +151,33 @@ type GqlChatResponse
 {
   answer: String!
   sources: [GqlSource!]!
+}
+
+type GqlCompany
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String!
+  website: String!
+  linkedinUrl: String!
+  twitterUrl: String
+  githubUrl: String
+  createdBy: String!
+  createdAt: String!
+}
+
+type GqlCompanyInvite
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  invitedBy: String!
+  email: String!
+  token: String!
+  role: String!
+  expiresAt: String!
+  acceptedAt: String
+  createdAt: String!
 }
 
 type GqlConnector
@@ -110,6 +209,7 @@ type GqlConnectorResource
   lastSyncAt: String
   nodeCount: Int!
   createdAt: String!
+  meta: String!
 }
 
 type GqlDocument
@@ -121,6 +221,20 @@ type GqlDocument
   domain: String!
   excerpt: String!
   zone: Int!
+}
+
+type GqlDocumentReconciliation
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  title: String!
+  description: String!
+  sourceA: String!
+  sourceB: String!
+  resolvedTo: String!
+  timeAgo: String!
+  createdAt: String!
 }
 
 enum GqlDomain
@@ -161,6 +275,19 @@ input GqlEdgeInput
   label: String!
   token: Int
   relationshipProbability: Float
+}
+
+type GqlExecutionLog
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  initiatedByUserId: String!
+  initiatedByTwinId: String
+  agentName: String!
+  message: String!
+  logLevel: String!
+  timestamp: String!
 }
 
 type GqlGroup
@@ -301,6 +428,30 @@ type GqlPath
   found: Boolean!
 }
 
+type GqlPipelineRun
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  name: String!
+  agentName: String!
+  status: String!
+  progress: Int!
+  detail: String
+  startedAt: String!
+  updatedAt: String!
+}
+
+type GqlPlannerChatMessage
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  sender: String!
+  content: String!
+  createdAt: String!
+}
+
 """Query tuning config — mirrors QueryConfig."""
 input GqlQueryConfig
   @join__type(graph: FLUVIO_GRAPH)
@@ -352,6 +503,40 @@ type GqlSource
   text: String!
 }
 
+type GqlTeam
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  name: String!
+  description: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type GqlTeamMember
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  teamId: String!
+  userId: String!
+  role: String!
+  joinedAt: String!
+}
+
+type GqlTeamWorkflow
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  teamId: String!
+  name: String!
+  description: String
+  steps: String!
+  createdBy: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
 type GqlUser
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -360,16 +545,39 @@ type GqlUser
   email: String
   displayName: String
   avatarUrl: String
+  companyEmail: String
+  companyId: String
   createdAt: String!
+}
+
+type GqlWorkspace
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  ownerId: String!
+  name: String!
+  isPublic: Boolean!
+  createdAt: String!
+}
+
+type GqlWorkspaceShare
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  userId: String!
+  sharedAt: String!
+  email: String
+  displayName: String
 }
 
 scalar join__FieldSet
 
 enum join__Graph {
-  FLUVIO_DATABASE @join__graph(name: "fluvio-database", url: "http://localhost:3005/graphql")
-  FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://localhost:3001/graphql")
-  FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://localhost:3004/graphql")
-  FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://localhost:3002/graphql")
+  FLUVIO_DATABASE @join__graph(name: "fluvio-database", url: "http://127.0.0.1:3005/graphql")
+  FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://127.0.0.1:3001/graphql")
+  FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://127.0.0.1:3004/graphql")
+  FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://127.0.0.1:3002/graphql")
 }
 
 scalar link__Import
@@ -407,23 +615,41 @@ type Mutation
   markSynced(connectorId: String!): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
   updateResourceSyncStats(connectorId: String!, externalId: String!, nodesAdded: Int!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   disconnectConnector(connectorId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  createWorkspace(input: CreateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
+  updateWorkspace(input: UpdateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
+  deleteWorkspace(id: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  shareWorkspace(workspaceId: String!, email: String!): GqlWorkspaceShare! @join__field(graph: FLUVIO_DATABASE)
+  unshareWorkspace(workspaceId: String!, userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  createCompany(input: CreateCompanyInput!): GqlCompany! @join__field(graph: FLUVIO_DATABASE)
+  updateUserCompanyEmail(userId: String!, email: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  updateUserCompany(userId: String!, companyId: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  createCompanyInvite(input: CreateCompanyInviteInput!): GqlCompanyInvite! @join__field(graph: FLUVIO_DATABASE)
+  acceptCompanyInvite(inviteId: String!): GqlCompanyInvite! @join__field(graph: FLUVIO_DATABASE)
+  createTeam(input: CreateTeamInput!): GqlTeam! @join__field(graph: FLUVIO_DATABASE)
+  addTeamMember(input: AddTeamMemberInput!): GqlTeamMember! @join__field(graph: FLUVIO_DATABASE)
+  createTeamWorkflow(input: CreateTeamWorkflowInput!): GqlTeamWorkflow! @join__field(graph: FLUVIO_DATABASE)
+  addPlannerChatMessage(workspaceId: String!, sender: String!, content: String!): GqlPlannerChatMessage! @join__field(graph: FLUVIO_DATABASE)
+  clearPlannerChatHistory(workspaceId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  resolveActionAuthorization(id: String!, status: String!, notes: String): GqlActionAuthorization! @join__field(graph: FLUVIO_DATABASE)
+  logExecution(companyId: String!, agentName: String!, message: String!, logLevel: String!): GqlExecutionLog! @join__field(graph: FLUVIO_DATABASE)
   upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
   deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
   upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
   saveGraph(zone: Int): GqlSaveResult! @join__field(graph: FLUVIO_GRAPH)
   deleteUserGraph: Boolean! @join__field(graph: FLUVIO_GRAPH)
+  deleteWorkspaceNodes(workspaceId: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Upload and ingest a file (PDF, TXT, MD).
-  Returns immediately with a jobId — processing runs in background.
+  Returns immediately with a job_id — processing runs in background.
   """
-  ingestFile(file: Upload!, filename: String!, zone: Int): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+  ingestFile(file: Upload!, filename: String!, zone: Int, workspaceId: String): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
 
   """
   Ingest raw text directly — no file upload needed.
   Runs synchronously since text is small.
   """
-  ingestRaw(text: String!, sourceUri: String!, domain: String, zone: Int): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+  ingestRaw(text: String!, sourceUri: String!, domain: String, zone: Int, workspaceId: String): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
 }
 
 type Query
@@ -446,6 +672,19 @@ type Query
   getConnectorResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
   getSelectedResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
   getConnector(connectorId: String!): GqlConnector @join__field(graph: FLUVIO_DATABASE)
+  myWorkspaces(userId: String!): [GqlWorkspace!]! @join__field(graph: FLUVIO_DATABASE)
+  workspaceShares(workspaceId: String!): [GqlWorkspaceShare!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompany(id: String!): GqlCompany @join__field(graph: FLUVIO_DATABASE)
+  getPendingCompanyInvites(email: String!): [GqlCompanyInvite!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompanyTeams(companyId: String!): [GqlTeam!]! @join__field(graph: FLUVIO_DATABASE)
+  getTeam(id: String!): GqlTeam @join__field(graph: FLUVIO_DATABASE)
+  getTeamMembers(teamId: String!): [GqlTeamMember!]! @join__field(graph: FLUVIO_DATABASE)
+  getTeamWorkflows(teamId: String!): [GqlTeamWorkflow!]! @join__field(graph: FLUVIO_DATABASE)
+  plannerChatHistory(workspaceId: String!): [GqlPlannerChatMessage!]! @join__field(graph: FLUVIO_DATABASE)
+  companyExecutionLogs(companyId: String!, limit: Int): [GqlExecutionLog!]! @join__field(graph: FLUVIO_DATABASE)
+  companyActionAuthorizations(companyId: String!, status: String): [GqlActionAuthorization!]! @join__field(graph: FLUVIO_DATABASE)
+  companyDocumentReconciliations(companyId: String!): [GqlDocumentReconciliation!]! @join__field(graph: FLUVIO_DATABASE)
+  companyPipelineRuns(companyId: String!): [GqlPipelineRun!]! @join__field(graph: FLUVIO_DATABASE)
 
   """Fetch a single node by ID."""
   node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
@@ -453,13 +692,13 @@ type Query
   """
   Fetch all nodes for the authenticated user, optionally filtered by domain.
   """
-  nodes(domain: String, zone: Int): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
+  nodes(domain: String, zone: Int, workspaceId: String): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Semantic similarity search — returns top-K nodes closest to the query.
   Goes directly to SurrealDB — no in-memory subgraph needed.
   """
-  search(query: String!, config: GqlQueryConfig): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
+  search(query: String!, config: GqlQueryConfig, workspaceId: String): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
 
   """
   Cross-user semantic search — "who in my network knows about X?"
@@ -492,10 +731,10 @@ type Query
   4. Call Claude with context + question
   5. Return grounded answer + sources
   """
-  chat(question: String!, history: [GqlChatMessage!], topK: Int, zone: Int): GqlChatResponse! @join__field(graph: FLUVIO_TWIN)
+  chat(question: String!, history: [GqlChatMessage!], topK: Int, zone: Int, workspaceId: String): GqlChatResponse! @join__field(graph: FLUVIO_TWIN)
 
   """List all documents (graph nodes) in the user's knowledge graph."""
-  documents(zone: Int): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
+  documents(zone: Int, workspaceId: String): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
 }
 
 input SelectResourcesInput
@@ -525,6 +764,14 @@ input UpdateQueueStatusInput
   reviewNote: String
 }
 
+input UpdateWorkspaceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String
+  isPublic: Boolean
+}
+
 """A multipart file upload"""
 scalar Upload
   @join__type(graph: FLUVIO_INGESTION)
@@ -537,4 +784,5 @@ input UpsertResourceInput
   externalId: String!
   name: String!
   description: String
+  meta: String
 }

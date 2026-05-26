@@ -1,0 +1,11 @@
+INFO:     Started server process [7991]
+INFO:     Waiting for application startup.
+2026-05-26 13:06:11,940 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3007 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61451 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-26 13:51:55,355 [INFO] agent-planner stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7991]

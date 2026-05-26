@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 use anyhow::Context;
 
-use crate::clients::dbtypes::{DbUser, DbGroup, DbMember, DbInvite, DbQueueItem};
-use crate::clients::parse_helpers::{parse_user, parse_group, parse_member, parse_invite, parse_queue_item};
+use crate::clients::dbtypes::{DbUser, DbGroup, DbMember, DbInvite, DbQueueItem, DbCompany, DbCompanyInvite, DbTeam, DbTeamMember, DbTeamWorkflow};
+use crate::clients::parse_helpers::{parse_user, parse_group, parse_member, parse_invite, parse_queue_item, parse_company, parse_company_invite, parse_team, parse_team_member, parse_team_workflow};
 // Client ---------------------------------------------------------------
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl DatabaseClient {
     // --- Users ------------------------------------------------------------
     pub async fn get_user(&self, id: &str) -> Result<Option<DbUser>, anyhow::Error> {
         let q = r#"query($id: String!) {
-            getUser(id: $id) { id firebaseUid email displayName }
+            getUser(id: $id) { id firebaseUid email displayName companyEmail companyId }
         }"#;
         let body = self.post(q, json!({ "id": id })).await?;
         Ok(parse_user(body["data"]["getUser"].clone()))
@@ -31,7 +31,7 @@ impl DatabaseClient {
 
     pub async fn get_user_by_firebase_uid(&self, uid: &str) -> anyhow::Result<Option<DbUser>> {
         let q = r#"query($uid: String!) {
-            getUserByFirebaseUid(firebaseUid: $uid) { id firebaseUid email displayName }
+            getUserByFirebaseUid(firebaseUid: $uid) { id firebaseUid email displayName companyEmail companyId }
         }"#;
         let body = self.post(q, json!({ "uid": uid })).await?;
         Ok(parse_user(body["data"]["getUserByFirebaseUid"].clone()))
@@ -44,7 +44,7 @@ impl DatabaseClient {
         display_name: Option<&str>,
     ) -> anyhow::Result<DbUser> {
         let q = r#"mutation($input: CreateUserInput!) {
-            createUser(input: $input) { id firebaseUid email displayName }
+            createUser(input: $input) { id firebaseUid email displayName companyEmail companyId }
         }"#;
         let body = self.post(q, json!({
             "input": { "firebaseUid": firebase_uid, "email": email, "displayName": display_name }
@@ -275,6 +275,183 @@ impl DatabaseClient {
         }
  
         Ok(body)
+    }
+
+    // ── Company & Teams ──────────────────────────────────────────────────────────
+
+    pub async fn update_user_company_email(&self, user_id: &str, email: &str) -> anyhow::Result<DbUser> {
+        let q = r#"mutation($userId: String!, $email: String!) {
+            updateUserCompanyEmail(userId: $userId, email: $email) { id firebaseUid email displayName companyEmail companyId }
+        }"#;
+        let body = self.post(q, json!({ "userId": user_id, "email": email })).await?;
+        parse_user(body["data"]["updateUserCompanyEmail"].clone())
+            .context("updateUserCompanyEmail returned null")
+    }
+
+    pub async fn update_user_company(&self, user_id: &str, company_id: &str) -> anyhow::Result<DbUser> {
+        let q = r#"mutation($userId: String!, $companyId: String!) {
+            updateUserCompany(userId: $userId, companyId: $companyId) { id firebaseUid email displayName companyEmail companyId }
+        }"#;
+        let body = self.post(q, json!({ "userId": user_id, "companyId": company_id })).await?;
+        parse_user(body["data"]["updateUserCompany"].clone())
+            .context("updateUserCompany returned null")
+    }
+
+    pub async fn create_company(
+        &self,
+        name:         &str,
+        website:      &str,
+        linkedin_url: &str,
+        twitter_url:  Option<&str>,
+        github_url:   Option<&str>,
+        created_by:   &str,
+    ) -> anyhow::Result<DbCompany> {
+        let q = r#"mutation($input: CreateCompanyInput!) {
+            createCompany(input: $input) { id name website linkedinUrl twitterUrl githubUrl createdBy }
+        }"#;
+        let body = self.post(q, json!({
+            "input": {
+                "name": name,
+                "website": website,
+                "linkedinUrl": linkedin_url,
+                "twitterUrl": twitter_url,
+                "githubUrl": github_url,
+                "createdBy": created_by
+            }
+        })).await?;
+        parse_company(body["data"]["createCompany"].clone())
+            .context("createCompany returned null")
+    }
+
+    pub async fn get_company(&self, id: &str) -> anyhow::Result<Option<DbCompany>> {
+        let q = r#"query($id: String!) {
+            getCompany(id: $id) { id name website linkedinUrl twitterUrl githubUrl createdBy }
+        }"#;
+        let body = self.post(q, json!({ "id": id })).await?;
+        Ok(parse_company(body["data"]["getCompany"].clone()))
+    }
+
+    pub async fn get_pending_company_invites(&self, email: &str) -> anyhow::Result<Vec<DbCompanyInvite>> {
+        let q = r#"query($email: String!) {
+            getPendingCompanyInvites(email: $email) { id companyId invitedBy email token role expiresAt acceptedAt }
+        }"#;
+        let body = self.post(q, json!({ "email": email })).await?;
+        Ok(body["data"]["getPendingCompanyInvites"]
+            .as_array().cloned().unwrap_or_default()
+            .into_iter().filter_map(parse_company_invite).collect())
+    }
+
+    pub async fn create_company_invite(
+        &self,
+        company_id: &str,
+        invited_by: &str,
+        email:      &str,
+        token:      &str,
+        role:       &str,
+        expires_at: &str,
+    ) -> anyhow::Result<DbCompanyInvite> {
+        let q = r#"mutation($input: CreateCompanyInviteInput!) {
+            createCompanyInvite(input: $input) { id companyId invitedBy email token role expiresAt acceptedAt }
+        }"#;
+        let body = self.post(q, json!({
+            "input": {
+                "companyId": company_id,
+                "invitedBy": invited_by,
+                "email": email,
+                "token": token,
+                "role": role,
+                "expiresAt": expires_at
+            }
+        })).await?;
+        parse_company_invite(body["data"]["createCompanyInvite"].clone())
+            .context("createCompanyInvite returned null")
+    }
+
+    pub async fn accept_company_invite(&self, invite_id: &str) -> anyhow::Result<DbCompanyInvite> {
+        let q = r#"mutation($inviteId: String!) {
+            acceptCompanyInvite(inviteId: $inviteId) { id companyId invitedBy email token role expiresAt acceptedAt }
+        }"#;
+        let body = self.post(q, json!({ "inviteId": invite_id })).await?;
+        parse_company_invite(body["data"]["acceptCompanyInvite"].clone())
+            .context("acceptCompanyInvite returned null")
+    }
+
+    pub async fn create_team(
+        &self,
+        company_id:  &str,
+        name:        &str,
+        description: Option<&str>,
+    ) -> anyhow::Result<DbTeam> {
+        let q = r#"mutation($input: CreateTeamInput!) {
+            createTeam(input: $input) { id companyId name description }
+        }"#;
+        let body = self.post(q, json!({
+            "input": { "companyId": company_id, "name": name, "description": description }
+        })).await?;
+        parse_team(body["data"]["createTeam"].clone())
+            .context("createTeam returned null")
+    }
+
+    pub async fn get_team(&self, id: &str) -> anyhow::Result<Option<DbTeam>> {
+        let q = r#"query($id: String!) {
+            getTeam(id: $id) { id companyId name description }
+        }"#;
+        let body = self.post(q, json!({ "id": id })).await?;
+        Ok(parse_team(body["data"]["getTeam"].clone()))
+    }
+
+    pub async fn get_company_teams(&self, company_id: &str) -> anyhow::Result<Vec<DbTeam>> {
+        let q = r#"query($companyId: String!) {
+            getCompanyTeams(companyId: $companyId) { id companyId name description }
+        }"#;
+        let body = self.post(q, json!({ "companyId": company_id })).await?;
+        Ok(body["data"]["getCompanyTeams"]
+            .as_array().cloned().unwrap_or_default()
+            .into_iter().filter_map(parse_team).collect())
+    }
+
+    pub async fn add_team_member(
+        &self,
+        team_id: &str,
+        user_id: &str,
+        role:    &str,
+    ) -> anyhow::Result<DbTeamMember> {
+        let q = r#"mutation($input: AddTeamMemberInput!) {
+            addTeamMember(input: $input) { id teamId userId role joinedAt }
+        }"#;
+        let body = self.post(q, json!({
+            "input": { "teamId": team_id, "userId": user_id, "role": role }
+        })).await?;
+        parse_team_member(body["data"]["addTeamMember"].clone())
+            .context("addTeamMember returned null")
+    }
+
+    pub async fn create_team_workflow(
+        &self,
+        team_id:     &str,
+        name:        &str,
+        description: Option<&str>,
+        steps:       &str,
+        created_by:  &str,
+    ) -> anyhow::Result<DbTeamWorkflow> {
+        let q = r#"mutation($input: CreateTeamWorkflowInput!) {
+            createTeamWorkflow(input: $input) { id teamId name description steps createdBy }
+        }"#;
+        let body = self.post(q, json!({
+            "input": { "teamId": team_id, "name": name, "description": description, "steps": steps, "createdBy": created_by }
+        })).await?;
+        parse_team_workflow(body["data"]["createTeamWorkflow"].clone())
+            .context("createTeamWorkflow returned null")
+    }
+
+    pub async fn get_team_workflows(&self, team_id: &str) -> anyhow::Result<Vec<DbTeamWorkflow>> {
+        let q = r#"query($teamId: String!) {
+            getTeamWorkflows(teamId: $teamId) { id teamId name description steps createdBy }
+        }"#;
+        let body = self.post(q, json!({ "teamId": team_id })).await?;
+        Ok(body["data"]["getTeamWorkflows"]
+            .as_array().cloned().unwrap_or_default()
+            .into_iter().filter_map(parse_team_workflow).collect())
     }
 }
 
