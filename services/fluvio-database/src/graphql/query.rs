@@ -221,6 +221,18 @@ impl QueryRoot {
             .into_iter().map(GqlTeam::from).collect())
     }
 
+    async fn get_company_users(
+        &self,
+        ctx:        &Context<'_>,
+        company_id: String,
+    ) -> Result<Vec<GqlUser>> {
+        let state      = ctx.data::<AppState>()?;
+        let company_id = parse_uuid(&company_id)?;
+        Ok(users::get_company_users(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .into_iter().map(GqlUser::from).collect())
+    }
+
     async fn get_team(
         &self,
         ctx: &Context<'_>,

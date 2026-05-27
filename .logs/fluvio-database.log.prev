@@ -1,12 +1,7 @@
-[2m2026-05-26T17:06:29.385265Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-26T17:06:30.382348Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-26T17:06:30.421210Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-26T17:06:30.429827Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-26T17:06:30.429877Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
-[2m2026-05-26T17:14:47.485508Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT id, user_id, group_id, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT id, user_id, group_id,\n               kind::text, auth_method::text,\n               access_token, refresh_token, token_expires_at,\n               status::text, error_message,\n               created_at, updated_at, last_sync_at\n        FROM connectors\n        WHERE user_id = $1\n        ORDER BY created_at DESC\n    \n" [3mrows_affected[0m[2m=[0m3 [3mrows_returned[0m[2m=[0m3 [3melapsed[0m[2m=[0m1.355752417s [3melapsed_secs[0m[2m=[0m1.355752417 [3mslow_threshold[0m[2m=[0m1s
-[2m2026-05-26T17:48:47.833608Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-26T17:48:47.868593Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-26T17:48:47.885057Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-26T17:48:48.099375Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-26T17:48:48.106600Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-26T17:48:48.106648Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-05-27T17:42:26.652910Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-05-27T17:42:26.691971Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-27T17:42:26.701203Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-27T17:42:26.719908Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-27T17:42:26.725376Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-27T17:42:26.734802Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-05-27T17:42:26.734865Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql

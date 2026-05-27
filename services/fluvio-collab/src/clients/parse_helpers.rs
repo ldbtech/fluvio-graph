@@ -109,6 +109,7 @@ pub fn parse_team_workflow(v: Value) -> Option<DbTeamWorkflow> {
         description: v["description"].as_str().map(String::from),
         steps:       v["steps"].as_str()?.to_string(),
         created_by:  v["createdBy"].as_str()?.to_string(),
+        is_enabled:  v["isEnabled"].as_bool().unwrap_or(true),
     })
 }
  

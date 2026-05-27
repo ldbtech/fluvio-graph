@@ -98,5 +98,6 @@ pub struct DbTeamWorkflow {
     pub description: Option<String>,
     pub steps:       String, // JSON string
     pub created_by:  String,
+    pub is_enabled:  bool,
 }
  

@@ -1,10 +1,13 @@
-[2m2026-05-26T18:02:08.359498Z[0m [32m INFO[0m [2mfluvio_graph[0m[2m:[0m fluvio-graph starting...
-[2m2026-05-26T18:02:08.362232Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Connecting to SurrealDB...
-[2m2026-05-26T18:02:08.841843Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Connected to ws://127.0.0.1:8000 ns=fluvio db=graph
-[2m2026-05-26T18:02:08.914816Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Schema initialized
-[2m2026-05-26T18:02:08.915164Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m SurrealDB ready.
-[2m2026-05-26T18:02:08.915180Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-05-26T18:02:09.339656Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Embedding model ready.
-[2m2026-05-26T18:02:09.369215Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m fluvio-graph listening on http://0.0.0.0:3001
-[2m2026-05-26T18:02:09.369263Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3001/graphql
-[2m2026-05-26T19:50:12.094509Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mnode_id[0m[2m=[0m0b7b4e61-6760-4940-7486-5e350dd332bd
+[2m2026-05-27T17:49:33.522025Z[0m [32m INFO[0m [2mfluvio_graph[0m[2m:[0m fluvio-graph starting...
+[2m2026-05-27T17:49:33.522263Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Connecting to SurrealDB...
+[2m2026-05-27T17:49:33.622217Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Connected to ws://127.0.0.1:8000 ns=fluvio db=graph
+[2m2026-05-27T17:49:33.648554Z[0m [32m INFO[0m [2mfluvio_graph::storage::surreal[0m[2m:[0m [SurrealDB] Schema initialized
+[2m2026-05-27T17:49:33.648623Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m SurrealDB ready.
+[2m2026-05-27T17:49:33.648633Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-27T17:49:33.915773Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-27T17:49:33.918078Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m fluvio-graph listening on http://0.0.0.0:3001
+[2m2026-05-27T17:49:33.918096Z[0m [32m INFO[0m [2mfluvio_graph::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3001/graphql
+[2m2026-05-27T20:33:53.766119Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0mb5d353f2-22c4-4b3f-b534-15b99c296c6f [3mnode_id[0m[2m=[0m445812b2-fcc3-a261-acf7-1fd330d90dd4
+[2m2026-05-27T20:33:53.805836Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m node upserted [3muser_id[0m[2m=[0mb5d353f2-22c4-4b3f-b534-15b99c296c6f [3mnode_id[0m[2m=[0m3a7a3634-98c5-e303-e24b-7713e4fa3de6
+[2m2026-05-27T20:33:53.856673Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m edge upserted [3muser_id[0m[2m=[0mb5d353f2-22c4-4b3f-b534-15b99c296c6f [3mfrom[0m[2m=[0m445812b2-fcc3-a261-acf7-1fd330d90dd4 [3mto[0m[2m=[0m3a7a3634-98c5-e303-e24b-7713e4fa3de6 [3mlabel[0m[2m=[0msemantic_neighbor
+[2m2026-05-27T20:33:53.907523Z[0m [32m INFO[0m [2mfluvio_graph::graphql::mutation[0m[2m:[0m edge upserted [3muser_id[0m[2m=[0mb5d353f2-22c4-4b3f-b534-15b99c296c6f [3mfrom[0m[2m=[0m3a7a3634-98c5-e303-e24b-7713e4fa3de6 [3mto[0m[2m=[0m445812b2-fcc3-a261-acf7-1fd330d90dd4 [3mlabel[0m[2m=[0msemantic_neighbor

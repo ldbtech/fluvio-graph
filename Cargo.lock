@@ -1867,6 +1867,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "fluvio-common",
+ "reqwest 0.13.3",
  "serde",
  "serde_json",
  "sqlx",

@@ -33,6 +33,7 @@ pub struct TeamWorkflow {
     pub created_by:  Uuid,
     pub created_at:  DateTime<Utc>,
     pub updated_at:  DateTime<Utc>,
+    pub is_enabled:  bool,
 }
 
 pub async fn create_team(
@@ -114,7 +115,7 @@ pub async fn create_team_workflow(
     Ok(sqlx::query_as::<_, TeamWorkflow>(
         "INSERT INTO team_workflows (team_id, name, description, steps, created_by)
          VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, team_id, name, description, steps, created_by, created_at, updated_at"
+         RETURNING id, team_id, name, description, steps, created_by, created_at, updated_at, is_enabled"
     )
     .bind(team_id)
     .bind(name)
@@ -127,11 +128,28 @@ pub async fn create_team_workflow(
 
 pub async fn get_team_workflows(pool: &PgPool, team_id: Uuid) -> anyhow::Result<Vec<TeamWorkflow>> {
     Ok(sqlx::query_as::<_, TeamWorkflow>(
-        "SELECT id, team_id, name, description, steps, created_by, created_at, updated_at
+        "SELECT id, team_id, name, description, steps, created_by, created_at, updated_at, is_enabled
          FROM team_workflows WHERE team_id = $1
          ORDER BY created_at DESC"
     )
     .bind(team_id)
     .fetch_all(pool)
+    .await?)
+}
+
+pub async fn toggle_workflow_enabled(
+    pool:       &PgPool,
+    id:          Uuid,
+    is_enabled:  bool,
+) -> anyhow::Result<TeamWorkflow> {
+    Ok(sqlx::query_as::<_, TeamWorkflow>(
+        "UPDATE team_workflows
+         SET is_enabled = $2, updated_at = now()
+         WHERE id = $1
+         RETURNING id, team_id, name, description, steps, created_by, created_at, updated_at, is_enabled"
+    )
+    .bind(id)
+    .bind(is_enabled)
+    .fetch_one(pool)
     .await?)
 }

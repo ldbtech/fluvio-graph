@@ -1,77 +1,36 @@
-INFO:     Started server process [23494]
+INFO:     Started server process [46903]
 INFO:     Waiting for application startup.
-2026-05-26 14:02:07,877 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
+2026-05-27 13:49:28,549 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3007 (Press CTRL+C to quit)
-INFO:     127.0.0.1:49243 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51773 - "OPTIONS /plan/context HTTP/1.1" 200 OK
-2026-05-26 14:37:30,420 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-26 14:37:30,435 [INFO] Fetching workspace shares...
-2026-05-26 14:37:30,435 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:37:30,611 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:30,612 [INFO] Executing concurrent query fetches for main user context...
-2026-05-26 14:37:30,612 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-26 14:37:30,617 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
-2026-05-26 14:37:30,622 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:37:30,643 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:30,644 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-26 14:37:30,952 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:30,953 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:30,954 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:51773 - "POST /plan/context HTTP/1.1" 200 OK
-2026-05-26 14:37:55,567 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-26 14:37:55,567 [INFO] Fetching workspace shares...
-2026-05-26 14:37:55,567 [INFO] Fetching workspace shares for workspace: 5173cbc2-30ed-4382-b89c-a5915bc0ab76
-2026-05-26 14:37:55,583 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:55,583 [INFO] Executing concurrent query fetches for main user context...
-2026-05-26 14:37:55,584 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-26 14:37:55,589 [INFO] Fetching documents in workspace: 5173cbc2-30ed-4382-b89c-a5915bc0ab76, zone: 0
-2026-05-26 14:37:55,595 [INFO] Fetching graph nodes for workspace: 5173cbc2-30ed-4382-b89c-a5915bc0ab76
-2026-05-26 14:37:55,605 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:55,606 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-26 14:37:55,645 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:55,648 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:55,649 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:51814 - "POST /plan/context HTTP/1.1" 200 OK
-2026-05-26 14:37:59,483 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-26 14:37:59,484 [INFO] Fetching workspace shares...
-2026-05-26 14:37:59,484 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:37:59,496 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:59,497 [INFO] Executing concurrent query fetches for main user context...
-2026-05-26 14:37:59,497 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-26 14:37:59,504 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
-2026-05-26 14:37:59,511 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:37:59,527 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:59,527 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-26 14:37:59,548 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:59,554 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:37:59,555 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:51814 - "POST /plan/context HTTP/1.1" 200 OK
-2026-05-26 14:38:22,713 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-26 14:38:22,713 [INFO] Fetching workspace shares...
-2026-05-26 14:38:22,713 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:38:22,732 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,733 [INFO] Executing concurrent query fetches for main user context...
-2026-05-26 14:38:22,733 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-26 14:38:22,740 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
-2026-05-26 14:38:22,744 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:38:22,751 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-26 14:38:22,751 [INFO] Fetching workspace shares...
-2026-05-26 14:38:22,751 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:38:22,761 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,761 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-26 14:38:22,769 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,770 [INFO] Executing concurrent query fetches for main user context...
-2026-05-26 14:38:22,770 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-26 14:38:22,776 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
-2026-05-26 14:38:22,781 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
-2026-05-26 14:38:22,790 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,791 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,792 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-26 14:38:22,793 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,794 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:51885 - "POST /plan/context HTTP/1.1" 200 OK
-2026-05-26 14:38:22,806 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,807 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-26 14:38:22,807 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:51887 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55900 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50225 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50226 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-05-27 16:32:52,483 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-05-27 16:32:52,672 [INFO] Fetching workspace shares...
+2026-05-27 16:32:52,673 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
+2026-05-27 16:32:52,815 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-05-27 16:32:52,815 [INFO] Fetching workspace shares...
+2026-05-27 16:32:52,815 [INFO] Fetching workspace shares for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
+2026-05-27 16:32:53,040 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,041 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,044 [INFO] Executing concurrent query fetches for main user context...
+2026-05-27 16:32:53,044 [INFO] Executing concurrent query fetches for main user context...
+2026-05-27 16:32:53,044 [INFO] Fetching connectors for groupId: grp_eng
+2026-05-27 16:32:53,055 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
+2026-05-27 16:32:53,064 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
+2026-05-27 16:32:53,074 [INFO] Fetching connectors for groupId: grp_eng
+2026-05-27 16:32:53,082 [INFO] Fetching documents in workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf, zone: 0
+2026-05-27 16:32:53,095 [INFO] Fetching graph nodes for workspace: 27c20d89-36a4-4508-b55e-6f2bae0557cf
+2026-05-27 16:32:53,144 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,146 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-05-27 16:32:53,153 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,154 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-05-27 16:32:53,703 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,706 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,708 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,709 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-27 16:32:53,712 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50226 - "POST /plan/context HTTP/1.1" 200 OK
+2026-05-27 16:32:53,733 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50225 - "POST /plan/context HTTP/1.1" 200 OK

@@ -14,27 +14,37 @@ use crate::db::teams::{Team, TeamMember as DbTeamMember, TeamWorkflow};
 
 #[derive(SimpleObject, Clone)]
 pub struct GqlUser {
-    pub id:            String,
-    pub firebase_uid:  String,
-    pub email:         Option<String>,
-    pub display_name:  Option<String>,
-    pub avatar_url:    Option<String>,
-    pub company_email: Option<String>,
-    pub company_id:    Option<String>,
-    pub created_at:    String,
+    pub id:                   String,
+    pub firebase_uid:         String,
+    pub email:                Option<String>,
+    pub display_name:         Option<String>,
+    pub avatar_url:           Option<String>,
+    pub company_email:        Option<String>,
+    pub company_id:           Option<String>,
+    pub role:                 String,
+    pub must_change_password: bool,
+    pub policies:             Vec<String>,
+    pub assigned_agent_roles: Vec<String>,
+    pub twin_manifest:        Option<String>,
+    pub created_at:           String,
 }
 
 impl From<User> for GqlUser {
     fn from(u: User) -> Self {
         Self {
-            id:            u.id.to_string(),
-            firebase_uid:  u.firebase_uid,
-            email:         u.email,
-            display_name:  u.display_name,
-            avatar_url:    u.avatar_url,
-            company_email: u.company_email,
-            company_id:    u.company_id.map(|id| id.to_string()),
-            created_at:    u.created_at.to_rfc3339(),
+            id:                   u.id.to_string(),
+            firebase_uid:         u.firebase_uid,
+            email:                u.email,
+            display_name:         u.display_name,
+            avatar_url:           u.avatar_url,
+            company_email:        u.company_email,
+            company_id:           u.company_id.map(|id| id.to_string()),
+            role:                 u.role,
+            must_change_password: u.must_change_password,
+            policies:             u.policies,
+            assigned_agent_roles: u.assigned_agent_roles,
+            twin_manifest:        u.twin_manifest,
+            created_at:           u.created_at.to_rfc3339(),
         }
     }
 }
@@ -161,6 +171,11 @@ pub struct CreateUserInput {
     pub email:        Option<String>,
     pub display_name: Option<String>,
     pub avatar_url:   Option<String>,
+    pub role:         Option<String>,
+    pub must_change_password: Option<bool>,
+    pub policies:             Option<Vec<String>>,
+    pub assigned_agent_roles: Option<Vec<String>>,
+    pub twin_manifest:        Option<String>,
 }
 
 #[derive(InputObject)]
@@ -400,6 +415,7 @@ pub struct GqlTeamWorkflow {
     pub created_by:  String,
     pub created_at:  String,
     pub updated_at:  String,
+    pub is_enabled:  bool,
 }
 
 impl From<TeamWorkflow> for GqlTeamWorkflow {
@@ -413,6 +429,7 @@ impl From<TeamWorkflow> for GqlTeamWorkflow {
             created_by:  tw.created_by.to_string(),
             created_at:  tw.created_at.to_rfc3339(),
             updated_at:  tw.updated_at.to_rfc3339(),
+            is_enabled:  tw.is_enabled,
         }
     }
 }

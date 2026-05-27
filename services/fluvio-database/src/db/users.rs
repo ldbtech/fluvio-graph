@@ -55,6 +55,11 @@ pub async fn update(
         .bind(avatar_url)
         .bind(None::<&str>)
         .bind(None::<Uuid>)
+        .bind(None::<&str>)
+        .bind(None::<bool>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<String>)
         .fetch_one(pool)
         .await?)
 }
@@ -71,6 +76,11 @@ pub async fn update_company_email(
         .bind(None::<&str>)
         .bind(company_email)
         .bind(None::<Uuid>)
+        .bind(None::<&str>)
+        .bind(None::<bool>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<String>)
         .fetch_one(pool)
         .await?)
 }
@@ -87,6 +97,26 @@ pub async fn update_company_id(
         .bind(None::<&str>)
         .bind(None::<&str>)
         .bind(company_id)
+        .bind(None::<&str>)
+        .bind(None::<bool>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<Vec<String>>)
+        .bind(None::<String>)
         .fetch_one(pool)
         .await?)
+}
+
+pub async fn get_company_users(
+    pool: &PgPool,
+    company_id: Uuid,
+) -> anyhow::Result<Vec<User>> {
+    Ok(sqlx::query_as::<_, User>(
+        "SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
+         FROM users WHERE company_id = $1
+         ORDER BY display_name ASC, email ASC"
+    )
+    .bind(company_id)
+    .fetch_all(pool)
+    .await?)
 }

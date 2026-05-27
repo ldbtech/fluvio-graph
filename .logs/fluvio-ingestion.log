@@ -1,13 +1,13 @@
-[2m2026-05-26T18:02:10.406237Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
-[2m2026-05-26T18:02:10.409376Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-05-26T18:02:10.714430Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
-[2m2026-05-26T18:02:10.733241Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
-[2m2026-05-26T18:02:10.756864Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
-[2m2026-05-26T18:02:10.756902Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql
-[2m2026-05-26T19:50:11.053366Z[0m [32m INFO[0m [2mfluvio_ingestion::graphql::mutation[0m[2m:[0m ingestion job queued [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mfilename[0m[2m=[0mmoh_Ali_larbi_daho_bachir_resume.pdf [3mjob_id[0m[2m=[0m8d582984-d8c3-487c-afe9-f86578170c20
-[2m2026-05-26T19:50:11.135833Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF text extracted [3mfilename[0m[2m=[0m"moh_Ali_larbi_daho_bachir_resume.pdf" [3mchars[0m[2m=[0m3466
-[2m2026-05-26T19:50:11.136572Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF chunked [3mchunk_count[0m[2m=[0m1
-[2m2026-05-26T19:50:12.102097Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m nodes written to fluvio-graph [3mnode_count[0m[2m=[0m1
-[2m2026-05-26T19:50:12.102150Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
-[2m2026-05-26T19:50:12.102163Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m0
-[2m2026-05-26T19:50:12.102194Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF ingestion complete [3mjob_id[0m[2m=[0m8d582984-d8c3-487c-afe9-f86578170c20
+[2m2026-05-27T17:49:36.323241Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
+[2m2026-05-27T17:49:36.323738Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
+[2m2026-05-27T17:49:36.552317Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
+[2m2026-05-27T17:49:36.557063Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
+[2m2026-05-27T17:49:36.559782Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
+[2m2026-05-27T17:49:36.559799Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql
+[2m2026-05-27T20:33:51.800576Z[0m [32m INFO[0m [2mfluvio_ingestion::graphql::mutation[0m[2m:[0m ingestion job queued [3muser_id[0m[2m=[0mb5d353f2-22c4-4b3f-b534-15b99c296c6f [3mfilename[0m[2m=[0mKim Lee Resume.pdf [3mjob_id[0m[2m=[0mc916e813-f1f9-4028-8884-3c468fcd7255
+[2m2026-05-27T20:33:52.139279Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF text extracted [3mfilename[0m[2m=[0m"Kim Lee Resume.pdf" [3mchars[0m[2m=[0m5367
+[2m2026-05-27T20:33:52.139738Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF chunked [3mchunk_count[0m[2m=[0m2
+[2m2026-05-27T20:33:53.806744Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m nodes written to fluvio-graph [3mnode_count[0m[2m=[0m2
+[2m2026-05-27T20:33:53.911168Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline::edge_wirer[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-27T20:33:53.911201Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m semantic edges wired [3medges_wired[0m[2m=[0m2
+[2m2026-05-27T20:33:53.911236Z[0m [32m INFO[0m [2mfluvio_ingestion::pipeline[0m[2m:[0m PDF ingestion complete [3mjob_id[0m[2m=[0mc916e813-f1f9-4028-8884-3c468fcd7255

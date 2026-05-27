@@ -350,6 +350,7 @@ impl MutationRoot {
             description: w.description,
             steps:       w.steps,
             created_by:  w.created_by,
+            is_enabled:  w.is_enabled,
         })
     }
 }

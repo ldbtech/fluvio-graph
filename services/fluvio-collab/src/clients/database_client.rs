@@ -435,7 +435,7 @@ impl DatabaseClient {
         created_by:  &str,
     ) -> anyhow::Result<DbTeamWorkflow> {
         let q = r#"mutation($input: CreateTeamWorkflowInput!) {
-            createTeamWorkflow(input: $input) { id teamId name description steps createdBy }
+            createTeamWorkflow(input: $input) { id teamId name description steps createdBy isEnabled }
         }"#;
         let body = self.post(q, json!({
             "input": { "teamId": team_id, "name": name, "description": description, "steps": steps, "createdBy": created_by }
@@ -446,7 +446,7 @@ impl DatabaseClient {
 
     pub async fn get_team_workflows(&self, team_id: &str) -> anyhow::Result<Vec<DbTeamWorkflow>> {
         let q = r#"query($teamId: String!) {
-            getTeamWorkflows(teamId: $teamId) { id teamId name description steps createdBy }
+            getTeamWorkflows(teamId: $teamId) { id teamId name description steps createdBy isEnabled }
         }"#;
         let body = self.post(q, json!({ "teamId": team_id })).await?;
         Ok(body["data"]["getTeamWorkflows"]

@@ -113,6 +113,11 @@ input CreateUserInput
   email: String
   displayName: String
   avatarUrl: String
+  role: String
+  mustChangePassword: Boolean
+  policies: [String!]
+  assignedAgentRoles: [String!]
+  twinManifest: String
 }
 
 input CreateWorkspaceInput
@@ -535,6 +540,7 @@ type GqlTeamWorkflow
   createdBy: String!
   createdAt: String!
   updatedAt: String!
+  isEnabled: Boolean!
 }
 
 type GqlUser
@@ -547,6 +553,11 @@ type GqlUser
   avatarUrl: String
   companyEmail: String
   companyId: String
+  role: String!
+  mustChangePassword: Boolean!
+  policies: [String!]!
+  assignedAgentRoles: [String!]!
+  twinManifest: String
   createdAt: String!
 }
 
@@ -628,10 +639,21 @@ type Mutation
   createTeam(input: CreateTeamInput!): GqlTeam! @join__field(graph: FLUVIO_DATABASE)
   addTeamMember(input: AddTeamMemberInput!): GqlTeamMember! @join__field(graph: FLUVIO_DATABASE)
   createTeamWorkflow(input: CreateTeamWorkflowInput!): GqlTeamWorkflow! @join__field(graph: FLUVIO_DATABASE)
+  toggleWorkflowEnabled(id: String!, isEnabled: Boolean!): GqlTeamWorkflow! @join__field(graph: FLUVIO_DATABASE)
   addPlannerChatMessage(workspaceId: String!, sender: String!, content: String!): GqlPlannerChatMessage! @join__field(graph: FLUVIO_DATABASE)
   clearPlannerChatHistory(workspaceId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   resolveActionAuthorization(id: String!, status: String!, notes: String): GqlActionAuthorization! @join__field(graph: FLUVIO_DATABASE)
   logExecution(companyId: String!, agentName: String!, message: String!, logLevel: String!): GqlExecutionLog! @join__field(graph: FLUVIO_DATABASE)
+  registerEmployee(firebaseUid: String!, email: String!, displayName: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  attachUserPolicy(userId: String!, policy: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  detachUserPolicy(userId: String!, policy: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  attachUserTwinRole(userId: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  detachUserTwinRole(userId: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  draftTwinRole(userId: String!): String! @join__field(graph: FLUVIO_DATABASE)
+  saveUserTwinManifest(userId: String!, manifest: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  completePasswordReset: Boolean! @join__field(graph: FLUVIO_DATABASE)
+  updateUserRole(userId: String!, newRole: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  removeUserFromCompany(userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
   deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
   upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
@@ -677,6 +699,7 @@ type Query
   getCompany(id: String!): GqlCompany @join__field(graph: FLUVIO_DATABASE)
   getPendingCompanyInvites(email: String!): [GqlCompanyInvite!]! @join__field(graph: FLUVIO_DATABASE)
   getCompanyTeams(companyId: String!): [GqlTeam!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompanyUsers(companyId: String!): [GqlUser!]! @join__field(graph: FLUVIO_DATABASE)
   getTeam(id: String!): GqlTeam @join__field(graph: FLUVIO_DATABASE)
   getTeamMembers(teamId: String!): [GqlTeamMember!]! @join__field(graph: FLUVIO_DATABASE)
   getTeamWorkflows(teamId: String!): [GqlTeamWorkflow!]! @join__field(graph: FLUVIO_DATABASE)

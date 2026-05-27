@@ -135,4 +135,5 @@ pub struct GqlTeamWorkflow {
     pub description: Option<String>,
     pub steps:       String,
     pub created_by:  String,
+    pub is_enabled:  bool,
 }

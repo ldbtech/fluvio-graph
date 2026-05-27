@@ -6,7 +6,7 @@ use chrono::Utc;
 use chrono::DateTime;
 
 use crate::server::AppState;
-use crate::db::{users, groups, members, invites, queue, companies, teams};
+use crate::db::{users, groups, members, invites, queue, companies, teams, queries::users::User};
 use crate::graphql::types::*;
 
 use crate::graphql::connectors_type;
@@ -463,6 +463,19 @@ impl MutationRoot {
         .map(GqlTeamWorkflow::from)?)
     }
 
+    async fn toggle_workflow_enabled(
+        &self,
+        ctx:        &Context<'_>,
+        id:         String,
+        is_enabled: bool,
+    ) -> Result<GqlTeamWorkflow> {
+        let state = ctx.data::<AppState>()?;
+        let id    = parse_uuid(&id)?;
+        Ok(teams::toggle_workflow_enabled(&state.pool, id, is_enabled).await
+            .map_err(|e| Error::new(e.to_string()))
+            .map(GqlTeamWorkflow::from)?)
+    }
+
     async fn add_planner_chat_message(
         &self,
         ctx:          &Context<'_>,
@@ -570,6 +583,559 @@ impl MutationRoot {
         ).await.map_err(|e| Error::new(e.to_string()))?;
         
         Ok(GqlExecutionLog::from(el))
+    }
+
+    async fn register_employee(
+        &self,
+        ctx:          &Context<'_>,
+        firebase_uid: String,
+        email:        String,
+        display_name: String,
+        role:         String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+
+        // Fetch the admin's company_id
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company_id = admin_user.company_id
+            .ok_or_else(|| Error::new("You must belong to a company to register employees"))?;
+
+        // Check if admin is indeed an admin (createdBy matches or role is admin)
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can register employees"));
+        }
+
+        // Create the user in database with ReadOnlyAccess default policy
+        let user = sqlx::query_as::<_, User>(
+            "INSERT INTO users (firebase_uid, email, display_name, company_email, company_id, role, must_change_password, policies)
+             VALUES ($1, $2, $3, $2, $4, $5, TRUE, ARRAY['ReadOnlyAccess'])
+             ON CONFLICT (firebase_uid) DO UPDATE
+               SET email = EXCLUDED.email,
+                   display_name = EXCLUDED.display_name,
+                   company_email = EXCLUDED.company_email,
+                   company_id = EXCLUDED.company_id,
+                   role = EXCLUDED.role,
+                   must_change_password = TRUE,
+                   updated_at = now()
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(&firebase_uid)
+        .bind(&email)
+        .bind(&display_name)
+        .bind(company_id)
+        .bind(&role)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        // Add the employee to the "General" team of the company automatically
+        if let Ok(teams) = teams::get_company_teams(&state.pool, company_id).await {
+            if let Some(general_team) = teams.iter().find(|t| t.name == "General") {
+                let _ = teams::add_team_member(&state.pool, general_team.id, user.id, "member").await;
+            }
+        }
+
+        Ok(GqlUser::from(user))
+    }
+
+    async fn attach_user_policy(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+        policy:  String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can attach policies"));
+        }
+
+        // Attach policy if not already attached
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users 
+             SET policies = ARRAY(
+               SELECT DISTINCT unnest(array_append(policies, $2))
+             ), updated_at = now() 
+             WHERE id = $1 
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(target_user_id)
+        .bind(&policy)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn detach_user_policy(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+        policy:  String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can detach policies"));
+        }
+
+        // Detach policy
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users 
+             SET policies = array_remove(policies, $2), updated_at = now() 
+             WHERE id = $1 
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(target_user_id)
+        .bind(&policy)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn attach_user_twin_role(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+        role:    String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can assign twin roles"));
+        }
+
+        // Attach role if not already attached
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users 
+             SET assigned_agent_roles = ARRAY(
+               SELECT DISTINCT unnest(array_append(assigned_agent_roles, $2))
+             ), updated_at = now() 
+             WHERE id = $1 
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(target_user_id)
+        .bind(&role)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn detach_user_twin_role(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+        role:    String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can detach twin roles"));
+        }
+
+        // Detach role
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users 
+             SET assigned_agent_roles = array_remove(assigned_agent_roles, $2), updated_at = now() 
+             WHERE id = $1 
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(target_user_id)
+        .bind(&role)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn draft_twin_role(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+    ) -> Result<String> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // 1. Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // 2. Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can draft twin roles"));
+        }
+
+        // 3. Fetch user's squads/teams
+        let squads: Vec<teams::Team> = sqlx::query_as::<_, teams::Team>(
+            "SELECT t.id, t.company_id, t.name, t.description, t.created_at, t.updated_at 
+             FROM teams t
+             INNER JOIN team_members tm ON t.id = tm.team_id
+             WHERE tm.user_id = $1"
+        )
+        .bind(target_user_id)
+        .fetch_all(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        let squads_str = squads.iter()
+            .map(|s| format!("{} ({})", s.name, s.description.as_deref().unwrap_or("No description")))
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        // 4. Fetch company's active connectors
+        let connectors: Vec<String> = sqlx::query_scalar::<_, String>(
+            "SELECT DISTINCT kind::text FROM connectors WHERE user_id IN (
+               SELECT id FROM users WHERE company_id = $1
+             )"
+        )
+        .bind(company_id)
+        .fetch_all(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        let connectors_str = if connectors.is_empty() {
+            "None".to_string()
+        } else {
+            connectors.join(", ")
+        };
+
+        // 5. Query Anthropic API to generate draft
+        let api_key = std::env::var("ANTHROPIC_API_KEY")
+            .map_err(|_| Error::new("ANTHROPIC_API_KEY environment variable is not set"))?;
+
+        let display_name = user.display_name.unwrap_or_else(|| user.email.clone().unwrap_or_else(|| "Employee".to_string()));
+        let user_position = user.role; // position/role
+        let policies_str = if user.policies.is_empty() {
+            "None (ReadOnlyAccess)".to_string()
+        } else {
+            user.policies.join(", ")
+        };
+
+        let system_prompt = format!(
+            "You are the Enterprise Architect for the company '{}'. Your job is to draft a custom TwinAgentRole markdown specification for an employee.
+
+Analyze the user's role/position, their squad, their specific IAM permission policies, and the company's active integrations/tools to output a highly personalized agent role description, directive, permission boundaries, and a checklist of cooperative tasks. Make sure the twin agent's capabilities do not exceed the user's IAM permission policies.
+
+Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in markdown code blocks like ```markdown ... ```. Do NOT include any introduction, conversational filler, or wrap-up commentary. Start immediately with '# Agent Role: [Name]'.",
+            company.name
+        );
+
+        let user_message = format!(
+            "Company Name: {}\nEmployee Name: {}\nEmployee Position/Role: {}\nSquads: {}\nIAM Permission Policies: {}\nActive Company Tools/Connectors: {}\n\nDraft a highly tailored twin agent role.",
+            company.name,
+            display_name,
+            user_position,
+            if squads_str.is_empty() { "General Squad".to_string() } else { squads_str },
+            policies_str,
+            connectors_str
+        );
+
+        let client = reqwest::Client::new();
+        let payload = serde_json::json!({
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 4096,
+            "system": system_prompt,
+            "messages": [
+                { "role": "user", "content": user_message }
+            ]
+        });
+
+        let resp: serde_json::Value = client
+            .post("https://api.anthropic.com/v1/messages")
+            .header("x-api-key", &api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("content-type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| Error::new(format!("Failed to connect to Anthropic API: {}", e)))?
+            .json()
+            .await
+            .map_err(|e| Error::new(format!("Failed to parse Anthropic response: {}", e)))?;
+
+        let answer = resp["content"][0]["text"]
+            .as_str()
+            .ok_or_else(|| {
+                let err_msg = resp["error"]["message"].as_str().unwrap_or("Unknown error");
+                Error::new(format!("Anthropic API error: {}", err_msg))
+            })?
+            .to_string();
+
+        Ok(answer)
+    }
+
+    async fn save_user_twin_manifest(
+        &self,
+        ctx:      &Context<'_>,
+        user_id:  String,
+        manifest: String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // 1. Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // 2. Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can save twin manifests"));
+        }
+
+        // 3. Save twin manifest
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users 
+             SET twin_manifest = $2, updated_at = now() 
+             WHERE id = $1 
+             RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
+                       role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at"
+        )
+        .bind(target_user_id)
+        .bind(&manifest)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn complete_password_reset(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<bool> {
+        let state = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+
+        sqlx::query(
+            "UPDATE users SET must_change_password = FALSE, updated_at = now() WHERE id = $1"
+        )
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(true)
+    }
+
+    async fn update_user_role(
+        &self,
+        ctx:      &Context<'_>,
+        user_id:  String,
+        new_role: String,
+    ) -> Result<GqlUser> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can change roles"));
+        }
+
+        // Update role
+        let updated = sqlx::query_as::<_, User>(
+            "UPDATE users SET role = $2, updated_at = now() WHERE id = $1 RETURNING *"
+        )
+        .bind(target_user_id)
+        .bind(&new_role)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(GqlUser::from(updated))
+    }
+
+    async fn remove_user_from_company(
+        &self,
+        ctx:     &Context<'_>,
+        user_id: String,
+    ) -> Result<bool> {
+        let state = ctx.data::<AppState>()?;
+        let admin_id = extract_user_id(ctx)?;
+        let target_user_id = parse_uuid(&user_id)?;
+
+        // Fetch target user
+        let user = users::get_user_by_id(&state.pool, target_user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id = user.company_id
+            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+
+        // Check admin permissions
+        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Admin user not found"))?;
+
+        let company = companies::get_company(&state.pool, company_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != admin_id && admin_user.role != "admin" {
+            return Err(Error::new("Only company admins can remove employees"));
+        }
+
+        if user.id == company.created_by {
+            return Err(Error::new("Cannot remove the company owner/creator"));
+        }
+
+        // Set company_id to NULL and company_email to NULL (or just clear company details)
+        sqlx::query(
+            "UPDATE users SET company_id = NULL, company_email = NULL, updated_at = now() WHERE id = $1"
+        )
+        .bind(target_user_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        // Also remove user from all company squads
+        sqlx::query(
+            "DELETE FROM team_members WHERE user_id = $1 AND team_id IN (SELECT id FROM teams WHERE company_id = $2)"
+        )
+        .bind(target_user_id)
+        .bind(company_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(true)
     }
 }
 

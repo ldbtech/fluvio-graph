@@ -14,6 +14,11 @@ pub mod users {
         pub avatar_url:   Option<String>,
         pub company_email: Option<String>,
         pub company_id:   Option<Uuid>,
+        pub role:         String,
+        pub must_change_password: bool,
+        pub policies:     Vec<String>,
+        pub assigned_agent_roles: Vec<String>,
+        pub twin_manifest: Option<String>,
         pub created_at:   DateTime<Utc>,
         pub updated_at:   DateTime<Utc>,
     }
@@ -21,13 +26,13 @@ pub mod users {
     // ── Queries ───────────────────────────────────────────────────
     pub const GET_BY_ID: &str = "
         SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
-               created_at, updated_at
+               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
         FROM users WHERE id = $1
     ";
 
     pub const GET_BY_FIREBASE_UID: &str = "
         SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
-               created_at, updated_at
+               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
         FROM users WHERE firebase_uid = $1
     ";
 
@@ -40,7 +45,7 @@ pub mod users {
               avatar_url   = EXCLUDED.avatar_url,
               updated_at   = now()
         RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
-                  created_at, updated_at
+                  role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
     ";
 
     pub const UPDATE: &str = "
@@ -50,15 +55,20 @@ pub mod users {
             avatar_url    = COALESCE($4, avatar_url),
             company_email = COALESCE($5, company_email),
             company_id    = COALESCE($6, company_id),
+            role          = COALESCE($7, role),
+            must_change_password = COALESCE($8, must_change_password),
+            policies      = COALESCE($9, policies),
+            assigned_agent_roles = COALESCE($10, assigned_agent_roles),
+            twin_manifest = COALESCE($11, twin_manifest),
             updated_at    = now()
         WHERE id = $1
         RETURNING id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
-                  created_at, updated_at
+                  role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
     ";
 
     pub const GET_BY_EMAIL: &str = "
         SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,
-               created_at, updated_at
+               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at
         FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(company_email) = LOWER($1)
     ";
 }

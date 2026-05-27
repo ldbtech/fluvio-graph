@@ -1,7 +1,9 @@
-[2m2026-05-26T18:02:12.538302Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-26T18:02:12.609766Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-26T18:02:12.621743Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-26T18:02:12.640768Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-26T18:02:12.647795Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-26T18:02:12.671127Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-26T18:02:12.671164Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-05-27T17:49:40.334716Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-05-27T17:49:40.372983Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-27T17:49:40.378727Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-27T17:49:40.398469Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-27T17:49:40.402793Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-27T17:49:40.413352Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-05-27T17:49:40.413433Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-05-27T20:33:02.543005Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT id, firebase_uid, email, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,\n               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at\n        FROM users WHERE firebase_uid = $1\n    \n" [3mrows_affected[0m[2m=[0m1 [3mrows_returned[0m[2m=[0m1 [3melapsed[0m[2m=[0m1.031565666s [3melapsed_secs[0m[2m=[0m1.031565666 [3mslow_threshold[0m[2m=[0m1s
+[2m2026-05-27T20:33:02.543012Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT id, firebase_uid, email, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,\n               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at\n        FROM users WHERE id = $1\n    \n" [3mrows_affected[0m[2m=[0m1 [3mrows_returned[0m[2m=[0m1 [3melapsed[0m[2m=[0m1.031545708s [3melapsed_secs[0m[2m=[0m1.031545708 [3mslow_threshold[0m[2m=[0m1s
