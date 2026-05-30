@@ -116,6 +116,7 @@ stop_all() {
   done
   stop_service "fluvio-auth"
   stop_service "agent-planner"
+  stop_service "fluvio-tool-builder"
   pkill -f "node services/fluvio-auth/src/index.js" 2>/dev/null || true
   pkill -f "uvicorn src.main:app" 2>/dev/null || true
   pkill -f "uvicorn app.main:app" 2>/dev/null || true
@@ -319,6 +320,49 @@ else
   done
   ok "agent-planner healthy"
 fi
+
+# ── Start fluvio-tool-builder (Python) ────────────────────────────────────────
+
+section "Starting fluvio-tool-builder (Python)"
+
+TOOL_BUILDER_DIR="$ROOT/services/fluvio-tool-builder"
+TOOL_BUILDER_PORT="${FLUVIO_TOOL_BUILDER_PORT:-3008}"
+
+if [[ ! -d "$TOOL_BUILDER_DIR/.venv" ]]; then
+  log "Creating virtual environment and installing dependencies for fluvio-tool-builder..."
+  (
+    cd "$TOOL_BUILDER_DIR"
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install fastapi uvicorn "strawberry-graphql[fastapi]" python-dotenv pydantic httpx
+  )
+fi
+
+[[ -f "$LOG_DIR/fluvio-tool-builder.log" ]] && \
+  mv "$LOG_DIR/fluvio-tool-builder.log" "$LOG_DIR/fluvio-tool-builder.log.prev"
+
+(
+  cd "$TOOL_BUILDER_DIR"
+  source .venv/bin/activate
+  PORT="$TOOL_BUILDER_PORT" \
+    python3 -m uvicorn src.main:app \
+      --host 0.0.0.0 \
+      --port "$TOOL_BUILDER_PORT" \
+      >> "$LOG_DIR/fluvio-tool-builder.log" 2>&1 &
+  echo $! > "$ROOT/.pids/fluvio-tool-builder.pid"
+)
+
+local_i=0
+until curl -sf "http://127.0.0.1:${TOOL_BUILDER_PORT}/health" &>/dev/null; do
+  sleep 1
+  ((local_i++))
+  if ((local_i >= 30)); then
+    fail "fluvio-tool-builder failed to start"
+    tail -20 "$LOG_DIR/fluvio-tool-builder.log" >&2
+    exit 1
+  fi
+done
+ok "fluvio-tool-builder healthy"
 
 # ── Start subgraphs ────────────────────────────────────────────────────────────
 

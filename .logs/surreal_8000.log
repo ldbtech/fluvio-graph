@@ -1,0 +1,44 @@
+
+ .d8888b.                                             888 8888888b.  888888b.
+d88P  Y88b                                            888 888  'Y88b 888  '88b
+Y88b.                                                 888 888    888 888  .88P
+ 'Y888b.   888  888 888d888 888d888  .d88b.   8888b.  888 888    888 8888888K.
+    'Y88b. 888  888 888P'   888P'   d8P  Y8b     '88b 888 888    888 888  'Y88b
+      '888 888  888 888     888     88888888 .d888888 888 888    888 888    888
+Y88b  d88P Y88b 888 888     888     Y8b.     888  888 888 888  .d88P 888   d88P
+ 'Y8888P'   'Y88888 888     888      'Y8888  'Y888888 888 8888888P'  8888888P'
+
+
+[2m2026-05-30T07:22:18.364388Z[0m [32m INFO[0m [2msurrealdb_server::env[0m[2m:[0m Running 3.0.5 for macos on aarch64
+[2m2026-05-30T07:22:18.366566Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Starting kvs store at relative path surrealkv://fluvio_surreal_data
+[2m2026-05-30T07:22:18.368454Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Enabling value log separation: true
+[2m2026-05-30T07:22:18.379774Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting value log max file size: 134217728
+[2m2026-05-30T07:22:18.379787Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting value log threshold: 4096
+[2m2026-05-30T07:22:18.379789Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Versioning enabled: false with retention period: 0ns
+[2m2026-05-30T07:22:18.379790Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Versioning with versioned_index: false
+[2m2026-05-30T07:22:18.389271Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting block cache capacity: 3221225472
+[2m2026-05-30T07:22:18.389355Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting block size: 65536
+[2m2026-05-30T07:22:18.390044Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === Starting LSM tree initialization ===
+[2m2026-05-30T07:22:18.390049Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Database path: "fluvio_surreal_data"
+[2m2026-05-30T07:22:18.390354Z[0m [32m INFO[0m [2msurrealkv::levels[0m[2m:[0m Loading manifest from "fluvio_surreal_data/manifest/00000000000000000000.manifest"
+[2m2026-05-30T07:22:18.392295Z[0m [32m INFO[0m [2msurrealkv::levels[0m[2m:[0m Manifest loaded successfully: version=1, log_number=1, last_sequence=29541, tables=1, levels=6
+[2m2026-05-30T07:22:18.401780Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Manifest state: log_number=1, last_sequence=29541
+[2m2026-05-30T07:22:18.401790Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m Starting WAL recovery from directory: "fluvio_surreal_data/wal"
+[2m2026-05-30T07:22:18.401841Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m Replaying WAL segments #00000000000000000001 to #00000000000000000001
+[2m2026-05-30T07:22:18.423675Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m Replayed 1120 batches from WAL segment #00000000000000000001
+[2m2026-05-30T07:22:18.423692Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m WAL recovery complete: 1120 batches across 1 segments, 1 memtables created, max_seq_num=Some(30661)
+[2m2026-05-30T07:22:18.424014Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Recovery: setting last memtable (wal=1) as active with 1120 entries
+[2m2026-05-30T07:22:18.426336Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === LSM tree initialization complete ===
+[2m2026-05-30T07:22:18.438750Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Sync mode: every transaction commit
+[2m2026-05-30T07:22:18.438973Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Grouped commit: enabled (timeout=5000000ns, wait_threshold=12, max_batch_size=4096)
+[2m2026-05-30T07:22:18.439020Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Started surrealkv kvs store
+[2m2026-05-30T07:22:18.449041Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"check_version" [3mattempts[0m[2m=[0m1
+[2m2026-05-30T07:22:18.449336Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Initialising credentials [3muser[0m[2m=[0mroot
+[2m2026-05-30T07:22:18.453904Z[0m [33m WARN[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Credentials were provided, but existing root users were found. The root user 'root' will not be created
+[2m2026-05-30T07:22:18.453912Z[0m [33m WARN[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Consider removing the --user and --pass arguments from the server start command
+[2m2026-05-30T07:22:18.454087Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"initialise_credentials" [3mattempts[0m[2m=[0m1
+[2m2026-05-30T07:22:18.466960Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Insert node" [3mattempts[0m[2m=[0m1
+[2m2026-05-30T07:22:18.474491Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Expire nodes" [3mattempts[0m[2m=[0m1
+[2m2026-05-30T07:22:18.482406Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Remove nodes" [3mattempts[0m[2m=[0m1
+[2m2026-05-30T07:22:18.489778Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Listening for a system shutdown signal.
+[2m2026-05-30T07:22:18.489924Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Started web server on 127.0.0.1:8000

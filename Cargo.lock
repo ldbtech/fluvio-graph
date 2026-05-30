@@ -1944,10 +1944,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fluvio-tool-builder"
-version = "0.1.0"
-
-[[package]]
 name = "fluvio-twin"
 version = "0.1.0"
 dependencies = [

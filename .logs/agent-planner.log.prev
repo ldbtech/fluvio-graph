@@ -1,6 +1,57 @@
-INFO:     Started server process [44770]
+INFO:     Started server process [38715]
 INFO:     Waiting for application startup.
-2026-05-27 13:42:14,657 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
+2026-05-30 03:32:01,407 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3007 (Press CTRL+C to quit)
-INFO:     127.0.0.1:55344 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52451 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52478 - "OPTIONS /chat HTTP/1.1" 200 OK
+2026-05-30 03:33:20,466 [INFO] Adding chat message to workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
+2026-05-30 03:33:20,566 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:20,575 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 400 Bad Request"
+2026-05-30 03:33:20,575 [ERROR] Error querying connectors in planner: Client error '400 Bad Request' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+2026-05-30 03:33:20,882 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:21,221 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:22,539 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:23,290 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:24,033 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:25,975 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,213 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,234 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,235 [INFO] Adding chat message to workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
+2026-05-30 03:33:27,250 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:52478 - "POST /chat HTTP/1.1" 200 OK
+2026-05-30 03:33:27,262 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-05-30 03:33:27,262 [INFO] Fetching workspace shares...
+2026-05-30 03:33:27,262 [INFO] Fetching workspace shares for workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
+2026-05-30 03:33:27,281 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,282 [INFO] Executing concurrent query fetches for main user context...
+2026-05-30 03:33:27,282 [INFO] Fetching connectors for groupId: grp_eng
+2026-05-30 03:33:27,291 [INFO] Fetching documents in workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0, zone: 0
+2026-05-30 03:33:27,299 [INFO] Fetching graph nodes for workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
+2026-05-30 03:33:27,311 [INFO] Fetching available execution tools from gateway...
+2026-05-30 03:33:27,324 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,325 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,333 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,336 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,336 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-05-30 03:33:27,336 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-05-30 03:33:27,346 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,347 [INFO] User belongs to company: 87b4850a-debc-406a-81c1-c26d9213aca0. Fetching directory and squads...
+2026-05-30 03:33:27,347 [INFO] Fetching company users for company_id: 87b4850a-debc-406a-81c1-c26d9213aca0
+2026-05-30 03:33:27,351 [INFO] Fetching teams for company_id: 87b4850a-debc-406a-81c1-c26d9213aca0
+2026-05-30 03:33:27,361 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,362 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,362 [INFO] Fetching members and workflows for team: 70caac9a-04bd-4448-9720-b65961c6d902
+2026-05-30 03:33:27,363 [INFO] Fetching members and workflows for team: 712a906e-ef6c-4c76-beb5-557b821f4d2c
+2026-05-30 03:33:27,385 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,386 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,394 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,395 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-05-30 03:33:27,395 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:52478 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-30 03:34:40,580 [INFO] agent-planner stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38715]

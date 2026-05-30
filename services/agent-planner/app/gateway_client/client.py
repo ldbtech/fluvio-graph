@@ -7,7 +7,7 @@ class FederationClient:
 
     async def query(self, query: str, variables=None, headers=None):
         req_headers = {**self.headers, **(headers or {})}
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
                 self.gateway_url,
                 json={

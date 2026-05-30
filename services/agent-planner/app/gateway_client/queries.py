@@ -102,3 +102,84 @@ mutation ClearPlannerChatHistory($workspaceId: String!) {
 }
 """
 
+GET_AVAILABLE_TOOLS = """
+query GetAvailableTools {
+  availableTools {
+    id
+    name
+    description
+    category
+    parameters {
+      name
+      paramType
+      description
+      required
+      defaultValue
+    }
+  }
+}
+"""
+
+GET_USER_PROFILE = """
+query GetUser($id: String!) {
+  getUser(id: $id) {
+    id
+    displayName
+    email
+    companyId
+    role
+    policies
+    assignedAgentRoles
+    twinManifest
+  }
+}
+"""
+
+GET_COMPANY_USERS = """
+query GetCompanyUsers($companyId: String!) {
+  getCompanyUsers(companyId: $companyId) {
+    id
+    displayName
+    email
+    role
+    policies
+    assignedAgentRoles
+    twinManifest
+  }
+}
+"""
+
+GET_COMPANY_TEAMS = """
+query GetCompanyTeams($companyId: String!) {
+  getCompanyTeams(companyId: $companyId) {
+    id
+    name
+    description
+  }
+}
+"""
+
+GET_TEAM_MEMBERS = """
+query GetTeamMembers($teamId: String!) {
+  getTeamMembers(teamId: $teamId) {
+    id
+    teamId
+    userId
+    role
+  }
+}
+"""
+
+GET_TEAM_WORKFLOWS = """
+query GetTeamWorkflows($teamId: String!) {
+  getTeamWorkflows(teamId: $teamId) {
+    id
+    teamId
+    name
+    description
+    steps
+    isEnabled
+  }
+}
+"""
+

@@ -3,7 +3,7 @@
 //! Pure CRUD over PostgreSQL. No business logic.
 //! Every other service that needs Postgres data calls this service.
 
-// Force rebuild to bundle migration 010
+// Force rebuild to bundle migration 016
 use std::str::FromStr;
 use tracing_subscriber::{fmt, EnvFilter};
 

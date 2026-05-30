@@ -228,6 +228,7 @@ pub struct GqlWorkspace {
     pub name:        String,
     pub is_public:   bool,
     pub created_at:  String,
+    pub team_id:     Option<String>,
 }
 
 impl From<Workspace> for GqlWorkspace {
@@ -238,6 +239,7 @@ impl From<Workspace> for GqlWorkspace {
             name:        w.name,
             is_public:   w.is_public,
             created_at:  w.created_at.to_rfc3339(),
+            team_id:     w.team_id.map(|tid| tid.to_string()),
         }
     }
 }
@@ -272,6 +274,7 @@ pub struct CreateWorkspaceInput {
     pub owner_id:  String,
     pub name:      String,
     pub is_public: bool,
+    pub team_id:   Option<String>,
 }
 
 #[derive(InputObject)]
@@ -279,7 +282,55 @@ pub struct UpdateWorkspaceInput {
     pub id:        String,
     pub name:      Option<String>,
     pub is_public: Option<bool>,
+    pub team_id:   Option<String>,
 }
+
+// ── PlannerApproval ──────────────────────────────────────────────────────────
+
+#[derive(SimpleObject, Clone)]
+pub struct GqlPlannerApproval {
+    pub id:             String,
+    pub workspace_id:   String,
+    pub suggested_by:   String,
+    pub change_type:    String,
+    pub change_details: String,
+    pub status:         String,
+    pub created_at:     String,
+    pub reviewed_at:    Option<String>,
+    pub review_note:    Option<String>,
+}
+
+impl From<crate::db::queries::planner_approvals::PlannerApproval> for GqlPlannerApproval {
+    fn from(a: crate::db::queries::planner_approvals::PlannerApproval) -> Self {
+        Self {
+            id:             a.id.to_string(),
+            workspace_id:   a.workspace_id.to_string(),
+            suggested_by:   a.suggested_by.to_string(),
+            change_type:    a.change_type,
+            change_details: a.change_details.to_string(),
+            status:         a.status,
+            created_at:     a.created_at.to_rfc3339(),
+            reviewed_at:    a.reviewed_at.map(|t| t.to_rfc3339()),
+            review_note:    a.review_note,
+        }
+    }
+}
+
+#[derive(InputObject)]
+pub struct CreatePlannerApprovalInput {
+    pub workspace_id:   String,
+    pub suggested_by:   String,
+    pub change_type:    String,
+    pub change_details: String,
+}
+
+#[derive(InputObject)]
+pub struct ReviewPlannerApprovalInput {
+    pub id:          String,
+    pub status:      String,
+    pub review_note: Option<String>,
+}
+
 
 // ── Company ───────────────────────────────────────────────────────────────────
 

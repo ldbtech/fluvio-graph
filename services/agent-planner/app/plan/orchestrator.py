@@ -6,6 +6,11 @@ from app.fetch import (
     fetch_knowledge_documents,
     fetch_semantic_nodes,
     fetch_workspace_shares,
+    fetch_available_tools,
+    fetch_user_profile,
+    fetch_company_users,
+    fetch_company_teams,
+    fetch_team_details,
 )
 from app.gateway_client.client import FederationClient
 from app.plan.markdown.builder import generate_planner_markdown
@@ -36,15 +41,42 @@ async def generate_plan_context(
         shares = await fetch_workspace_shares(client, workspace_id)
 
     logger.info("Executing concurrent query fetches for main user context...")
-    connectors_data, documents, nodes = await asyncio.gather(
+    connectors_data, documents, nodes, tools = await asyncio.gather(
         fetch_connectors_with_resources(client, group_id),
         fetch_knowledge_documents(client, workspace_id, zone),
         fetch_semantic_nodes(client, workspace_id, zone, domain),
+        fetch_available_tools(client),
     )
 
     # Convert documents and nodes to lists to allow mutation/appending
     documents = list(documents)
     nodes = list(nodes)
+
+    # Fetch company IAM and Teams context
+    company_users = []
+    company_teams = []
+    current_user = None
+
+    if user_id:
+        current_user = await fetch_user_profile(client, user_id)
+        if current_user and current_user.get("companyId"):
+            cid = current_user.get("companyId")
+            logger.info("User belongs to company: %s. Fetching directory and squads...", cid)
+            users_data, teams_data = await asyncio.gather(
+                fetch_company_users(client, cid),
+                fetch_company_teams(client, cid),
+            )
+            company_users = users_data
+
+            if teams_data:
+                team_tasks = [fetch_team_details(client, t["id"]) for t in teams_data]
+                details_list = await asyncio.gather(*team_tasks)
+                for t, details in zip(teams_data, details_list):
+                    company_teams.append({
+                        "team": t,
+                        "members": details["members"],
+                        "workflows": details["workflows"]
+                    })
 
     # Fetch personal twins of shared team members
     if shares:
@@ -74,5 +106,13 @@ async def generate_plan_context(
                         nodes.append(node)
 
     logger.info("Fetches completed. Compiling markdown plan...")
-    return generate_planner_markdown(connectors_data, documents, nodes)
+    return generate_planner_markdown(
+        connectors_data=connectors_data,
+        documents=documents,
+        nodes=nodes,
+        tools=tools,
+        users=company_users,
+        teams_data=company_teams,
+        current_user=current_user,
+    )
 

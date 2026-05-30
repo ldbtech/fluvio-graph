@@ -1,0 +1,21 @@
+{
+  "id": "data-cleaning",
+  "name": "Data Cleaning Processor",
+  "description": "Standardizes column headers, purges null identifier rows, and deduplicates records in PostgreSQL tables.",
+  "category": "engineering",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'clean_table'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing parameters defined in contracts.py (e.g., table_name, operations)",
+      "required": true
+    }
+  ]
+}

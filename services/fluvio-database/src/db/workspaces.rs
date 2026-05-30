@@ -11,11 +11,13 @@ pub async fn create_workspace(
     owner_id: Uuid,
     name: &str,
     is_public: bool,
+    team_id: Option<Uuid>,
 ) -> anyhow::Result<Workspace> {
     Ok(sqlx::query_as::<_, Workspace>(CREATE)
         .bind(owner_id)
         .bind(name)
         .bind(is_public)
+        .bind(team_id)
         .fetch_one(pool)
         .await?)
 }
@@ -39,14 +41,17 @@ pub async fn update_workspace(
     id: Uuid,
     name: Option<&str>,
     is_public: Option<bool>,
+    team_id: Option<Uuid>,
 ) -> anyhow::Result<Workspace> {
     Ok(sqlx::query_as::<_, Workspace>(UPDATE)
         .bind(id)
         .bind(name)
         .bind(is_public)
+        .bind(team_id)
         .fetch_one(pool)
         .await?)
 }
+
 
 pub async fn delete_workspace(pool: &PgPool, id: Uuid) -> anyhow::Result<()> {
     sqlx::query(DELETE)

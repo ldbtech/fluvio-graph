@@ -1,0 +1,66 @@
+INFO:     Started server process [38723]
+INFO:     Waiting for application startup.
+2026-05-30 03:32:02,578  INFO      src.main  fluvio-tool-builder starting...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3008 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52453 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52470 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52470 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:20,684  INFO      data-cleaning-runtime  Cloning table 'users' to 'clean_users'...
+2026-05-30 03:33:20,729  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
+2026-05-30 03:33:20,765  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
+2026-05-30 03:33:20,823  INFO      data-cleaning-runtime  Deduplicating rows...
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:20,953  INFO      data-cleaning-runtime  Cloning table 'bookings' to 'clean_bookings'...
+2026-05-30 03:33:21,012  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
+2026-05-30 03:33:21,047  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
+2026-05-30 03:33:21,105  INFO      data-cleaning-runtime  Deduplicating rows...
+2026-05-30 03:33:21,156  INFO      data-cleaning-runtime  Standardizing currency fields to numeric base USD...
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:21,793  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:33:22,310  INFO      spark-runtime  Executing Spark SQL query: SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month
+2026-05-30 03:33:22,484  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:33:22,484  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:33:22,506  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:33:22,506  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS signup_trends_analytics; CREATE TABLE signup_trends_analytics AS SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month;
+2026-05-30 03:33:22,537  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'signup_trends_analytics' created.
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:22,703  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:33:23,054  INFO      spark-runtime  Executing Spark SQL query: SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC
+2026-05-30 03:33:23,231  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:33:23,231  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:33:23,253  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:33:23,254  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS revenue_by_country_analytics; CREATE TABLE revenue_by_country_analytics AS SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC;
+2026-05-30 03:33:23,289  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'revenue_by_country_analytics' created.
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:23,453  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:33:23,800  INFO      spark-runtime  Executing Spark SQL query: SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC
+2026-05-30 03:33:23,978  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:33:23,978  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:33:24,001  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:33:24,001  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS membership_metrics_analytics; CREATE TABLE membership_metrics_analytics AS SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC;
+2026-05-30 03:33:24,032  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'membership_metrics_analytics' created.
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:24,068  INFO      dashboard-syncer-runtime  Publishing Vowayage Executive Performance Dashboard to TABLEAU (workspace: httpsfluviomecom)...
+2026-05-30 03:33:24,068  INFO      dashboard-syncer-runtime  Tableau signin requested with Server: 10ax.online.tableau.com, Site ID: httpsfluviomecom, Token Name: fluviome
+2026-05-30 03:33:24,068  INFO      dashboard-syncer-runtime  Signin details - Name: 'fluviome', Secret: 'BADCx1...GY+Q==', URL: 'https://10ax.online.tableau.com/api/3.19/auth/signin'
+2026-05-30 03:33:24,470  INFO      httpx  HTTP Request: POST https://10ax.online.tableau.com/api/3.19/auth/signin "HTTP/1.1 401 Unauthorized"
+2026-05-30 03:33:24,471  ERROR     dashboard-syncer-runtime  Tableau signin failed (status 401): {"error":{"summary":"Signin Error","detail":"The personal access token you provided is invalid.","code":"401001"}}
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:33:26,001  INFO      dashboard-syncer-runtime  Triggering refresh for TABLEAU model (dataset/workbook ID: rep-e18f584e)...
+2026-05-30 03:33:26,001  INFO      dashboard-syncer-runtime  Tableau signin requested with Server: 10ax.online.tableau.com, Site ID: httpsfluviomecom, Token Name: fluviome
+2026-05-30 03:33:26,001  INFO      dashboard-syncer-runtime  Signin details - Name: 'fluviome', Secret: 'BADCx1...GY+Q==', URL: 'https://10ax.online.tableau.com/api/3.19/auth/signin'
+2026-05-30 03:33:26,208  INFO      httpx  HTTP Request: POST https://10ax.online.tableau.com/api/3.19/auth/signin "HTTP/1.1 401 Unauthorized"
+2026-05-30 03:33:26,209  ERROR     dashboard-syncer-runtime  Tableau signin failed (status 401): {"error":{"summary":"Signin Error","detail":"The personal access token you provided is invalid.","code":"401001"}}
+2026-05-30 03:33:27,211  INFO      dashboard-syncer-runtime  [Simulated Sandbox Mode] Refreshed trigger request sent successfully for rep-e18f584e.
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52484 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-30 03:34:40,876  INFO      src.main  fluvio-tool-builder stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38723]

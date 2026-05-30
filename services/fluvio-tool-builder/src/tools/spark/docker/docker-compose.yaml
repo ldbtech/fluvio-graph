@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  spark:
+    image: apache/spark:3.5.1
+    container_name: fluvio-spark
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    command: tail -f /dev/null

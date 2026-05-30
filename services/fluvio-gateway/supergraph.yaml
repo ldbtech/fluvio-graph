@@ -20,3 +20,8 @@ subgraphs:
     routing_url: http://127.0.0.1:3005/graphql
     schema:
       subgraph_url: http://127.0.0.1:3005/graphql
+
+  fluvio-tool-builder:
+    routing_url: http://127.0.0.1:3008/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3008/graphql

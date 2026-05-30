@@ -1,0 +1,21 @@
+{
+  "id": "kafka",
+  "name": "Kafka Tool",
+  "description": "Provides real-time event streaming infrastructure (create topic, produce, consume, list topics, and lag monitoring).",
+  "category": "ingestion",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'create_topic', 'produce', 'consume', 'list_topics', 'get_consumer_lag'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing parameters defined in contracts.py (e.g., config, topic, message)",
+      "required": true
+    }
+  ]
+}

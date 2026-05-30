@@ -1,0 +1,57 @@
+INFO:     Started server process [38988]
+INFO:     Waiting for application startup.
+2026-05-30 03:34:44,712  INFO      src.main  fluvio-tool-builder starting...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3008 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52565 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52582 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:34,468  INFO      data-cleaning-runtime  Cloning table 'users' to 'clean_users'...
+2026-05-30 03:35:34,508  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
+2026-05-30 03:35:34,545  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
+2026-05-30 03:35:34,601  INFO      data-cleaning-runtime  Deduplicating rows...
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:34,718  INFO      data-cleaning-runtime  Cloning table 'bookings' to 'clean_bookings'...
+2026-05-30 03:35:34,759  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
+2026-05-30 03:35:34,793  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
+2026-05-30 03:35:34,849  INFO      data-cleaning-runtime  Deduplicating rows...
+2026-05-30 03:35:34,901  INFO      data-cleaning-runtime  Standardizing currency fields to numeric base USD...
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:35,569  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:35:36,078  INFO      spark-runtime  Executing Spark SQL query: SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month
+2026-05-30 03:35:36,250  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:35:36,250  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:35:36,273  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:35:36,273  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS signup_trends_analytics; CREATE TABLE signup_trends_analytics AS SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month;
+2026-05-30 03:35:36,310  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'signup_trends_analytics' created.
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:36,478  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:35:36,822  INFO      spark-runtime  Executing Spark SQL query: SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC
+2026-05-30 03:35:37,020  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:35:37,020  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:35:37,042  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:35:37,042  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS revenue_by_country_analytics; CREATE TABLE revenue_by_country_analytics AS SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC;
+2026-05-30 03:35:37,080  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'revenue_by_country_analytics' created.
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:37,253  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
+2026-05-30 03:35:37,599  INFO      spark-runtime  Executing Spark SQL query: SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC
+2026-05-30 03:35:37,773  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
+
+2026-05-30 03:35:37,773  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-05-30 03:35:37,795  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-05-30 03:35:37,796  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS membership_metrics_analytics; CREATE TABLE membership_metrics_analytics AS SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC;
+2026-05-30 03:35:37,824  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'membership_metrics_analytics' created.
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+2026-05-30 03:35:38,520  INFO      dashboard-syncer-runtime  Generating PDF report: Vowayage Executive Performance Report
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:279: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_signup = pd.read_sql("SELECT month, new_users, cumulative_users FROM signup_trends_analytics ORDER BY month", conn)
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:280: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_revenue = pd.read_sql("SELECT destination_country, total_bookings, total_revenue FROM revenue_by_country_analytics ORDER BY total_revenue DESC", conn)
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:281: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_membership = pd.read_sql("SELECT membership_tier, user_count, avg_fee FROM membership_metrics_analytics ORDER BY user_count DESC", conn)
+2026-05-30 03:35:38,990  INFO      dashboard-syncer-runtime  pdflatex not available. Compiling via ReportLab fallback...
+2026-05-30 03:35:39,304  INFO      dashboard-syncer-runtime  Successfully compiled PDF via ReportLab fallback.
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK

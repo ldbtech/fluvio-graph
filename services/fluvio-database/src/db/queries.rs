@@ -506,6 +506,7 @@ pub mod workspaces {
         pub name:        String,
         pub is_public:   bool,
         pub created_at:  DateTime<Utc>,
+        pub team_id:     Option<Uuid>,
     }
 
     #[derive(Debug, Clone, sqlx::FromRow)]
@@ -527,18 +528,18 @@ pub mod workspaces {
     }
 
     pub const CREATE: &str = "
-        INSERT INTO workspaces (owner_id, name, is_public)
-        VALUES ($1, $2, $3)
-        RETURNING id, owner_id, name, is_public, created_at
+        INSERT INTO workspaces (owner_id, name, is_public, team_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, owner_id, name, is_public, created_at, team_id
     ";
 
     pub const GET_BY_ID: &str = "
-        SELECT id, owner_id, name, is_public, created_at
+        SELECT id, owner_id, name, is_public, created_at, team_id
         FROM workspaces WHERE id = $1
     ";
 
     pub const GET_USER_WORKSPACES: &str = "
-        SELECT DISTINCT w.id, w.owner_id, w.name, w.is_public, w.created_at
+        SELECT DISTINCT w.id, w.owner_id, w.name, w.is_public, w.created_at, w.team_id
         FROM workspaces w
         LEFT JOIN workspace_shares s ON s.workspace_id = w.id
         WHERE w.owner_id = $1 OR s.user_id = $1
@@ -548,9 +549,10 @@ pub mod workspaces {
     pub const UPDATE: &str = "
         UPDATE workspaces
         SET name      = COALESCE($2, name),
-            is_public = COALESCE($3, is_public)
+            is_public = COALESCE($3, is_public),
+            team_id   = COALESCE($4, team_id)
         WHERE id = $1
-        RETURNING id, owner_id, name, is_public, created_at
+        RETURNING id, owner_id, name, is_public, created_at, team_id
     ";
 
     pub const DELETE: &str = "
@@ -575,5 +577,46 @@ pub mod workspaces {
         INNER JOIN users u ON u.id = s.user_id
         WHERE s.workspace_id = $1
         ORDER BY s.shared_at ASC
+    ";
+}
+
+pub mod planner_approvals {
+    use uuid::Uuid;
+    use chrono::{DateTime, Utc};
+    use serde_json::Value;
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct PlannerApproval {
+        pub id:             Uuid,
+        pub workspace_id:   Uuid,
+        pub suggested_by:   Uuid,
+        pub change_type:    String,
+        pub change_details: Value,
+        pub status:         String,
+        pub created_at:     DateTime<Utc>,
+        pub reviewed_at:    Option<DateTime<Utc>>,
+        pub review_note:    Option<String>,
+    }
+
+    pub const CREATE: &str = "
+        INSERT INTO planner_approvals (workspace_id, suggested_by, change_type, change_details)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, workspace_id, suggested_by, change_type, change_details, status::text, created_at, reviewed_at, review_note
+    ";
+
+    pub const GET_BY_WORKSPACE: &str = "
+        SELECT id, workspace_id, suggested_by, change_type, change_details, status::text, created_at, reviewed_at, review_note
+        FROM planner_approvals
+        WHERE workspace_id = $1
+        ORDER BY created_at DESC
+    ";
+
+    pub const REVIEW: &str = "
+        UPDATE planner_approvals
+        SET status = $2::planner_approval_status,
+            reviewed_at = now(),
+            review_note = $3
+        WHERE id = $1
+        RETURNING id, workspace_id, suggested_by, change_type, change_details, status::text, created_at, reviewed_at, review_note
     ";
 }

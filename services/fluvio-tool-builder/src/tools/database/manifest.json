@@ -1,0 +1,21 @@
+{
+  "id": "database",
+  "name": "Database SQL Tool",
+  "description": "Allows read-only schema discovery, table listing, and SELECT query execution against active PostgreSQL databases.",
+  "category": "database",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'list_tables', 'get_table_schema', 'execute_query'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing parameters defined in contracts.py (e.g., table_name, query, limit)",
+      "required": true
+    }
+  ]
+}

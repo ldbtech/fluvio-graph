@@ -69,6 +69,15 @@ async def notion_callback(code: str, state: str):
     }
 
 
+@app.get("/oauth/tableau/callback")
+async def tableau_callback(code: str, state: str):
+    return {
+        "code":  code,
+        "state": state,
+        "next":  "call mutation connectOAuth(input: { kind: 'tableau', code, state })"
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "src.main:app",

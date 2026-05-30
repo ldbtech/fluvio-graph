@@ -12,5 +12,6 @@ pub mod workspaces;
 pub mod companies;
 pub mod teams;
 pub mod company_ops;
+pub mod planner_approvals;
 
 pub use pool::create_pool;

@@ -1,7 +1,7 @@
-[2m2026-05-27T17:42:26.652910Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-27T17:42:26.691971Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-27T17:42:26.701203Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-27T17:42:26.719908Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-27T17:42:26.725376Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-27T17:42:26.734802Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-27T17:42:26.734865Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-05-30T07:32:06.309291Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-05-30T07:32:06.329666Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-30T07:32:06.334512Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-30T07:32:06.346075Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-05-30T07:32:06.350615Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-05-30T07:32:06.359245Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-05-30T07:32:06.359266Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql

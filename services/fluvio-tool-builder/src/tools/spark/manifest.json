@@ -1,0 +1,21 @@
+{
+  "id": "spark",
+  "name": "Spark Tool",
+  "description": "Executes distributed analytical queries (Spark SQL) and submits PySpark / Scala jobs to aggregate and analyze data.",
+  "category": "analytics",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'execute_sql', 'submit_job', 'get_job_status'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing parameters defined in contracts.py (e.g., query, output_table, jar_or_py_path, config)",
+      "required": true
+    }
+  ]
+}

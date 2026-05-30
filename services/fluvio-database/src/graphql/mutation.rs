@@ -238,11 +238,13 @@ impl MutationRoot {
     ) -> Result<GqlWorkspace> {
         let state    = ctx.data::<AppState>()?;
         let owner_id = parse_uuid(&input.owner_id)?;
+        let team_id  = input.team_id.map(|tid| parse_uuid(&tid)).transpose()?;
         Ok(crate::db::workspaces::create_workspace(
             &state.pool,
             owner_id,
             &input.name,
             input.is_public,
+            team_id,
         ).await.map_err(|e| Error::new(e.to_string()))
         .map(GqlWorkspace::from)?)
     }
@@ -252,16 +254,57 @@ impl MutationRoot {
         ctx:   &Context<'_>,
         input: UpdateWorkspaceInput,
     ) -> Result<GqlWorkspace> {
-        let state = ctx.data::<AppState>()?;
-        let id    = parse_uuid(&input.id)?;
+        let state   = ctx.data::<AppState>()?;
+        let id      = parse_uuid(&input.id)?;
+        let team_id = input.team_id.map(|tid| parse_uuid(&tid)).transpose()?;
         Ok(crate::db::workspaces::update_workspace(
             &state.pool,
             id,
             input.name.as_deref(),
             input.is_public,
+            team_id,
         ).await.map_err(|e| Error::new(e.to_string()))
         .map(GqlWorkspace::from)?)
     }
+
+    async fn create_planner_approval(
+        &self,
+        ctx:   &Context<'_>,
+        input: CreatePlannerApprovalInput,
+    ) -> Result<GqlPlannerApproval> {
+        let state        = ctx.data::<AppState>()?;
+        let workspace_id = parse_uuid(&input.workspace_id)?;
+        let suggested_by = parse_uuid(&input.suggested_by)?;
+        let details: serde_json::Value = serde_json::from_str(&input.change_details)
+            .map_err(|_| Error::new("Invalid JSON in change_details"))?;
+
+        Ok(crate::db::planner_approvals::create_planner_approval(
+            &state.pool,
+            workspace_id,
+            suggested_by,
+            &input.change_type,
+            details,
+        ).await.map_err(|e| Error::new(e.to_string()))
+        .map(GqlPlannerApproval::from)?)
+    }
+
+    async fn review_planner_approval(
+        &self,
+        ctx:   &Context<'_>,
+        input: ReviewPlannerApprovalInput,
+    ) -> Result<GqlPlannerApproval> {
+        let state = ctx.data::<AppState>()?;
+        let id    = parse_uuid(&input.id)?;
+        
+        Ok(crate::db::planner_approvals::review_planner_approval(
+            &state.pool,
+            id,
+            &input.status,
+            input.review_note.as_deref(),
+        ).await.map_err(|e| Error::new(e.to_string()))
+        .map(GqlPlannerApproval::from)?)
+    }
+
 
     async fn delete_workspace(
         &self,

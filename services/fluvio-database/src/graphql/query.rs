@@ -184,6 +184,18 @@ impl QueryRoot {
             .into_iter().map(GqlWorkspaceShare::from).collect())
     }
 
+    async fn planner_approvals(
+        &self,
+        ctx:          &Context<'_>,
+        workspace_id: String,
+    ) -> Result<Vec<GqlPlannerApproval>> {
+        let state        = ctx.data::<AppState>()?;
+        let workspace_id = parse_uuid(&workspace_id)?;
+        Ok(crate::db::planner_approvals::get_workspace_approvals(&state.pool, workspace_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .into_iter().map(GqlPlannerApproval::from).collect())
+    }
+
     // ── Company & Teams ──────────────────────────────────────────────────────────
 
     async fn get_company(

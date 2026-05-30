@@ -88,6 +88,15 @@ input CreateInviteInput
   expiresInHours: Int
 }
 
+input CreatePlannerApprovalInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  workspaceId: String!
+  suggestedBy: String!
+  changeType: String!
+  changeDetails: String!
+}
+
 input CreateTeamInput
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -126,6 +135,7 @@ input CreateWorkspaceInput
   ownerId: String!
   name: String!
   isPublic: Boolean!
+  teamId: String
 }
 
 type GqlActionAuthorization
@@ -447,6 +457,20 @@ type GqlPipelineRun
   updatedAt: String!
 }
 
+type GqlPlannerApproval
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  suggestedBy: String!
+  changeType: String!
+  changeDetails: String!
+  status: String!
+  createdAt: String!
+  reviewedAt: String
+  reviewNote: String
+}
+
 type GqlPlannerChatMessage
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -543,6 +567,42 @@ type GqlTeamWorkflow
   isEnabled: Boolean!
 }
 
+type GqlTool
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  id: String!
+  name: String!
+  description: String!
+  category: String!
+  isDataScience: Boolean!
+  parameters: [GqlToolParameter!]!
+}
+
+type GqlToolParameter
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  name: String!
+  paramType: String!
+  description: String!
+  required: Boolean!
+  defaultValue: String
+}
+
+type GqlToolRun
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  id: String!
+  toolId: String!
+  toolName: String!
+  status: String!
+  inputs: String!
+  output: String
+  logs: String
+  startedAt: String!
+  finishedAt: String
+  durationMs: Int
+}
+
 type GqlUser
   @join__type(graph: FLUVIO_DATABASE)
 {
@@ -569,6 +629,7 @@ type GqlWorkspace
   name: String!
   isPublic: Boolean!
   createdAt: String!
+  teamId: String
 }
 
 type GqlWorkspaceShare
@@ -588,6 +649,7 @@ enum join__Graph {
   FLUVIO_DATABASE @join__graph(name: "fluvio-database", url: "http://127.0.0.1:3005/graphql")
   FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://127.0.0.1:3001/graphql")
   FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://127.0.0.1:3004/graphql")
+  FLUVIO_TOOL_BUILDER @join__graph(name: "fluvio-tool-builder", url: "http://127.0.0.1:3008/graphql")
   FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://127.0.0.1:3002/graphql")
 }
 
@@ -609,6 +671,7 @@ type Mutation
   @join__type(graph: FLUVIO_DATABASE)
   @join__type(graph: FLUVIO_GRAPH)
   @join__type(graph: FLUVIO_INGESTION)
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
 {
   createUser(input: CreateUserInput!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
   createGroup(input: CreateGroupInput!): GqlGroup! @join__field(graph: FLUVIO_DATABASE)
@@ -628,6 +691,8 @@ type Mutation
   disconnectConnector(connectorId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   createWorkspace(input: CreateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
   updateWorkspace(input: UpdateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
+  createPlannerApproval(input: CreatePlannerApprovalInput!): GqlPlannerApproval! @join__field(graph: FLUVIO_DATABASE)
+  reviewPlannerApproval(input: ReviewPlannerApprovalInput!): GqlPlannerApproval! @join__field(graph: FLUVIO_DATABASE)
   deleteWorkspace(id: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
   shareWorkspace(workspaceId: String!, email: String!): GqlWorkspaceShare! @join__field(graph: FLUVIO_DATABASE)
   unshareWorkspace(workspaceId: String!, userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
@@ -672,12 +737,16 @@ type Mutation
   Runs synchronously since text is small.
   """
   ingestRaw(text: String!, sourceUri: String!, domain: String, zone: Int, workspaceId: String): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+
+  """Executes a tool with the provided input parameters."""
+  executeTool(toolId: String!, inputs: String!): GqlToolRun! @join__field(graph: FLUVIO_TOOL_BUILDER)
 }
 
 type Query
   @join__type(graph: FLUVIO_DATABASE)
   @join__type(graph: FLUVIO_GRAPH)
   @join__type(graph: FLUVIO_INGESTION)
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
   @join__type(graph: FLUVIO_TWIN)
 {
   getUser(id: String!): GqlUser @join__field(graph: FLUVIO_DATABASE)
@@ -696,6 +765,7 @@ type Query
   getConnector(connectorId: String!): GqlConnector @join__field(graph: FLUVIO_DATABASE)
   myWorkspaces(userId: String!): [GqlWorkspace!]! @join__field(graph: FLUVIO_DATABASE)
   workspaceShares(workspaceId: String!): [GqlWorkspaceShare!]! @join__field(graph: FLUVIO_DATABASE)
+  plannerApprovals(workspaceId: String!): [GqlPlannerApproval!]! @join__field(graph: FLUVIO_DATABASE)
   getCompany(id: String!): GqlCompany @join__field(graph: FLUVIO_DATABASE)
   getPendingCompanyInvites(email: String!): [GqlCompanyInvite!]! @join__field(graph: FLUVIO_DATABASE)
   getCompanyTeams(companyId: String!): [GqlTeam!]! @join__field(graph: FLUVIO_DATABASE)
@@ -744,6 +814,12 @@ type Query
   """Get the status of an ingestion job by ID."""
   ingestJob(jobId: String!): GqlIngestJob @join__field(graph: FLUVIO_INGESTION)
 
+  """List all available tools."""
+  availableTools: [GqlTool!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Retrieve the execution history, optionally filtered by tool ID."""
+  toolExecutionHistory(toolId: String = null): [GqlToolRun!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
   """
   Ask a question over the user's knowledge graph.
   
@@ -758,6 +834,14 @@ type Query
 
   """List all documents (graph nodes) in the user's knowledge graph."""
   documents(zone: Int, workspaceId: String): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
+}
+
+input ReviewPlannerApprovalInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  status: String!
+  reviewNote: String
 }
 
 input SelectResourcesInput
@@ -793,6 +877,7 @@ input UpdateWorkspaceInput
   id: String!
   name: String
   isPublic: Boolean
+  teamId: String
 }
 
 """A multipart file upload"""

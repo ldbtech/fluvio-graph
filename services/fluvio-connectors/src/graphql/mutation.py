@@ -13,6 +13,7 @@ from src.graphql.types import (
 from src.clients import db_client, ingestion_client
 from src.connectors.github import GitHubConnector, get_auth_url as gh_auth_url, exchange_code as gh_exchange
 from src.connectors.notion import NotionConnector, get_auth_url as notion_auth_url, exchange_code as notion_exchange
+from src.connectors.tableau import TableauConnector, get_auth_url as tableau_auth_url, exchange_code as tableau_exchange
 from src.connectors.local_drive.connector import LocalDriveConnector
 from src.jobs import job_store
 
@@ -96,6 +97,8 @@ class Mutation:
             url = gh_auth_url(state)
         elif kind == "notion":
             url = notion_auth_url(state)
+        elif kind == "tableau":
+            url = tableau_auth_url(state)
         else:
             raise Exception(f"unsupported connector kind: {kind}")
 
@@ -115,6 +118,9 @@ class Mutation:
             access_token = await gh_exchange(input.code)
         elif input.kind == "notion":
             token_data   = await notion_exchange(input.code)
+            access_token = token_data["access_token"]
+        elif input.kind == "tableau":
+            token_data   = await tableau_exchange(input.code)
             access_token = token_data["access_token"]
         else:
             raise Exception(f"unsupported connector kind: {input.kind}")
@@ -449,6 +455,8 @@ def _get_connector_class(kind: str):
         return NotionConnector
     elif kind == "local_drive":
         return LocalDriveConnector
+    elif kind == "tableau":
+        return TableauConnector
     raise Exception(f"unsupported connector kind: {kind}")
 
 async def _fetch_and_store_resources(connector, connector_id: str, user_id: str):
