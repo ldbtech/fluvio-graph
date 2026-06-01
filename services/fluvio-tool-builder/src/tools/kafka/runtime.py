@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from src.tools.kafka.contracts import (
     KafkaTool,
     KafkaExecutionContext,
@@ -17,18 +17,32 @@ class KafkaRuntime(KafkaTool[Any]):
     This fulfills the local mode docker runtime assumptions.
     """
 
-    async def _ensure_container_running(self) -> bool:
-        """Verify if the fluvio-kafka container is running, and try starting it if not."""
+    async def _ensure_container_running(self, sandbox_id: Optional[str] = None) -> bool:
+        """Verify if the kafka container is running, and try starting it if not."""
+        container_name = f"fluvio-sandbox-{sandbox_id}-kafka" if sandbox_id else "fluvio-kafka"
         try:
             # Check if container is running
             proc = await asyncio.create_subprocess_exec(
-                "docker", "inspect", "-f", "{{.State.Running}}", "fluvio-kafka",
+                "docker", "inspect", "-f", "{{.State.Running}}", container_name,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
             if proc.returncode == 0 and stdout.strip() == b"true":
                 return True
+
+            if sandbox_id:
+                logger.info(f"Sandbox container {container_name} is not running. Attempting to start it...")
+                start_proc = await asyncio.create_subprocess_exec(
+                    "docker", "start", container_name,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                await start_proc.communicate()
+                if start_proc.returncode == 0:
+                    await asyncio.sleep(2)
+                    return True
+                return False
 
             logger.info("fluvio-kafka container is not running. Attempting to start it...")
             # Try running docker-compose up
@@ -52,15 +66,14 @@ class KafkaRuntime(KafkaTool[Any]):
         return False
 
     async def create_topic(self, context: KafkaExecutionContext, config: KafkaTopicConfig) -> bool:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-kafka" if context.sandbox_id else "fluvio-kafka"
         
         bootstrap = ",".join(context.bootstrap_servers)
-        # Match bootstrap_servers host if running inside/outside docker network.
-        # Since Kafka docker advertises localhost:9092 to host, we map it to localhost:9092 inside the container command.
         bootstrap_in_container = "localhost:9092"
         
         cmd = [
-            "docker", "exec", "fluvio-kafka",
+            "docker", "exec", container_name,
             "kafka-topics.sh", "--create",
             "--bootstrap-server", bootstrap_in_container,
             "--topic", config.name,
@@ -90,10 +103,11 @@ class KafkaRuntime(KafkaTool[Any]):
             return False
 
     async def list_topics(self, context: KafkaExecutionContext) -> List[str]:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-kafka" if context.sandbox_id else "fluvio-kafka"
         
         cmd = [
-            "docker", "exec", "fluvio-kafka",
+            "docker", "exec", container_name,
             "kafka-topics.sh", "--list",
             "--bootstrap-server", "localhost:9092"
         ]
@@ -106,7 +120,6 @@ class KafkaRuntime(KafkaTool[Any]):
             stdout, stderr = await proc.communicate()
             if proc.returncode == 0:
                 topics = stdout.decode().strip().split("\n")
-                # Filter out empty or system topics
                 return [t.strip() for t in topics if t.strip() and not t.startswith("__")]
             else:
                 logger.error(f"Failed to list topics: {stderr.decode()}")
@@ -121,10 +134,11 @@ class KafkaRuntime(KafkaTool[Any]):
         topic: str,
         message: KafkaMessage[Any],
     ) -> bool:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-kafka" if context.sandbox_id else "fluvio-kafka"
         
         cmd = [
-            "docker", "exec", "-i", "fluvio-kafka",
+            "docker", "exec", "-i", container_name,
             "kafka-console-producer.sh",
             "--bootstrap-server", "localhost:9092",
             "--topic", topic,
@@ -132,11 +146,8 @@ class KafkaRuntime(KafkaTool[Any]):
             "--property", "key.separator=:"
         ]
         
-        # Serialize the value payload to JSON
         value_str = json.dumps(message.value) if not isinstance(message.value, str) else message.value
         key_str = message.key or ""
-        
-        # Construct line: key:value
         payload_line = f"{key_str}:{value_str}\n".encode()
         
         try:
@@ -163,10 +174,11 @@ class KafkaRuntime(KafkaTool[Any]):
         topic: str,
         limit: int = 100,
     ) -> List[KafkaMessage[Any]]:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-kafka" if context.sandbox_id else "fluvio-kafka"
         
         cmd = [
-            "docker", "exec", "fluvio-kafka",
+            "docker", "exec", container_name,
             "kafka-console-consumer.sh",
             "--bootstrap-server", "localhost:9092",
             "--topic", topic,
@@ -177,7 +189,6 @@ class KafkaRuntime(KafkaTool[Any]):
         ]
         
         try:
-            # We enforce a timeout in case there are fewer than 'limit' messages
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -185,10 +196,8 @@ class KafkaRuntime(KafkaTool[Any]):
             )
             
             try:
-                # Wait up to 5 seconds for consumer to read historical buffer
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=5.0)
             except asyncio.TimeoutError:
-                # Terminate the process if it times out
                 try:
                     proc.terminate()
                 except Exception:
@@ -208,7 +217,6 @@ class KafkaRuntime(KafkaTool[Any]):
                         val_raw = line
                     
                     try:
-                        # Attempt to parse as JSON, fallback to raw string
                         val = json.loads(val_raw)
                     except Exception:
                         val = val_raw
@@ -224,10 +232,11 @@ class KafkaRuntime(KafkaTool[Any]):
         context: KafkaExecutionContext,
         consumer_group: str,
     ) -> Dict[str, Any]:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-kafka" if context.sandbox_id else "fluvio-kafka"
         
         cmd = [
-            "docker", "exec", "fluvio-kafka",
+            "docker", "exec", container_name,
             "kafka-consumer-groups.sh",
             "--bootstrap-server", "localhost:9092",
             "--describe",
@@ -244,11 +253,9 @@ class KafkaRuntime(KafkaTool[Any]):
             if proc.returncode != 0:
                 return {"status": "error", "message": stderr.decode()}
                 
-            # Parse the tabular output of consumer groups describe command
             output = stdout.decode().strip()
             lines = output.split("\n")
             
-            # Find the header row (contains GROUP, TOPIC, PARTITION, CURRENT-OFFSET, LOG-END-OFFSET, LAG...)
             partitions_lag = []
             total_lag = 0
             
@@ -260,7 +267,6 @@ class KafkaRuntime(KafkaTool[Any]):
                 if headers and line.strip():
                     parts = line.split()
                     if len(parts) >= len(headers) - 1:
-                        # Extract topic, partition, offset, lag
                         row = dict(zip(headers, parts))
                         lag_val = row.get("LAG", "0")
                         try:

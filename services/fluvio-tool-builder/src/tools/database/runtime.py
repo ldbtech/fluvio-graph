@@ -39,13 +39,27 @@ class DatabaseRuntime(DatabaseTool):
                 
         return True
 
+    def _get_psql_cmd(self, context: DatabaseExecutionContext, sql: str) -> List[str]:
+        if context.sandbox_id:
+            db_name = "vowayage"
+            match = re.search(r"/([^/\?]+)(?:\?|$)", context.database_url)
+            if match:
+                db_name = match.group(1)
+            return [
+                "docker", "exec", "-i", f"fluvio-sandbox-{context.sandbox_id}-postgres",
+                "psql", "-U", "postgres", "-d", db_name,
+                "-t", "-A", "-c", sql
+            ]
+        else:
+            return [
+                "psql", context.database_url,
+                "-t", "-A", "-c", sql
+            ]
+
     async def list_tables(self, context: DatabaseExecutionContext) -> List[str]:
         # Fetch tables from information_schema
         sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
-        cmd = [
-            "psql", context.database_url,
-            "-t", "-A", "-c", sql
-        ]
+        cmd = self._get_psql_cmd(context, sql)
         
         try:
             logger.info("Listing database tables...")
@@ -84,10 +98,7 @@ class DatabaseRuntime(DatabaseTool):
             ORDER BY ordinal_position
         ) t
         """
-        cmd = [
-            "psql", context.database_url,
-            "-t", "-A", "-c", sql
-        ]
+        cmd = self._get_psql_cmd(context, sql)
         
         try:
             logger.info(f"Fetching schema for table: {table_name}")
@@ -125,10 +136,7 @@ class DatabaseRuntime(DatabaseTool):
         ) sub
         """
         
-        cmd = [
-            "psql", context.database_url,
-            "-t", "-A", "-c", wrapped_sql
-        ]
+        cmd = self._get_psql_cmd(context, wrapped_sql)
         
         try:
             logger.info(f"Executing read-only SQL: {cleaned[:80]}...")

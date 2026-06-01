@@ -2,7 +2,7 @@ import asyncio
 import os
 import uuid
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from src.tools.spark.contracts import (
     SparkTool,
     SparkExecutionContext,
@@ -19,18 +19,32 @@ class SparkRuntime(SparkTool):
     Spark Tool implementation that executes Spark commands inside a local Docker container.
     """
 
-    async def _ensure_container_running(self) -> bool:
-        """Verify if the fluvio-spark container is running, and try starting it if not."""
+    async def _ensure_container_running(self, sandbox_id: Optional[str] = None) -> bool:
+        """Verify if the Spark container is running, and try starting it if not."""
+        container_name = f"fluvio-sandbox-{sandbox_id}-spark" if sandbox_id else "fluvio-spark"
         try:
             # Check if container is running
             proc = await asyncio.create_subprocess_exec(
-                "docker", "inspect", "-f", "{{.State.Running}}", "fluvio-spark",
+                "docker", "inspect", "-f", "{{.State.Running}}", container_name,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
             if proc.returncode == 0 and stdout.strip() == b"true":
                 return True
+
+            if sandbox_id:
+                logger.info(f"Sandbox container {container_name} is not running. Attempting to start it...")
+                start_proc = await asyncio.create_subprocess_exec(
+                    "docker", "start", container_name,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                await start_proc.communicate()
+                if start_proc.returncode == 0:
+                    await asyncio.sleep(2)
+                    return True
+                return False
 
             logger.info("fluvio-spark container is not running. Attempting to start it...")
             # Try running docker-compose up
@@ -58,12 +72,13 @@ class SparkRuntime(SparkTool):
         query: str,
         output_table: str
     ) -> bool:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-spark" if context.sandbox_id else "fluvio-spark"
         
         # Clean query: escape quotes
         # We run spark-sql utility inside the container
         cmd = [
-            "docker", "exec", "fluvio-spark",
+            "docker", "exec", container_name,
             "spark-sql", "--name", context.app_name,
             "-e", f"{query}; CREATE TABLE IF NOT EXISTS {output_table} AS {query}"
         ]
@@ -85,27 +100,36 @@ class SparkRuntime(SparkTool):
                 
                 # Auto-detect database URL by checking where clean_users exists
                 db_url = "postgres://localhost/vowayage"
-                try:
-                    check_proc = await asyncio.create_subprocess_exec(
-                        "psql", db_url, "-t", "-A", "-c", "SELECT count(*) FROM clean_users",
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE
-                    )
-                    await check_proc.communicate()
-                    if check_proc.returncode != 0:
+                if not context.sandbox_id:
+                    try:
+                        check_proc = await asyncio.create_subprocess_exec(
+                            "psql", db_url, "-t", "-A", "-c", "SELECT count(*) FROM clean_users",
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE
+                        )
+                        await check_proc.communicate()
+                        if check_proc.returncode != 0:
+                            db_url = "postgres://localhost/fluvio_company"
+                    except Exception:
                         db_url = "postgres://localhost/fluvio_company"
-                except Exception:
-                    db_url = "postgres://localhost/fluvio_company"
                 
                 logger.info(f"Using database URL for fallback: {db_url}")
                 
                 # Check query to make it safe for PostgreSQL CREATE TABLE AS SELECT
                 # Let's drop output table first, then create it
                 fallback_sql = f"DROP TABLE IF EXISTS {output_table}; CREATE TABLE {output_table} AS {query};"
-                fallback_cmd = [
-                    "psql", db_url,
-                    "-c", fallback_sql
-                ]
+                
+                if context.sandbox_id:
+                    fallback_cmd = [
+                        "docker", "exec", "-i", f"fluvio-sandbox-{context.sandbox_id}-postgres",
+                        "psql", "-U", "postgres", "-d", "vowayage",
+                        "-c", fallback_sql
+                    ]
+                else:
+                    fallback_cmd = [
+                        "psql", db_url,
+                        "-c", fallback_sql
+                    ]
                 
                 logger.info(f"Running fallback SQL on Postgres: {fallback_sql}")
                 fallback_proc = await asyncio.create_subprocess_exec(
@@ -130,7 +154,8 @@ class SparkRuntime(SparkTool):
         jar_or_py_path: str,
         config: SparkJobConfig
     ) -> str:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-spark" if context.sandbox_id else "fluvio-spark"
         
         job_id = f"spark-job-{uuid.uuid4().hex[:8]}"
         filename = os.path.basename(jar_or_py_path)
@@ -139,7 +164,7 @@ class SparkRuntime(SparkTool):
         # 1. Copy local file into container if it exists on host
         if os.path.exists(jar_or_py_path):
             copy_proc = await asyncio.create_subprocess_exec(
-                "docker", "cp", jar_or_py_path, f"fluvio-spark:{dest_in_container}",
+                "docker", "cp", jar_or_py_path, f"{container_name}:{dest_in_container}",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
@@ -151,7 +176,7 @@ class SparkRuntime(SparkTool):
 
         # 2. Build spark-submit command
         cmd = [
-            "docker", "exec", "fluvio-spark",
+            "docker", "exec", container_name,
             "spark-submit",
             "--master", context.master_url,
             "--name", context.app_name
@@ -207,7 +232,7 @@ class SparkRuntime(SparkTool):
         context: SparkExecutionContext,
         job_id: str
     ) -> Dict[str, Any]:
-        await self._ensure_container_running()
+        await self._ensure_container_running(context.sandbox_id)
         
         # Check in memory first
         if job_id in submitted_jobs:

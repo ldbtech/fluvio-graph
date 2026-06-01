@@ -39,3 +39,7 @@ Y88b  d88P Y88b 888 888     888     Y8b.     888  888 888 888  .d88P 888   d88P
 [2m2026-05-30T07:22:18.547500Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Remove nodes" [3mattempts[0m[2m=[0m1
 [2m2026-05-30T07:22:18.547679Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Listening for a system shutdown signal.
 [2m2026-05-30T07:22:18.547690Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Started web server on 127.0.0.1:8001
+
+thread 'surrealdb-worker' (267524) panicked at /Users/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.0/src/commit.rs:113:13:
+commit queue overflow - should not be reached
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

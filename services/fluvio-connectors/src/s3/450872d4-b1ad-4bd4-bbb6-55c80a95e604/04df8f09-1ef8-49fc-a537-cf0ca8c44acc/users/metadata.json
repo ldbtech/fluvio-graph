@@ -1,0 +1,16 @@
+{
+  "table": "users",
+  "row_count": 1000,
+  "columns": [
+    "id",
+    "email",
+    "display_name",
+    "membership_tier",
+    "monthly_membership_fee",
+    "created_at"
+  ],
+  "nodes_created": 1000,
+  "synced_at": "2026-05-30T15:46:46.465257+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/450872d4-b1ad-4bd4-bbb6-55c80a95e604/04df8f09-1ef8-49fc-a537-cf0ca8c44acc/users/snapshots/2026-05-30T15-46-13.csv"
+}

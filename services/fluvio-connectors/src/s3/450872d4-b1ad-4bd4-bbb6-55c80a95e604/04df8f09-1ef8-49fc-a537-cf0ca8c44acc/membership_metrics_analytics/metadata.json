@@ -1,0 +1,13 @@
+{
+  "table": "membership_metrics_analytics",
+  "row_count": 4,
+  "columns": [
+    "membership_tier",
+    "user_count",
+    "avg_fee"
+  ],
+  "nodes_created": 4,
+  "synced_at": "2026-05-30T15:53:28.669529+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/450872d4-b1ad-4bd4-bbb6-55c80a95e604/04df8f09-1ef8-49fc-a537-cf0ca8c44acc/membership_metrics_analytics/snapshots/2026-05-30T15-53-28.csv"
+}

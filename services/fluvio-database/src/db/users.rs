@@ -120,3 +120,19 @@ pub async fn get_company_users(
     .fetch_all(pool)
     .await?)
 }
+
+pub async fn delete_user(pool: &PgPool, id: Uuid) -> anyhow::Result<bool> {
+    // 1. Delete groups created by the user first to avoid ON DELETE RESTRICT constraints
+    sqlx::query("DELETE FROM groups WHERE created_by = $1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    // 2. Delete the user
+    sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    Ok(true)
+}

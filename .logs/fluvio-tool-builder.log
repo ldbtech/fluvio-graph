@@ -1,57 +1,64 @@
-INFO:     Started server process [38988]
+INFO:     Started server process [10747]
 INFO:     Waiting for application startup.
-2026-05-30 03:34:44,712  INFO      src.main  fluvio-tool-builder starting...
+2026-06-01 14:05:52,359  INFO      src.main  fluvio-tool-builder starting...
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3008 (Press CTRL+C to quit)
-INFO:     127.0.0.1:52565 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52582 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52582 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:34,468  INFO      data-cleaning-runtime  Cloning table 'users' to 'clean_users'...
-2026-05-30 03:35:34,508  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
-2026-05-30 03:35:34,545  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
-2026-05-30 03:35:34,601  INFO      data-cleaning-runtime  Deduplicating rows...
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:34,718  INFO      data-cleaning-runtime  Cloning table 'bookings' to 'clean_bookings'...
-2026-05-30 03:35:34,759  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
-2026-05-30 03:35:34,793  INFO      data-cleaning-runtime  Purging rows with null values in identifier columns...
-2026-05-30 03:35:34,849  INFO      data-cleaning-runtime  Deduplicating rows...
-2026-05-30 03:35:34,901  INFO      data-cleaning-runtime  Standardizing currency fields to numeric base USD...
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:35,569  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
-2026-05-30 03:35:36,078  INFO      spark-runtime  Executing Spark SQL query: SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month
-2026-05-30 03:35:36,250  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
-
-2026-05-30 03:35:36,250  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
-2026-05-30 03:35:36,273  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
-2026-05-30 03:35:36,273  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS signup_trends_analytics; CREATE TABLE signup_trends_analytics AS SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users, SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as cumulative_users FROM clean_users GROUP BY DATE_TRUNC('month', created_at) ORDER BY month;
-2026-05-30 03:35:36,310  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'signup_trends_analytics' created.
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:36,478  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
-2026-05-30 03:35:36,822  INFO      spark-runtime  Executing Spark SQL query: SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC
-2026-05-30 03:35:37,020  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
-
-2026-05-30 03:35:37,020  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
-2026-05-30 03:35:37,042  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
-2026-05-30 03:35:37,042  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS revenue_by_country_analytics; CREATE TABLE revenue_by_country_analytics AS SELECT destination_country, COUNT(*) as total_bookings, SUM(amount_paid) as total_revenue FROM clean_bookings GROUP BY destination_country ORDER BY total_revenue DESC;
-2026-05-30 03:35:37,080  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'revenue_by_country_analytics' created.
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:37,253  INFO      spark-runtime  fluvio-spark container is not running. Attempting to start it...
-2026-05-30 03:35:37,599  INFO      spark-runtime  Executing Spark SQL query: SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC
-2026-05-30 03:35:37,773  ERROR     spark-runtime  Failed to execute Spark SQL: Cannot connect to the Docker daemon at unix:///Users/alidaho/.docker/run/docker.sock. Is the docker daemon running?
-
-2026-05-30 03:35:37,773  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
-2026-05-30 03:35:37,795  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
-2026-05-30 03:35:37,796  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS membership_metrics_analytics; CREATE TABLE membership_metrics_analytics AS SELECT membership_tier, COUNT(*) as user_count, AVG(monthly_membership_fee) as avg_fee FROM clean_users GROUP BY membership_tier ORDER BY user_count DESC;
-2026-05-30 03:35:37,824  INFO      spark-runtime  PostgreSQL fallback query executed successfully. Table 'membership_metrics_analytics' created.
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-2026-05-30 03:35:38,520  INFO      dashboard-syncer-runtime  Generating PDF report: Vowayage Executive Performance Report
-/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:279: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
-  df_signup = pd.read_sql("SELECT month, new_users, cumulative_users FROM signup_trends_analytics ORDER BY month", conn)
-/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:280: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
-  df_revenue = pd.read_sql("SELECT destination_country, total_bookings, total_revenue FROM revenue_by_country_analytics ORDER BY total_revenue DESC", conn)
-/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:281: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
-  df_membership = pd.read_sql("SELECT membership_tier, user_count, avg_fee FROM membership_metrics_analytics ORDER BY user_count DESC", conn)
-2026-05-30 03:35:38,990  INFO      dashboard-syncer-runtime  pdflatex not available. Compiling via ReportLab fallback...
-2026-05-30 03:35:39,304  INFO      dashboard-syncer-runtime  Successfully compiled PDF via ReportLab fallback.
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52595 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61964 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61985 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61985 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62154 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62224 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62224 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62224 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62224 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:46,785  INFO      data-cleaning-runtime  Cloning table 'users' to 'clean_users'...
+2026-06-01 14:09:46,858  INFO      data-cleaning-runtime  Normalizing column headers to lowercase snake_case...
+2026-06-01 14:09:46,897  INFO      data-cleaning-runtime  Deduplicating rows...
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:47,003  ERROR     data-cleaning-runtime  Error during table cleaning: Source table 'bookings' does not exist in the public schema.
+Traceback (most recent call last):
+  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/data_cleaning/runtime.py", line 59, in clean_table
+    raise Exception(f"Source table '{table_name}' does not exist in the public schema.")
+Exception: Source table 'bookings' does not exist in the public schema.
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:47,504  INFO      spark-runtime  Executing Spark SQL query: CREATE OR REPLACE TABLE cx_segment_analytics AS WITH customer_segments AS ( SELECT cu.user_id, cu.membership_tier, COUNT(cb.booking_id) as total_bookings, AVG(cb.amount_paid) as avg_order_value, SUM(cb.amount_paid) as lifetime_value, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment, COUNT(cb.booking_id) * 1.0 / GREATEST( EXTRACT(epoch FROM (CURRENT_DATE - MIN(cb.booking_date)))/86400/30, 1 ) as monthly_booking_rate FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id, cu.membership_tier HAVING COUNT(cb.booking_id) > 0 ) SELECT customer_segment, COUNT(*) as segment_users, AVG(avg_order_value) as segment_avg_order_value, AVG(monthly_booking_rate) as avg_monthly_booking_rate, SUM(lifetime_value) as segment_total_revenue, AVG(total_bookings) as avg_bookings_per_user FROM customer_segments GROUP BY customer_segment ORDER BY segment_avg_order_value DESC
+2026-06-01 14:09:47,773  ERROR     spark-runtime  Failed to execute Spark SQL: 
+2026-06-01 14:09:47,773  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-06-01 14:09:47,818  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-06-01 14:09:47,819  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS cx_segment_analytics; CREATE TABLE cx_segment_analytics AS CREATE OR REPLACE TABLE cx_segment_analytics AS WITH customer_segments AS ( SELECT cu.user_id, cu.membership_tier, COUNT(cb.booking_id) as total_bookings, AVG(cb.amount_paid) as avg_order_value, SUM(cb.amount_paid) as lifetime_value, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment, COUNT(cb.booking_id) * 1.0 / GREATEST( EXTRACT(epoch FROM (CURRENT_DATE - MIN(cb.booking_date)))/86400/30, 1 ) as monthly_booking_rate FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id, cu.membership_tier HAVING COUNT(cb.booking_id) > 0 ) SELECT customer_segment, COUNT(*) as segment_users, AVG(avg_order_value) as segment_avg_order_value, AVG(monthly_booking_rate) as avg_monthly_booking_rate, SUM(lifetime_value) as segment_total_revenue, AVG(total_bookings) as avg_bookings_per_user FROM customer_segments GROUP BY customer_segment ORDER BY segment_avg_order_value DESC;
+2026-06-01 14:09:47,850  ERROR     spark-runtime  PostgreSQL fallback failed: ERROR:  syntax error at or near "CREATE"
+LINE 1: ...t_analytics; CREATE TABLE cx_segment_analytics AS CREATE OR ...
+                                                             ^
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:48,045  INFO      spark-runtime  Executing Spark SQL query: CREATE OR REPLACE TABLE cx_destination_analytics AS WITH customer_segments AS ( SELECT cu.user_id, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id HAVING COUNT(cb.booking_id) > 0 ) SELECT cb.destination_country, cs.customer_segment, COUNT(*) as booking_count, SUM(cb.amount_paid) as segment_revenue, AVG(cb.amount_paid) as avg_order_value, COUNT(DISTINCT cb.user_id) as unique_customers, COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(PARTITION BY cb.destination_country) as segment_market_share, COUNT(CASE WHEN cb.booking_type = 'flight' THEN 1 END) as flight_bookings, COUNT(CASE WHEN cb.booking_type = 'hotel' THEN 1 END) as hotel_bookings FROM clean_bookings cb JOIN customer_segments cs ON cb.user_id = cs.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '3 months' GROUP BY cb.destination_country, cs.customer_segment HAVING COUNT(*) >= 3 ORDER BY cb.destination_country, segment_revenue DESC
+2026-06-01 14:09:48,278  ERROR     spark-runtime  Failed to execute Spark SQL: 
+2026-06-01 14:09:48,278  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-06-01 14:09:48,305  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-06-01 14:09:48,305  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS cx_destination_analytics; CREATE TABLE cx_destination_analytics AS CREATE OR REPLACE TABLE cx_destination_analytics AS WITH customer_segments AS ( SELECT cu.user_id, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id HAVING COUNT(cb.booking_id) > 0 ) SELECT cb.destination_country, cs.customer_segment, COUNT(*) as booking_count, SUM(cb.amount_paid) as segment_revenue, AVG(cb.amount_paid) as avg_order_value, COUNT(DISTINCT cb.user_id) as unique_customers, COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(PARTITION BY cb.destination_country) as segment_market_share, COUNT(CASE WHEN cb.booking_type = 'flight' THEN 1 END) as flight_bookings, COUNT(CASE WHEN cb.booking_type = 'hotel' THEN 1 END) as hotel_bookings FROM clean_bookings cb JOIN customer_segments cs ON cb.user_id = cs.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '3 months' GROUP BY cb.destination_country, cs.customer_segment HAVING COUNT(*) >= 3 ORDER BY cb.destination_country, segment_revenue DESC;
+2026-06-01 14:09:48,328  ERROR     spark-runtime  PostgreSQL fallback failed: ERROR:  syntax error at or near "CREATE"
+LINE 1: ...alytics; CREATE TABLE cx_destination_analytics AS CREATE OR ...
+                                                             ^
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:48,515  INFO      spark-runtime  Executing Spark SQL query: CREATE OR REPLACE TABLE cx_monthly_trends_analytics AS WITH customer_segments AS ( SELECT cu.user_id, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id HAVING COUNT(cb.booking_id) > 0 ) SELECT DATE_TRUNC('month', cb.booking_date) as booking_month, cs.customer_segment, COUNT(*) as monthly_bookings, SUM(cb.amount_paid) as monthly_revenue, AVG(cb.amount_paid) as monthly_avg_order_value, COUNT(DISTINCT cb.user_id) as unique_monthly_customers, LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) ) as prev_month_bookings, CASE WHEN LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) ) > 0 THEN ((COUNT(*) - LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) )) * 100.0 / LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) )) ELSE NULL END as monthly_growth_rate FROM clean_bookings cb JOIN customer_segments cs ON cb.user_id = cs.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '6 months' GROUP BY DATE_TRUNC('month', cb.booking_date), cs.customer_segment ORDER BY booking_month DESC, cs.customer_segment
+2026-06-01 14:09:48,737  ERROR     spark-runtime  Failed to execute Spark SQL: 
+2026-06-01 14:09:48,737  INFO      spark-runtime  Falling back to executing query on PostgreSQL local engine...
+2026-06-01 14:09:48,764  INFO      spark-runtime  Using database URL for fallback: postgres://localhost/vowayage
+2026-06-01 14:09:48,764  INFO      spark-runtime  Running fallback SQL on Postgres: DROP TABLE IF EXISTS cx_monthly_trends_analytics; CREATE TABLE cx_monthly_trends_analytics AS CREATE OR REPLACE TABLE cx_monthly_trends_analytics AS WITH customer_segments AS ( SELECT cu.user_id, CASE WHEN AVG(cb.amount_paid) >= 1500 THEN 'Luxury' WHEN AVG(cb.amount_paid) >= 800 THEN 'Premium' ELSE 'Budget' END as customer_segment FROM clean_users cu LEFT JOIN clean_bookings cb ON cu.user_id = cb.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '12 months' GROUP BY cu.user_id HAVING COUNT(cb.booking_id) > 0 ) SELECT DATE_TRUNC('month', cb.booking_date) as booking_month, cs.customer_segment, COUNT(*) as monthly_bookings, SUM(cb.amount_paid) as monthly_revenue, AVG(cb.amount_paid) as monthly_avg_order_value, COUNT(DISTINCT cb.user_id) as unique_monthly_customers, LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) ) as prev_month_bookings, CASE WHEN LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) ) > 0 THEN ((COUNT(*) - LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) )) * 100.0 / LAG(COUNT(*)) OVER ( PARTITION BY cs.customer_segment ORDER BY DATE_TRUNC('month', cb.booking_date) )) ELSE NULL END as monthly_growth_rate FROM clean_bookings cb JOIN customer_segments cs ON cb.user_id = cs.user_id WHERE cb.booking_date >= CURRENT_DATE - INTERVAL '6 months' GROUP BY DATE_TRUNC('month', cb.booking_date), cs.customer_segment ORDER BY booking_month DESC, cs.customer_segment;
+2026-06-01 14:09:48,787  ERROR     spark-runtime  PostgreSQL fallback failed: ERROR:  syntax error at or near "CREATE"
+LINE 1: ...tics; CREATE TABLE cx_monthly_trends_analytics AS CREATE OR ...
+                                                             ^
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:09:50,099  INFO      dashboard-syncer-runtime  Generating dynamic PDF report: cx_monthly_executive_report
+2026-06-01 14:09:50,134  INFO      dashboard-syncer-runtime  Auto-detected analytics tables: ['membership_destination_analytics', 'signup_trends_analytics', 'revenue_by_country_analytics', 'membership_metrics_analytics']
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:330: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(f"SELECT * FROM {table}", conn)
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:330: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(f"SELECT * FROM {table}", conn)
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:330: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(f"SELECT * FROM {table}", conn)
+/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/dashboard_syncer/runtime.py:330: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(f"SELECT * FROM {table}", conn)
+2026-06-01 14:09:50,758  INFO      dashboard-syncer-runtime  pdflatex not available. Compiling via ReportLab fallback...
+2026-06-01 14:09:51,224  INFO      dashboard-syncer-runtime  Successfully compiled PDF via ReportLab fallback.
+INFO:     127.0.0.1:62278 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63190 - "POST /graphql HTTP/1.1" 200 OK

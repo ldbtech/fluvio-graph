@@ -508,6 +508,31 @@ type GqlQueueItem
   reviewedAt: String
 }
 
+type GqlSandboxContainerStatus
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  name: String!
+  component: String!
+  status: String!
+  image: String!
+  ports: [String!]!
+  arn: String
+  costHourly: Float
+  efficiencyScore: Float
+}
+
+type GqlSandboxStatus
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  sandboxId: String!
+  status: String!
+  containers: [GqlSandboxContainerStatus!]!
+  provider: String
+  costHourly: Float
+  efficiencyScore: Float
+  agentTwinMonitored: Boolean
+}
+
 type GqlSaveResult
   @join__type(graph: FLUVIO_GRAPH)
 {
@@ -719,6 +744,8 @@ type Mutation
   completePasswordReset: Boolean! @join__field(graph: FLUVIO_DATABASE)
   updateUserRole(userId: String!, newRole: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
   removeUserFromCompany(userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  deleteCompany(companyId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  deleteUser: Boolean! @join__field(graph: FLUVIO_DATABASE)
   upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
   deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
   upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
@@ -740,6 +767,15 @@ type Mutation
 
   """Executes a tool with the provided input parameters."""
   executeTool(toolId: String!, inputs: String!): GqlToolRun! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Create and start a new containerized sandbox."""
+  createSandbox(sandboxId: String!, components: [String!] = null, provider: String = "docker"): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Stop all active containers for a sandbox."""
+  stopSandbox(sandboxId: String!): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Clean up and remove all containers and networks for a sandbox."""
+  cleanSandbox(sandboxId: String!): Boolean! @join__field(graph: FLUVIO_TOOL_BUILDER)
 }
 
 type Query
@@ -778,6 +814,7 @@ type Query
   companyActionAuthorizations(companyId: String!, status: String): [GqlActionAuthorization!]! @join__field(graph: FLUVIO_DATABASE)
   companyDocumentReconciliations(companyId: String!): [GqlDocumentReconciliation!]! @join__field(graph: FLUVIO_DATABASE)
   companyPipelineRuns(companyId: String!): [GqlPipelineRun!]! @join__field(graph: FLUVIO_DATABASE)
+  downloadCompanyData(companyId: String!): String! @join__field(graph: FLUVIO_DATABASE)
 
   """Fetch a single node by ID."""
   node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
@@ -819,6 +856,12 @@ type Query
 
   """Retrieve the execution history, optionally filtered by tool ID."""
   toolExecutionHistory(toolId: String = null): [GqlToolRun!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """List all active sandboxes."""
+  listSandboxes: [GqlSandboxStatus!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Retrieve the status of a specific sandbox."""
+  getSandboxStatus(sandboxId: String!): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
 
   """
   Ask a question over the user's knowledge graph.

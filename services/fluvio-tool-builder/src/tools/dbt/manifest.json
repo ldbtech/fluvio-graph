@@ -1,0 +1,21 @@
+{
+  "id": "dbt",
+  "name": "dbt CLI Builder",
+  "description": "Runs and tests dbt projects, compile SQL models, and manages data transformations in the warehouse.",
+  "category": "engineering",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'run_models', 'test_models', 'compile_project'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing parameters defined in contracts.py (e.g., project_dir, select, exclude)",
+      "required": true
+    }
+  ]
+}

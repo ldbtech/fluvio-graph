@@ -85,10 +85,11 @@ class DynamicRegistry:
         # 3. Parse arguments into Pydantic models using metadata from method signature
         log_stream.append(f"Preparing arguments for action: {action}")
         try:
-            if isinstance(arguments_raw, str):
-                arguments = json.loads(arguments_raw)
-            else:
-                arguments = arguments_raw or {}
+            arguments = arguments_raw or {}
+            while isinstance(arguments, str):
+                arguments = json.loads(arguments)
+            if not isinstance(arguments, dict):
+                arguments = {}
         except Exception as e:
             raise Exception(f"Failed to parse arguments JSON: {e}")
 

@@ -1,0 +1,13 @@
+{
+  "table": "revenue_by_country_analytics",
+  "row_count": 10,
+  "columns": [
+    "destination_country",
+    "total_bookings",
+    "total_revenue"
+  ],
+  "nodes_created": 10,
+  "synced_at": "2026-05-30T15:52:53.106093+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/450872d4-b1ad-4bd4-bbb6-55c80a95e604/04df8f09-1ef8-49fc-a537-cf0ca8c44acc/revenue_by_country_analytics/snapshots/2026-05-30T15-52-52.csv"
+}

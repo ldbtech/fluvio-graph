@@ -1,0 +1,16 @@
+{
+  "table": "hotels",
+  "row_count": 150,
+  "columns": [
+    "id",
+    "name",
+    "city",
+    "country",
+    "price_per_night",
+    "star_rating"
+  ],
+  "nodes_created": 150,
+  "synced_at": "2026-05-30T15:49:50.035571+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/450872d4-b1ad-4bd4-bbb6-55c80a95e604/04df8f09-1ef8-49fc-a537-cf0ca8c44acc/hotels/snapshots/2026-05-30T15-49-45.csv"
+}

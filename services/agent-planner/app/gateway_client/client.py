@@ -17,5 +17,8 @@ class FederationClient:
                 headers=req_headers
             )
 
+            if response.status_code != 200:
+                import logging
+                logging.getLogger("agent-planner").error(f"GraphQL Gateway HTTP Error {response.status_code}: {response.text}")
             response.raise_for_status()
             return response.json()

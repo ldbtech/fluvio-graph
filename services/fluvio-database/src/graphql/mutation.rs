@@ -900,55 +900,78 @@ impl MutationRoot {
             .map_err(|e| Error::new(e.to_string()))?
             .ok_or_else(|| Error::new("User not found"))?;
 
-        let company_id = user.company_id
-            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+        let mut company_name = "Personal Workspace".to_string();
+        let mut squads_str = "None (Personal Workspace)".to_string();
+        let mut connectors_str = "None".to_string();
 
-        // 2. Check admin permissions
-        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
-            .map_err(|e| Error::new(e.to_string()))?
-            .ok_or_else(|| Error::new("Admin user not found"))?;
+        if let Some(company_id) = user.company_id {
+            // 2. Check admin permissions
+            let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+                .map_err(|e| Error::new(e.to_string()))?
+                .ok_or_else(|| Error::new("Admin user not found"))?;
 
-        let company = companies::get_company(&state.pool, company_id).await
-            .map_err(|e| Error::new(e.to_string()))?
-            .ok_or_else(|| Error::new("Company not found"))?;
+            let company = companies::get_company(&state.pool, company_id).await
+                .map_err(|e| Error::new(e.to_string()))?
+                .ok_or_else(|| Error::new("Company not found"))?;
 
-        if company.created_by != admin_id && admin_user.role != "admin" {
-            return Err(Error::new("Only company admins can draft twin roles"));
-        }
+            if company.created_by != admin_id && admin_user.role != "admin" && admin_id != target_user_id {
+                return Err(Error::new("Only company admins can draft twin roles"));
+            }
 
-        // 3. Fetch user's squads/teams
-        let squads: Vec<teams::Team> = sqlx::query_as::<_, teams::Team>(
-            "SELECT t.id, t.company_id, t.name, t.description, t.created_at, t.updated_at 
-             FROM teams t
-             INNER JOIN team_members tm ON t.id = tm.team_id
-             WHERE tm.user_id = $1"
-        )
-        .bind(target_user_id)
-        .fetch_all(&state.pool)
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+            company_name = company.name;
 
-        let squads_str = squads.iter()
-            .map(|s| format!("{} ({})", s.name, s.description.as_deref().unwrap_or("No description")))
-            .collect::<Vec<String>>()
-            .join(", ");
+            // 3. Fetch user's squads/teams
+            let squads: Vec<teams::Team> = sqlx::query_as::<_, teams::Team>(
+                "SELECT t.id, t.company_id, t.name, t.description, t.created_at, t.updated_at 
+                 FROM teams t
+                 INNER JOIN team_members tm ON t.id = tm.team_id
+                 WHERE tm.user_id = $1"
+            )
+            .bind(target_user_id)
+            .fetch_all(&state.pool)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
 
-        // 4. Fetch company's active connectors
-        let connectors: Vec<String> = sqlx::query_scalar::<_, String>(
-            "SELECT DISTINCT kind::text FROM connectors WHERE user_id IN (
-               SELECT id FROM users WHERE company_id = $1
-             )"
-        )
-        .bind(company_id)
-        .fetch_all(&state.pool)
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+            if !squads.is_empty() {
+                squads_str = squads.iter()
+                    .map(|s| format!("{} ({})", s.name, s.description.as_deref().unwrap_or("No description")))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+            }
 
-        let connectors_str = if connectors.is_empty() {
-            "None".to_string()
+            // 4. Fetch company's active connectors
+            let connectors: Vec<String> = sqlx::query_scalar::<_, String>(
+                "SELECT DISTINCT kind::text FROM connectors WHERE user_id IN (
+                   SELECT id FROM users WHERE company_id = $1
+                 )"
+            )
+            .bind(company_id)
+            .fetch_all(&state.pool)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+            if !connectors.is_empty() {
+                connectors_str = connectors.join(", ");
+            }
         } else {
-            connectors.join(", ")
-        };
+            // Personal user
+            if admin_id != target_user_id {
+                return Err(Error::new("Only the user can draft their own personal twin manifest"));
+            }
+
+            // Fetch user's active connectors
+            let connectors: Vec<String> = sqlx::query_scalar::<_, String>(
+                "SELECT DISTINCT kind::text FROM connectors WHERE user_id = $1"
+            )
+            .bind(target_user_id)
+            .fetch_all(&state.pool)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+            if !connectors.is_empty() {
+                connectors_str = connectors.join(", ");
+            }
+        }
 
         // 5. Query Anthropic API to generate draft
         let api_key = std::env::var("ANTHROPIC_API_KEY")
@@ -962,24 +985,43 @@ impl MutationRoot {
             user.policies.join(", ")
         };
 
-        let system_prompt = format!(
-            "You are the Enterprise Architect for the company '{}'. Your job is to draft a custom TwinAgentRole markdown specification for an employee.
+        let system_prompt = if user.company_id.is_some() {
+            format!(
+                "You are the Enterprise Architect for the company '{}'. Your job is to draft a custom TwinAgentRole markdown specification for an employee.
 
 Analyze the user's role/position, their squad, their specific IAM permission policies, and the company's active integrations/tools to output a highly personalized agent role description, directive, permission boundaries, and a checklist of cooperative tasks. Make sure the twin agent's capabilities do not exceed the user's IAM permission policies.
 
 Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in markdown code blocks like ```markdown ... ```. Do NOT include any introduction, conversational filler, or wrap-up commentary. Start immediately with '# Agent Role: [Name]'.",
-            company.name
-        );
+                company_name
+            )
+        } else {
+            "You are the Personal AI Architect. Your job is to draft a custom TwinAgentRole markdown specification for an individual user in their personal workspace.
 
-        let user_message = format!(
-            "Company Name: {}\nEmployee Name: {}\nEmployee Position/Role: {}\nSquads: {}\nIAM Permission Policies: {}\nActive Company Tools/Connectors: {}\n\nDraft a highly tailored twin agent role.",
-            company.name,
-            display_name,
-            user_position,
-            if squads_str.is_empty() { "General Squad".to_string() } else { squads_str },
-            policies_str,
-            connectors_str
-        );
+Analyze the user's role/position, their specific IAM permission policies, and their active integrations/tools to output a highly personalized agent role description, directive, permission boundaries, and a checklist of cooperative tasks. Make sure the twin agent's capabilities do not exceed the user's IAM permission policies.
+
+Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in markdown code blocks like ```markdown ... ```. Do NOT include any introduction, conversational filler, or wrap-up commentary. Start immediately with '# Agent Role: [Name]'.".to_string()
+        };
+
+        let user_message = if user.company_id.is_some() {
+            format!(
+                "Company Name: {}\nEmployee Name: {}\nEmployee Position/Role: {}\nSquads: {}\nIAM Permission Policies: {}\nActive Company Tools/Connectors: {}\n\nDraft a highly tailored twin agent role.",
+                company_name,
+                display_name,
+                user_position,
+                squads_str,
+                policies_str,
+                connectors_str
+            )
+        } else {
+            format!(
+                "Company Name: Personal Workspace\nUser Name: {}\nPosition/Role: {}\nSquads: {}\nIAM Permission Policies: {}\nActive Personal Tools/Connectors: {}\n\nDraft a highly tailored twin agent role.",
+                display_name,
+                user_position,
+                squads_str,
+                policies_str,
+                connectors_str
+            )
+        };
 
         let client = reqwest::Client::new();
         let payload = serde_json::json!({
@@ -1030,20 +1072,24 @@ Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in mark
             .map_err(|e| Error::new(e.to_string()))?
             .ok_or_else(|| Error::new("User not found"))?;
 
-        let company_id = user.company_id
-            .ok_or_else(|| Error::new("User does not belong to any company"))?;
+        if let Some(company_id) = user.company_id {
+            // 2. Check admin permissions
+            let admin_user = users::get_user_by_id(&state.pool, admin_id).await
+                .map_err(|e| Error::new(e.to_string()))?
+                .ok_or_else(|| Error::new("Admin user not found"))?;
 
-        // 2. Check admin permissions
-        let admin_user = users::get_user_by_id(&state.pool, admin_id).await
-            .map_err(|e| Error::new(e.to_string()))?
-            .ok_or_else(|| Error::new("Admin user not found"))?;
+            let company = companies::get_company(&state.pool, company_id).await
+                .map_err(|e| Error::new(e.to_string()))?
+                .ok_or_else(|| Error::new("Company not found"))?;
 
-        let company = companies::get_company(&state.pool, company_id).await
-            .map_err(|e| Error::new(e.to_string()))?
-            .ok_or_else(|| Error::new("Company not found"))?;
-
-        if company.created_by != admin_id && admin_user.role != "admin" {
-            return Err(Error::new("Only company admins can save twin manifests"));
+            if company.created_by != admin_id && admin_user.role != "admin" && admin_id != target_user_id {
+                return Err(Error::new("Only company admins can save twin manifests"));
+            }
+        } else {
+            // Personal user
+            if admin_id != target_user_id {
+                return Err(Error::new("Only the user can save their own personal twin manifest"));
+            }
         }
 
         // 3. Save twin manifest
@@ -1180,7 +1226,73 @@ Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in mark
 
         Ok(true)
     }
+
+    async fn delete_company(
+        &self,
+        ctx:        &Context<'_>,
+        company_id: String,
+    ) -> Result<bool> {
+        let state   = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+        
+        let user = users::get_user_by_id(&state.pool, user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id_parsed = parse_uuid(&company_id)?;
+
+        if user.company_id != Some(company_id_parsed) {
+            return Err(Error::new("Permission denied: You do not belong to this company"));
+        }
+
+        let company = companies::get_company(&state.pool, company_id_parsed).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != user_id && user.role != "admin" {
+            return Err(Error::new("Permission denied: Only company owners or admins can delete the company"));
+        }
+
+        // Delete telemetry data from the company pool
+        crate::db::company_ops::delete_company_data(&state.company_pool, company_id_parsed).await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        // Delete company from core pool
+        companies::delete_company(&state.pool, company_id_parsed).await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(true)
+     }
+
+    async fn delete_user(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<bool> {
+        let state = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+
+        // Check if user is a company owner (createdBy of any company)
+        let is_owner: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM companies WHERE created_by = $1)"
+        )
+        .bind(user_id)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        if is_owner {
+            return Err(Error::new("Cannot delete account: You are the owner of a company. Please delete the company or transfer ownership first."));
+        }
+
+        // Call database helper
+        users::delete_user(&state.pool, user_id).await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        Ok(true)
+    }
 }
+
+
 
 fn parse_uuid(s: &str) -> Result<Uuid> {
     Uuid::parse_str(s).map_err(|_| Error::new(format!("Invalid UUID: {s}")))

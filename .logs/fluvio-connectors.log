@@ -1,8 +1,8 @@
-INFO:     Started server process [38971]
+INFO:     Started server process [10722]
 INFO:     Waiting for application startup.
-2026-05-30 03:34:43,031  INFO      src.main  fluvio-connectors starting...
-2026-05-30 03:34:43,032  INFO      apscheduler.scheduler  Scheduler started
-2026-05-30 03:34:43,032  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
+2026-06-01 14:05:50,802  INFO      src.main  fluvio-connectors starting...
+2026-06-01 14:05:50,803  INFO      apscheduler.scheduler  Scheduler started
+2026-06-01 14:05:50,803  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3006 (Press CTRL+C to quit)
-INFO:     127.0.0.1:52561 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61958 - "GET /health HTTP/1.1" 200 OK

@@ -1,0 +1,201 @@
+id,flight_number,carrier,origin,destination,destination_country,price
+1,LU762,Lufthansa,SFO,FCO,Italy,432.54
+2,EM625,Emirates,JFK,CDG,France,647.80
+3,AM762,American Airlines,ORD,CDG,France,384.96
+4,QA924,Qantas,ATL,BER,Germany,595.00
+5,EM972,Emirates,DFW,YYZ,Canada,414.60
+6,JA409,Japan Airlines,HND,LAX,United States,763.71
+7,DE623,Delta Air Lines,DFW,SYD,Australia,829.71
+8,QA389,Qantas,ATL,KIX,Japan,655.83
+9,BR383,British Airways,DFW,BER,Germany,424.20
+10,AI292,Air France,ORD,CUN,Mexico,953.75
+11,DE924,Delta Air Lines,CDG,LAX,United States,843.56
+12,AM838,American Airlines,JFK,YVR,Canada,1197.34
+13,AI528,Air France,DEN,LAX,United States,923.57
+14,QA825,Qantas,CDG,FCO,Italy,510.33
+15,LU802,Lufthansa,HND,YVR,Canada,1101.85
+16,BR619,British Airways,ATL,EDI,United Kingdom,1032.67
+17,AI285,Air Canada,ATL,KIX,Japan,644.32
+18,AI842,Air France,HND,EDI,United Kingdom,1144.27
+19,BR770,British Airways,LAX,VCE,Italy,523.05
+20,AI530,Air France,DFW,JFK,United States,423.59
+21,AI574,Air France,LAX,YVR,Canada,206.36
+22,QA694,Qantas,CDG,HND,Japan,645.83
+23,LU612,Lufthansa,LAX,CUN,Mexico,463.27
+24,DE991,Delta Air Lines,ORD,LHR,United Kingdom,1191.97
+25,BR519,British Airways,CDG,YYZ,Canada,300.39
+26,AM897,American Airlines,LAX,YVR,Canada,499.26
+27,AM420,American Airlines,JFK,CDG,France,624.66
+28,LU879,Lufthansa,ORD,MEL,Australia,952.71
+29,JA904,Japan Airlines,LAX,LHR,United Kingdom,795.20
+30,EM513,Emirates,DEN,YVR,Canada,552.48
+31,DE646,Delta Air Lines,SFO,JFK,United States,1147.57
+32,BR875,British Airways,HND,FCO,Italy,168.81
+33,DE741,Delta Air Lines,SFO,VCE,Italy,878.20
+34,BR419,British Airways,ORD,KIX,Japan,552.73
+35,QA413,Qantas,ORD,HND,Japan,1015.04
+36,AI397,Air France,LHR,CUN,Mexico,776.19
+37,BR544,British Airways,ORD,DXB,United Arab Emirates,1195.95
+38,JA467,Japan Airlines,SFO,EDI,United Kingdom,1145.49
+39,EM119,Emirates,SFO,VCE,Italy,913.53
+40,AM316,American Airlines,JFK,MEL,Australia,679.87
+41,UN475,United Airlines,JFK,LAX,United States,1070.37
+42,AI889,Air France,HND,NCE,France,773.62
+43,DE777,Delta Air Lines,LAX,CDG,France,200.65
+44,UN526,United Airlines,LHR,LAX,United States,279.77
+45,AI585,Air France,ORD,FCO,Italy,879.95
+46,DE408,Delta Air Lines,DEN,KIX,Japan,845.61
+47,AI737,Air France,CDG,LHR,United Kingdom,589.77
+48,UN623,United Airlines,CDG,KIX,Japan,446.84
+49,UN609,United Airlines,SFO,FCO,Italy,966.86
+50,AI306,Air Canada,DFW,SFO,United States,460.12
+51,DE661,Delta Air Lines,LHR,FCO,Italy,872.61
+52,JA438,Japan Airlines,SFO,CDG,France,163.39
+53,UN213,United Airlines,CDG,YVR,Canada,306.60
+54,UN898,United Airlines,HND,KIX,Japan,1100.02
+55,LU567,Lufthansa,ATL,BER,Germany,637.49
+56,UN932,United Airlines,ORD,NCE,France,1044.86
+57,BR920,British Airways,DFW,SFO,United States,925.47
+58,UN971,United Airlines,JFK,CDG,France,1044.60
+59,AM436,American Airlines,DFW,YYZ,Canada,1152.84
+60,AI999,Air France,LAX,JFK,United States,1005.71
+61,AM216,American Airlines,DEN,LAX,United States,1160.43
+62,AI955,Air France,DEN,YVR,Canada,989.89
+63,AM215,American Airlines,ORD,NCE,France,1180.65
+64,AM206,American Airlines,DEN,MEL,Australia,656.81
+65,QA794,Qantas,LHR,EDI,United Kingdom,791.89
+66,BR726,British Airways,JFK,LHR,United Kingdom,657.23
+67,JA215,Japan Airlines,DEN,YYZ,Canada,198.27
+68,AI770,Air France,DFW,CDG,France,889.80
+69,AI885,Air Canada,CDG,MEL,Australia,385.18
+70,BR631,British Airways,HND,KIX,Japan,604.49
+71,LU593,Lufthansa,DFW,LAX,United States,306.09
+72,AI727,Air Canada,JFK,CDG,France,825.57
+73,AM617,American Airlines,LHR,YVR,Canada,1062.89
+74,UN869,United Airlines,LHR,DXB,United Arab Emirates,402.94
+75,AI151,Air France,HND,VCE,Italy,728.02
+76,EM512,Emirates,SFO,HND,Japan,632.05
+77,QA558,Qantas,LAX,YVR,Canada,619.42
+78,UN609,United Airlines,JFK,KIX,Japan,573.61
+79,DE670,Delta Air Lines,HND,CDG,France,1017.20
+80,QA733,Qantas,ATL,CUN,Mexico,740.45
+81,JA449,Japan Airlines,DFW,NCE,France,1007.42
+82,JA439,Japan Airlines,HND,YVR,Canada,902.49
+83,BR833,British Airways,LHR,KIX,Japan,252.31
+84,LU102,Lufthansa,DFW,JFK,United States,1021.38
+85,AI660,Air France,HND,JFK,United States,887.20
+86,DE268,Delta Air Lines,LHR,SFO,United States,262.31
+87,QA300,Qantas,SFO,KIX,Japan,1126.73
+88,EM320,Emirates,LHR,FCO,Italy,902.63
+89,UN875,United Airlines,DEN,NCE,France,1122.96
+90,QA226,Qantas,LHR,YYZ,Canada,841.38
+91,AI237,Air Canada,LHR,CDG,France,706.88
+92,DE666,Delta Air Lines,DEN,MEL,Australia,657.08
+93,AI899,Air Canada,ORD,MEL,Australia,332.33
+94,AM206,American Airlines,DEN,DXB,United Arab Emirates,679.32
+95,EM528,Emirates,CDG,VCE,Italy,437.28
+96,BR401,British Airways,LHR,SFO,United States,782.65
+97,AI406,Air Canada,HND,DXB,United Arab Emirates,897.47
+98,AI747,Air Canada,SFO,FCO,Italy,370.20
+99,AI803,Air France,DFW,LHR,United Kingdom,1180.40
+100,AM615,American Airlines,HND,DXB,United Arab Emirates,895.87
+101,BR675,British Airways,LHR,MEL,Australia,749.17
+102,EM790,Emirates,HND,MUC,Germany,1071.35
+103,EM927,Emirates,JFK,CUN,Mexico,261.79
+104,EM248,Emirates,JFK,NCE,France,359.90
+105,AM393,American Airlines,ATL,LHR,United Kingdom,1031.35
+106,AI308,Air France,HND,NCE,France,526.62
+107,JA204,Japan Airlines,CDG,SYD,Australia,1058.08
+108,AI498,Air Canada,SFO,CUN,Mexico,973.52
+109,AI809,Air France,JFK,LAX,United States,556.93
+110,BR665,British Airways,JFK,CDG,France,930.85
+111,LU735,Lufthansa,LHR,VCE,Italy,1107.06
+112,BR873,British Airways,CDG,SYD,Australia,925.37
+113,LU894,Lufthansa,SFO,MUC,Germany,621.26
+114,UN291,United Airlines,ORD,CUN,Mexico,275.32
+115,DE538,Delta Air Lines,ATL,SYD,Australia,427.45
+116,AM698,American Airlines,ATL,CDG,France,497.09
+117,AM140,American Airlines,ORD,DXB,United Arab Emirates,776.72
+118,QA963,Qantas,ATL,YVR,Canada,979.40
+119,AI466,Air Canada,LAX,DXB,United Arab Emirates,701.66
+120,AM633,American Airlines,LAX,CUN,Mexico,317.34
+121,AI649,Air Canada,DEN,HND,Japan,516.87
+122,LU779,Lufthansa,DFW,DXB,United Arab Emirates,528.84
+123,LU870,Lufthansa,CDG,CUN,Mexico,648.60
+124,AI943,Air Canada,JFK,KIX,Japan,852.39
+125,JA346,Japan Airlines,CDG,VCE,Italy,1156.84
+126,BR490,British Airways,LAX,BER,Germany,717.25
+127,AI125,Air France,HND,JFK,United States,690.02
+128,AI556,Air Canada,LHR,NCE,France,461.26
+129,LU428,Lufthansa,HND,KIX,Japan,325.76
+130,AI646,Air Canada,JFK,HND,Japan,371.32
+131,LU985,Lufthansa,DEN,KIX,Japan,365.86
+132,EM762,Emirates,LAX,LHR,United Kingdom,174.94
+133,BR138,British Airways,LAX,HND,Japan,206.98
+134,AI671,Air France,LAX,MEL,Australia,1012.70
+135,AI517,Air France,DEN,YYZ,Canada,811.73
+136,EM423,Emirates,JFK,LAX,United States,856.96
+137,AI106,Air Canada,CDG,HND,Japan,943.76
+138,QA146,Qantas,LAX,JFK,United States,1124.45
+139,UN396,United Airlines,ATL,HND,Japan,445.59
+140,JA490,Japan Airlines,DEN,CDG,France,647.69
+141,AI325,Air Canada,ORD,LAX,United States,986.61
+142,AI402,Air Canada,ORD,MUC,Germany,861.15
+143,BR111,British Airways,HND,SYD,Australia,298.44
+144,DE105,Delta Air Lines,CDG,LAX,United States,714.01
+145,UN412,United Airlines,SFO,JFK,United States,372.32
+146,AI245,Air Canada,ORD,EDI,United Kingdom,381.83
+147,AI298,Air France,LAX,EDI,United Kingdom,854.53
+148,QA972,Qantas,JFK,SYD,Australia,634.33
+149,AI174,Air Canada,ATL,HND,Japan,413.22
+150,LU843,Lufthansa,CDG,YVR,Canada,1149.12
+151,BR231,British Airways,SFO,KIX,Japan,449.39
+152,UN298,United Airlines,DFW,YVR,Canada,623.18
+153,QA775,Qantas,ATL,MEL,Australia,310.01
+154,QA473,Qantas,DFW,SFO,United States,327.07
+155,BR352,British Airways,SFO,BER,Germany,1032.12
+156,AM795,American Airlines,DFW,YVR,Canada,635.99
+157,BR893,British Airways,ATL,YVR,Canada,729.26
+158,AM761,American Airlines,CDG,HND,Japan,1033.88
+159,AM651,American Airlines,SFO,BER,Germany,920.22
+160,UN844,United Airlines,LAX,CDG,France,1042.07
+161,DE932,Delta Air Lines,CDG,MEL,Australia,575.39
+162,QA317,Qantas,JFK,SYD,Australia,423.65
+163,AI583,Air Canada,ORD,JFK,United States,562.12
+164,QA850,Qantas,ATL,LHR,United Kingdom,637.94
+165,AI192,Air Canada,DEN,JFK,United States,677.28
+166,LU968,Lufthansa,CDG,EDI,United Kingdom,945.07
+167,AM556,American Airlines,ORD,EDI,United Kingdom,744.68
+168,QA775,Qantas,ORD,YVR,Canada,1136.13
+169,DE324,Delta Air Lines,LHR,VCE,Italy,216.00
+170,BR339,British Airways,JFK,FCO,Italy,693.78
+171,BR497,British Airways,LHR,YYZ,Canada,1075.63
+172,DE764,Delta Air Lines,DFW,KIX,Japan,888.92
+173,AI748,Air Canada,ATL,BER,Germany,757.56
+174,QA278,Qantas,DEN,LAX,United States,533.56
+175,UN629,United Airlines,ATL,LAX,United States,1171.31
+176,LU628,Lufthansa,DEN,JFK,United States,1008.10
+177,BR598,British Airways,LHR,CDG,France,676.93
+178,AM550,American Airlines,ORD,VCE,Italy,230.94
+179,AI316,Air France,ORD,EDI,United Kingdom,315.23
+180,QA834,Qantas,LAX,VCE,Italy,585.34
+181,BR837,British Airways,LAX,YVR,Canada,858.99
+182,JA315,Japan Airlines,CDG,EDI,United Kingdom,829.62
+183,EM122,Emirates,SFO,NCE,France,284.28
+184,QA264,Qantas,ORD,CUN,Mexico,191.15
+185,QA250,Qantas,JFK,EDI,United Kingdom,421.17
+186,AM629,American Airlines,DEN,MEL,Australia,819.50
+187,AI187,Air France,SFO,YYZ,Canada,786.85
+188,JA988,Japan Airlines,LHR,EDI,United Kingdom,380.33
+189,EM715,Emirates,ORD,MEL,Australia,1011.48
+190,AM738,American Airlines,HND,BER,Germany,326.11
+191,BR564,British Airways,CDG,MEL,Australia,222.29
+192,EM494,Emirates,ORD,KIX,Japan,167.39
+193,AI980,Air Canada,HND,SFO,United States,1017.84
+194,QA198,Qantas,ORD,YVR,Canada,1096.69
+195,QA139,Qantas,HND,CUN,Mexico,940.00
+196,UN593,United Airlines,ORD,SYD,Australia,1018.90
+197,EM634,Emirates,DEN,JFK,United States,1068.57
+198,AI539,Air Canada,SFO,YVR,Canada,979.03
+199,EM458,Emirates,CDG,MEL,Australia,252.60
+200,AM360,American Airlines,LHR,VCE,Italy,1105.59

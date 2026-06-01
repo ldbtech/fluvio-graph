@@ -1,0 +1,21 @@
+{
+  "id": "terraform",
+  "name": "Terraform Cloud Deployer",
+  "description": "Orchestrates AWS Cloud infrastructure (VPC, Redshift clusters, S3 buckets, EC2 nodes) by compiling and executing Terraform plans.",
+  "category": "engineering",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'apply_infrastructure', 'destroy_infrastructure', 'get_infrastructure_status'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string containing execution arguments (e.g. config_name, vpc_cidr, redshift_node_type, s3_bucket_name)",
+      "required": true
+    }
+  ]
+}

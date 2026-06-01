@@ -43,6 +43,7 @@ class KafkaExecutionContext(BaseModel):
     cluster_id: str 
     environment: str # local | dev | prod
     bootstrap_servers: List[str]
+    sandbox_id: Optional[str] = None
 
 # ============================
 # Capability Contract

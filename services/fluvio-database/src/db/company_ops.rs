@@ -177,3 +177,24 @@ pub async fn get_pipeline_runs(
     .fetch_all(pool)
     .await?)
 }
+
+pub async fn delete_company_data(pool: &PgPool, company_id: Uuid) -> anyhow::Result<bool> {
+    sqlx::query("DELETE FROM execution_logs WHERE company_id = $1")
+        .bind(company_id)
+        .execute(pool)
+        .await?;
+    sqlx::query("DELETE FROM action_authorizations WHERE company_id = $1")
+        .bind(company_id)
+        .execute(pool)
+        .await?;
+    sqlx::query("DELETE FROM document_reconciliations WHERE company_id = $1")
+        .bind(company_id)
+        .execute(pool)
+        .await?;
+    sqlx::query("DELETE FROM pipeline_runs WHERE company_id = $1")
+        .bind(company_id)
+        .execute(pool)
+        .await?;
+    Ok(true)
+}
+

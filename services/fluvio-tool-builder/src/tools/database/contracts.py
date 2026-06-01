@@ -12,6 +12,7 @@ class DatabaseExecutionContext(BaseModel):
     """
     database_url: str = "postgres://localhost/fluvio_company"
     environment: str = "local"
+    sandbox_id: Optional[str] = None
 
 # ============================
 # Capability Contract

@@ -13,6 +13,7 @@ class SparkExecutionContext(BaseModel):
     master_url: str = "local[*]"
     app_name: str = "FluviomeSparkApp"
     environment: str = "local"  # local | dev | prod
+    sandbox_id: Optional[str] = None
 
 # ============================
 # Spark Job Configuration

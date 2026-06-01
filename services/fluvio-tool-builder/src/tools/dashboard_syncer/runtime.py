@@ -262,7 +262,7 @@ class DashboardSyncerRuntime(DashboardSyncerTool):
         import os
         import subprocess
 
-        logger.info(f"Generating PDF report: {report_name}")
+        logger.info(f"Generating dynamic PDF report: {report_name}")
 
         db_url = database_url or "postgres://localhost/vowayage"
         try:
@@ -274,95 +274,205 @@ class DashboardSyncerRuntime(DashboardSyncerTool):
                 logger.error(f"Failed Postgres connection: {e}. Fallback failed: {e2}")
                 return {"status": "failed", "error": f"Database connection error: {e}"}
 
+        # Auto-detect analytics tables ending in _analytics
         try:
-            # Query data from analytics tables
-            df_signup = pd.read_sql("SELECT month, new_users, cumulative_users FROM signup_trends_analytics ORDER BY month", conn)
-            df_revenue = pd.read_sql("SELECT destination_country, total_bookings, total_revenue FROM revenue_by_country_analytics ORDER BY total_revenue DESC", conn)
-            df_membership = pd.read_sql("SELECT membership_tier, user_count, avg_fee FROM membership_metrics_analytics ORDER BY user_count DESC", conn)
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema='public' AND table_name LIKE '%_analytics';
+            """)
+            tables = [t[0] for t in cur.fetchall()]
+            cur.close()
+            logger.info(f"Auto-detected analytics tables: {tables}")
         except Exception as e:
-            logger.error(f"Failed to query analytics tables: {e}")
+            logger.error(f"Failed to scan tables: {e}")
             conn.close()
-            return {"status": "failed", "error": f"Database query error: {e}"}
-        finally:
-            conn.close()
+            return {"status": "failed", "error": f"Database scan error: {e}"}
 
-        # Clean/typecast types for plotting and display
-        try:
-            df_signup['month'] = pd.to_datetime(df_signup['month'], utc=True).dt.tz_localize(None)
-            df_revenue['total_revenue'] = df_revenue['total_revenue'].astype(float)
-            df_revenue['total_bookings'] = df_revenue['total_bookings'].astype(int)
-            df_membership['avg_fee'] = df_membership['avg_fee'].astype(float)
-            df_membership['user_count'] = df_membership['user_count'].astype(int)
-        except Exception as e:
-            logger.error(f"Failed to convert data types: {e}")
-            return {"status": "failed", "error": f"Data processing error: {e}"}
+        if not tables:
+            # Fallback in case no analytics tables are found, list standard clean tables
+            logger.warning("No analytics tables found in database. Using clean tables as fallback...")
+            tables = ['clean_users', 'clean_bookings']
+
+        # Sort tables for logical formatting order
+        tables = sorted(tables)
 
         # Directories setup
         target_dir = "/Users/alidaho/Developer/AWS/rust/fluviome-web/public/reports"
         os.makedirs(target_dir, exist_ok=True)
 
-        chart1_path = os.path.join(target_dir, "signup_growth.png")
-        chart2_path = os.path.join(target_dir, "revenue_by_country.png")
-        chart3_path = os.path.join(target_dir, "membership_metrics.png")
         tex_path = os.path.join(target_dir, "vowayage_executive_report.tex")
         pdf_path = os.path.join(target_dir, "vowayage_executive_report.pdf")
 
-        # Generate plots
-        try:
-            sns.set_theme(style="whitegrid")
+        # Dynamic Section Data
+        latex_sections = []
+        reportlab_sections = [] # Stores dicts with section title, body, table, plot path
+
+        # Column type detection helper
+        def detect_column_types(df):
+            temporal_cols = []
+            categorical_cols = []
+            numerical_cols = []
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]) or 'date' in col.lower() or 'month' in col.lower():
+                    temporal_cols.append(col)
+                elif pd.api.types.is_numeric_dtype(df[col]):
+                    numerical_cols.append(col)
+                else:
+                    if df[col].nunique() < 50:
+                        categorical_cols.append(col)
+            return temporal_cols, categorical_cols, numerical_cols
+
+        # Process each table
+        for table in tables:
+            try:
+                df = pd.read_sql(f"SELECT * FROM {table}", conn)
+            except Exception as e:
+                logger.error(f"Failed to read table {table}: {e}")
+                continue
+
+            if df.empty:
+                logger.warning(f"Table {table} is empty. Skipping.")
+                continue
+
+            # Convert types dynamically
+            for col in df.columns:
+                if 'month' in col.lower() or 'date' in col.lower():
+                    try:
+                        df[col] = pd.to_datetime(df[col], utc=True).dt.tz_localize(None)
+                    except Exception:
+                        pass
+                elif pd.api.types.is_numeric_dtype(df[col]):
+                    df[col] = df[col].astype(float)
+
+            temp, cat, num = detect_column_types(df)
             
-            # Chart 1: Signup growth
-            plt.figure(figsize=(7, 3.5))
-            ax = sns.lineplot(data=df_signup, x='month', y='cumulative_users', marker='o', color='#1A365D', linewidth=2.5, label='Cumulative Users')
-            ax2 = ax.twinx()
-            ax2.bar(df_signup['month'], df_signup['new_users'], width=20, alpha=0.3, color='#3182CE', label='New Signups')
-            ax.set_title("Vowayage User Signups: Monthly Trends & Cumulative Growth", fontsize=12, fontweight='bold', pad=15)
-            ax.set_xlabel("Month", fontsize=10)
-            ax.set_ylabel("Cumulative Users", fontsize=10)
-            ax2.set_ylabel("New Monthly Users", fontsize=10)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            plt.savefig(chart1_path, dpi=300)
-            plt.close()
+            title_str = table.replace('_', ' ').replace('analytics', '').strip().title()
+            chart_filename = f"{table}.png"
+            chart_path = os.path.join(target_dir, chart_filename)
+            plot_generated = False
 
-            # Chart 2: Revenue by country
-            plt.figure(figsize=(7, 3.5))
-            sns.barplot(data=df_revenue, x='total_revenue', y='destination_country', palette='Blues_r', hue='destination_country', legend=False)
-            plt.title("Total Booking Revenue by Destination Country", fontsize=12, fontweight='bold', pad=15)
-            plt.xlabel("Revenue ($)", fontsize=10)
-            plt.ylabel("Country", fontsize=10)
-            plt.gca().xaxis.set_major_formatter(ticker.StrMethodFormatter('${x:,.0f}'))
-            plt.tight_layout()
-            plt.savefig(chart2_path, dpi=300)
-            plt.close()
+            # Generate Plot
+            try:
+                sns.set_theme(style="whitegrid")
+                if len(temp) == 1 and len(num) >= 1:
+                    # Time Series Plot
+                    plt.figure(figsize=(7, 3.5))
+                    if len(num) >= 2:
+                        ax = sns.lineplot(data=df, x=temp[0], y=num[1], marker='o', color='#1A365D', linewidth=2.5, label=num[1].replace('_', ' ').title())
+                        ax2 = ax.twinx()
+                        ax2.bar(df[temp[0]], df[num[0]], width=20, alpha=0.3, color='#3182CE', label=num[0].replace('_', ' ').title())
+                        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+                    else:
+                        sns.lineplot(data=df, x=temp[0], y=num[0], marker='o', color='#1A365D', linewidth=2.5)
+                    plt.title(f"{title_str}: Trends & Growth", fontsize=11, fontweight='bold', pad=15)
+                    plt.xticks(rotation=45)
+                    plt.tight_layout()
+                    plt.savefig(chart_path, dpi=300)
+                    plt.close()
+                    plot_generated = True
+                elif len(cat) == 2 and len(num) >= 1:
+                    # Heatmap
+                    piv = df.groupby([cat[0], cat[1]])[num[0]].sum().unstack(level=0).fillna(0)
+                    # Flatten MultiIndex if necessary
+                    if isinstance(piv.columns, pd.MultiIndex):
+                        piv.columns = [f"{c[0]}_{c[1]}" for c in piv.columns]
+                    plt.figure(figsize=(7, 4))
+                    sns.heatmap(piv, annot=True, fmt=".1f", cmap="YlGnBu", cbar_kws={'label': num[0].replace('_', ' ').title()})
+                    plt.title(f"{title_str} Preferences", fontsize=11, fontweight='bold', pad=15)
+                    plt.tight_layout()
+                    plt.savefig(chart_path, dpi=300)
+                    plt.close()
+                    plot_generated = True
+                elif len(cat) == 1 and len(num) >= 1:
+                    # Bar Chart
+                    plt.figure(figsize=(7, 3.5))
+                    if len(df) > 8:
+                        sns.barplot(data=df, x=num[0], y=cat[0], palette='Blues_r', hue=cat[0], legend=False)
+                    else:
+                        sns.barplot(data=df, x=cat[0], y=num[0], palette='crest', hue=cat[0], legend=False)
+                    plt.title(f"{title_str} Distribution", fontsize=11, fontweight='bold', pad=15)
+                    plt.tight_layout()
+                    plt.savefig(chart_path, dpi=300)
+                    plt.close()
+                    plot_generated = True
+            except Exception as plot_err:
+                logger.error(f"Failed to generate plot for {table}: {plot_err}")
 
-            # Chart 3: Membership tier avg monthly fee
-            plt.figure(figsize=(7, 3.5))
-            sns.barplot(data=df_membership, x='membership_tier', y='avg_fee', palette='crest', hue='membership_tier', legend=False)
-            plt.title("Average Monthly Membership Fee by Tier", fontsize=12, fontweight='bold', pad=15)
-            plt.xlabel("Membership Tier", fontsize=10)
-            plt.ylabel("Average Monthly Fee ($)", fontsize=10)
-            plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('$%.2f'))
-            plt.tight_layout()
-            plt.savefig(chart3_path, dpi=300)
-            plt.close()
-        except Exception as e:
-            logger.error(f"Failed to generate plots: {e}")
-            return {"status": "failed", "error": f"Plot generation error: {e}"}
+            # Format Table Data for ReportLab
+            headers = [col.replace('_', ' ').title() for col in df.columns]
+            table_data = [headers]
+            for _, row in df.head(10).iterrows():
+                row_vals = []
+                for col in df.columns:
+                    val = row[col]
+                    if isinstance(val, float):
+                        row_vals.append(f"{val:,.2f}" if val > 100 or col.endswith('fee') or 'revenue' in col or 'value' in col else f"{val:.2f}")
+                    elif isinstance(val, (int, float)) and not isinstance(val, bool):
+                        row_vals.append(f"{int(val):,}")
+                    elif isinstance(val, pd.Timestamp):
+                        row_vals.append(val.strftime('%b %Y'))
+                    else:
+                        row_vals.append(str(val))
+                table_data.append(row_vals)
 
-        # Format LaTeX rows
-        revenue_rows = ""
-        for _, row in df_revenue.iterrows():
-            clean_country = row['destination_country'].replace("&", "\\&").replace("_", "\\_")
-            revenue_rows += f"    {clean_country} & {int(row['total_bookings']):,} & {row['total_revenue']:,.2f} \\\\\n"
+            # Store for ReportLab storyboard builder
+            reportlab_sections.append({
+                "title": title_str,
+                "table_name": table,
+                "table_data": table_data,
+                "plot_path": chart_path if plot_generated else None
+            })
 
-        membership_rows = ""
-        for _, row in df_membership.iterrows():
-            clean_tier = row['membership_tier'].capitalize().replace("&", "\\&").replace("_", "\\_")
-            membership_rows += f"    {clean_tier} & {int(row['user_count']):,} & {row['avg_fee']:.2f} \\\\\n"
+            # Format LaTeX table rows
+            latex_headers = " & ".join([f"\\textbf{{{col.replace('_', ' ').title()}}}" for col in df.columns])
+            latex_rows = ""
+            for _, row in df.head(10).iterrows():
+                row_vals = []
+                for col in df.columns:
+                    val = row[col]
+                    val_str = str(val).replace("&", "\\&").replace("_", "\\_").replace("%", "\\%")
+                    if isinstance(val, float):
+                        val_str = f"{val:,.2f}" if val > 100 or col.endswith('fee') or 'revenue' in col or 'value' in col else f"{val:.2f}"
+                    elif isinstance(val, (int, float)) and not isinstance(val, bool):
+                        val_str = f"{int(val):,}"
+                    elif isinstance(val, pd.Timestamp):
+                        val_str = val.strftime('%b %Y')
+                    row_vals.append(val_str)
+                latex_rows += "    " + " & ".join(row_vals) + " \\\\\n"
 
-        # LaTeX Template
+            # Format LaTeX section
+            latex_section_text = f"""
+\\section{{{title_str}}}
+This section outlines the aggregated metrics parsed from the \\texttt{{{table.replace('_', '\\_')}}} data model.
+
+\\begin{{table}}[h]
+\\centering
+\\caption{{{title_str} Data Summary}}
+\\begin{{tabular}}{{{'l' * len(df.columns)}}}
+\\toprule
+{latex_headers} \\\\
+\\midrule
+{latex_rows}\\bottomrule
+\\end{{tabular}}
+\\end{{table}}
+"""
+            if plot_generated:
+                latex_section_text += f"""
+\\begin{{figure}}[h]
+\\centering
+\\includegraphics[width=0.8\\textwidth]{{{chart_filename}}}
+\\caption{{Visual Analysis of {title_str}}}
+\\end{{figure}}
+"""
+            latex_sections.append(latex_section_text)
+
+        # Close database connection
+        conn.close()
+
+        # LaTeX Template compilation
+        latex_sections_joined = "\n\\newpage\n".join(latex_sections)
         tex_content = r"""\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
@@ -371,8 +481,8 @@ class DashboardSyncerRuntime(DashboardSyncerTool):
 \usepackage{geometry}
 \geometry{margin=1in}
 
-\title{\textbf{Vowayage Executive Performance Report}}
-\author{Fluviome AI Architect \& Vowayage Analytics Team}
+\title{\textbf{Executive Performance Report}}
+\author{Fluviome AI Architect \& Analytics Team}
 \date{May 30, 2026}
 
 \begin{document}
@@ -380,69 +490,21 @@ class DashboardSyncerRuntime(DashboardSyncerTool):
 \maketitle
 
 \begin{abstract}
-This report provides an executive summary of user growth trends, booking revenue performance across top destination countries, and membership tier metrics for Vowayage. The analysis leverages cleansed transaction logs processed through our Spark engine to provide real-time strategic insights.
+This report provides an executive summary of user growth trends, booking revenue performance, and membership tier metrics. The analysis leverages cleansed transaction logs processed dynamically through our Spark analytics engine.
 \end{abstract}
 
 \section{Introduction}
-Vowayage's transactional and user data has been cleaned and structured inside our PostgreSQL data warehouse. Utilizing Apache Spark to execute analytics aggregations, we have generated three critical key performance indicators (KPIs) to analyze user acquisition patterns, target country performance, and membership monetization.
+Transactional and user data has been cleaned and structured inside our PostgreSQL data warehouse. Utilizing Apache Spark to execute dynamic analytics aggregations, we have compiled key performance indicators (KPIs) to analyze user acquisition patterns and monetization.
 
-\section{User Signup Trends}
-User acquisition growth remains robust. Over the observed period, monthly signups have steadily increased, contributing to a compounding cumulative user base. Figure 1 outlines both the new monthly users (bar chart) and the cumulative user growth curve (line chart).
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\textwidth]{signup_growth.png}
-\caption{Monthly Signup Trends and Cumulative Growth}
-\end{figure}
-
-\section{Geographic Booking Revenue}
-Geographic revenue analysis indicates that North American and East Asian corridors (United States, Japan, and Canada) represent the largest revenue-producing markets. Table 1 lists the metrics, and Figure 2 shows the revenue values by country.
-
-\begin{table}[h]
-\centering
-\caption{Top Destination Countries by Booking Volume and Revenue}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Destination Country} & \textbf{Total Bookings} & \textbf{Total Revenue (\$)} \\
-\midrule
-""" + revenue_rows + r"""\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\textwidth]{revenue_by_country.png}
-\caption{Booking Revenue by Destination Country}
-\end{figure}
+""" + latex_sections_joined + r"""
 
 \newpage
-
-\section{Membership Tier Performance}
-The tier breakdown reveals a high volume of users in free tiers, but substantial recurring revenue opportunities in the Bronze and Silver premium plans. Table 2 details the metrics, and Figure 3 shows the average fee breakdown.
-
-\begin{table}[h]
-\centering
-\caption{Membership Tier Distribution and Fees}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Membership Tier} & \textbf{User Count} & \textbf{Average Fee (\$)} \\
-\midrule
-""" + membership_rows + r"""\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\textwidth]{membership_metrics.png}
-\caption{Average Monthly Membership Fee by Tier}
-\end{figure}
-
 \section{Strategic Recommendations}
 Based on the data, we recommend:
 \begin{itemize}
-\item \textbf{Optimize marketing spend} in high-performing regions such as the United States and Japan to maximize conversion rates.
-\item \textbf{Review tier pricing models}: The Silver tier has solid adoption, but introducing an intermediate Gold tier could bridge the gap and capture additional premium consumer surplus.
-\item \textbf{Enhance signup retention}: Address seasonality trends observed in signup trends to maintain steady month-over-month growth.
+\item \textbf{Optimize marketing spend} in high-performing regions and corridors to maximize conversion rates.
+\item \textbf{Review tier pricing models}: The current membership plans have solid adoption, but introducing intermediate options could bridge the gap and capture additional premium consumer surplus.
+\item \textbf{Enhance signup retention}: Address seasonality trends observed in signup trends to maintain steady growth.
 \end{itemize}
 
 \end{document}
@@ -557,131 +619,69 @@ Based on the data, we recommend:
                 story = []
 
                 story.append(Spacer(1, 15))
-                story.append(Paragraph("Vowayage Executive Performance Report", title_style))
-                story.append(Paragraph("Fluviome AI Architect & Vowayage Analytics Team", meta_style))
+                story.append(Paragraph(report_name, title_style))
+                story.append(Paragraph("Fluviome AI Architect & Analytics Team", meta_style))
                 story.append(Paragraph("Published: May 30, 2026", meta_style))
                 story.append(Spacer(1, 10))
 
                 abstract_text = (
                     "<b>Abstract</b>—<i>This report provides an executive summary of user growth trends, "
-                    "booking revenue performance across top destination countries, and membership tier metrics for Vowayage. "
-                    "The analysis leverages cleansed transaction logs processed through our Spark engine to provide "
-                    "real-time strategic insights.</i>"
+                    "booking revenue performance, and membership tier metrics. The analysis leverages cleansed "
+                    "transaction logs processed dynamically through our Spark analytics engine.</i>"
                 )
                 story.append(Paragraph(abstract_text, abstract_style))
                 story.append(Spacer(1, 10))
 
-                # Section 1
+                # Section 1: Intro
                 story.append(Paragraph("1. Introduction", section_style))
                 story.append(Paragraph(
-                    "Vowayage's transactional and user data has been cleaned and structured inside our PostgreSQL data warehouse. "
-                    "Utilizing Apache Spark to execute analytics aggregations, we have generated three critical key performance indicators (KPIs) "
-                    "to analyze user acquisition patterns, target country performance, and membership monetization.",
+                    "Transactional and user data has been cleaned and structured inside our PostgreSQL data warehouse. "
+                    "Utilizing Apache Spark to execute dynamic analytics aggregations, we have compiled key performance indicators (KPIs) "
+                    "to analyze user acquisition patterns and monetization.",
                     body_style
                 ))
-
-                # Section 2
-                story.append(Paragraph("2. User Signup Trends", section_style))
-                story.append(Paragraph(
-                    "User acquisition growth remains robust. Over the observed period, monthly signups have steadily increased, "
-                    "contributing to a compounding cumulative user base. Figure 1 outlines both the new monthly users (bar chart) and "
-                    "the cumulative user growth curve (line chart).",
-                    body_style
-                ))
-
-                if os.path.exists(chart1_path):
-                    story.append(Image(chart1_path, width=6.0*inch, height=3.0*inch))
-                    story.append(Paragraph("Figure 1: Monthly Signup Trends and Cumulative Growth", caption_style))
-                story.append(Spacer(1, 10))
-
                 story.append(PageBreak())
 
-                # Section 3
-                story.append(Paragraph("3. Geographic Booking Revenue", section_style))
-                story.append(Paragraph(
-                    "Geographic revenue analysis indicates that North American and East Asian corridors (United States, Japan, and Canada) "
-                    "represent the largest revenue-producing markets. Table 1 lists the metrics, and Figure 2 shows the revenue values by country.",
-                    body_style
-                ))
+                # Add dynamic sections for each table
+                for idx, sec in enumerate(reportlab_sections):
+                    story.append(Paragraph(f"{idx + 2}. {sec['title']}", section_style))
+                    story.append(Paragraph(
+                        f"This section presents the metrics compiled from the {sec['table_name'].replace('_', ' ')} dataset. The table below lists the details.",
+                        body_style
+                    ))
 
-                table_data = [["Destination Country", "Total Bookings", "Total Revenue ($)"]]
-                for _, row in df_revenue.iterrows():
-                    table_data.append([
-                        row['destination_country'],
-                        f"{int(row['total_bookings']):,}",
-                        f"${row['total_revenue']:,.2f}"
-                    ])
+                    # Build Table
+                    cols_count = len(sec['table_data'][0])
+                    col_width = (6.0 * inch) / cols_count
+                    t = Table(sec['table_data'], colWidths=[col_width] * cols_count)
+                    t.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E2E8F0')),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1A202C')),
+                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+                        ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
+                        ('TOPPADDING', (0, 1), (-1, -1), 3),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+                        ('FONTNAME', (0, 1), (-1, -1), 'Times-Roman'),
+                        ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ]))
+                    story.append(t)
+                    story.append(Paragraph(f"Table: {sec['title']} data summary.", caption_style))
+                    story.append(Spacer(1, 10))
 
-                t1 = Table(table_data, colWidths=[2.5*inch, 1.5*inch, 2.0*inch])
-                t1.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E2E8F0')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1A202C')),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                    ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-                    ('TOPPADDING', (0, 1), (-1, -1), 4),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
-                    ('FONTNAME', (0, 1), (-1, -1), 'Times-Roman'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ]))
-                story.append(t1)
-                story.append(Paragraph("Table 1: Top Destination Countries by Booking Volume and Revenue", caption_style))
-                story.append(Spacer(1, 10))
+                    if sec['plot_path'] and os.path.exists(sec['plot_path']):
+                        story.append(Image(sec['plot_path'], width=6.0*inch, height=3.0*inch))
+                        story.append(Paragraph(f"Figure: Visual analysis of {sec['title']}.", caption_style))
+                    
+                    story.append(PageBreak())
 
-                if os.path.exists(chart2_path):
-                    story.append(Image(chart2_path, width=6.0*inch, height=3.0*inch))
-                    story.append(Paragraph("Figure 2: Booking Revenue by Destination Country", caption_style))
-                story.append(Spacer(1, 10))
-
-                story.append(PageBreak())
-
-                # Section 4
-                story.append(Paragraph("4. Membership Tier Performance", section_style))
-                story.append(Paragraph(
-                    "The tier breakdown reveals a high volume of users in free tiers, but substantial recurring revenue opportunities "
-                    "in the Bronze and Silver premium plans. Table 2 details the metrics, and Figure 3 shows the average fee breakdown.",
-                    body_style
-                ))
-
-                table_data2 = [["Membership Tier", "User Count", "Average Fee ($)"]]
-                for _, row in df_membership.iterrows():
-                    table_data2.append([
-                        row['membership_tier'].capitalize(),
-                        f"{int(row['user_count']):,}",
-                        f"${row['avg_fee']:.2f}"
-                    ])
-
-                t2 = Table(table_data2, colWidths=[2.5*inch, 1.5*inch, 2.0*inch])
-                t2.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E2E8F0')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1A202C')),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                    ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-                    ('TOPPADDING', (0, 1), (-1, -1), 4),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
-                    ('FONTNAME', (0, 1), (-1, -1), 'Times-Roman'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ]))
-                story.append(t2)
-                story.append(Paragraph("Table 2: Membership Tier Distribution and Fees", caption_style))
-                story.append(Spacer(1, 10))
-
-                if os.path.exists(chart3_path):
-                    story.append(Image(chart3_path, width=6.0*inch, height=3.0*inch))
-                    story.append(Paragraph("Figure 3: Average Monthly Membership Fee by Tier", caption_style))
-                story.append(Spacer(1, 10))
-
-                # Section 5
-                story.append(Paragraph("5. Strategic Recommendations", section_style))
+                # Recommendations Section
+                story.append(Paragraph(f"{len(reportlab_sections) + 2}. Strategic Recommendations", section_style))
                 recs = [
-                    "<b>Optimize marketing spend</b> in high-performing regions such as the United States and Japan to maximize conversion rates.",
-                    "<b>Review tier pricing models</b>: The Silver tier has solid adoption, but introducing an intermediate Gold tier could bridge the gap and capture additional premium consumer surplus.",
-                    "<b>Enhance signup retention</b>: Address seasonality trends observed in signup trends to maintain steady month-over-month growth."
+                    "<b>Optimize marketing spend</b> in high-performing regions and corridors to maximize conversion rates.",
+                    "<b>Review tier pricing models</b>: The current membership plans have solid adoption, but introducing intermediate options could bridge the gap and capture additional premium consumer surplus.",
+                    "<b>Enhance signup retention</b>: Address seasonality trends observed in signup trends to maintain steady growth."
                 ]
                 for rec in recs:
                     story.append(Paragraph(f"• {rec}", body_style))

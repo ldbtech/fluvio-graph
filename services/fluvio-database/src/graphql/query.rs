@@ -365,7 +365,79 @@ impl QueryRoot {
             
         Ok(runs.into_iter().map(GqlPipelineRun::from).collect())
     }
+
+    async fn download_company_data(
+        &self,
+        ctx:        &Context<'_>,
+        company_id: String,
+    ) -> Result<String> {
+        let state   = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+        
+        let user = users::get_user_by_id(&state.pool, user_id).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("User not found"))?;
+
+        let company_id_parsed = parse_uuid(&company_id)?;
+
+        if user.company_id != Some(company_id_parsed) {
+            return Err(Error::new("Permission denied: You do not belong to this company"));
+        }
+
+        let company = companies::get_company(&state.pool, company_id_parsed).await
+            .map_err(|e| Error::new(e.to_string()))?
+            .ok_or_else(|| Error::new("Company not found"))?;
+
+        if company.created_by != user_id && user.role != "admin" {
+            return Err(Error::new("Permission denied: Only company owners or admins can download company data"));
+        }
+
+        // Fetch all main DB tables as a single JSON object using postgres json_build_object
+        let main_json: serde_json::Value = sqlx::query_scalar(
+            "SELECT json_build_object(
+                'company', (SELECT row_to_json(c) FROM (SELECT id, name, website, linkedin_url, twitter_url, github_url, created_by, created_at, updated_at FROM companies WHERE id = $1) c),
+                'users', COALESCE((SELECT json_agg(u) FROM (SELECT id, email, display_name, avatar_url, company_email, role, policies, assigned_agent_roles, created_at FROM users WHERE company_id = $1) u), '[]'::json),
+                'invites', COALESCE((SELECT json_agg(ci) FROM (SELECT id, invited_by, email, role, expires_at, accepted_at, created_at FROM company_invites WHERE company_id = $1) ci), '[]'::json),
+                'teams', COALESCE((SELECT json_agg(t) FROM (SELECT id, name, description, created_at, updated_at FROM teams WHERE company_id = $1) t), '[]'::json),
+                'team_members', COALESCE((SELECT json_agg(tm) FROM (SELECT id, team_id, user_id, role, joined_at FROM team_members WHERE team_id IN (SELECT id FROM teams WHERE company_id = $1)) tm), '[]'::json),
+                'workflows', COALESCE((SELECT json_agg(tw) FROM (SELECT id, team_id, name, description, steps, created_by, created_at, updated_at FROM team_workflows WHERE team_id IN (SELECT id FROM teams WHERE company_id = $1)) tw), '[]'::json)
+            )"
+        )
+        .bind(company_id_parsed)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        // Fetch telemetry DB tables as a single JSON object using company_pool
+        let telemetry_json: serde_json::Value = sqlx::query_scalar(
+            "SELECT json_build_object(
+                'execution_logs', COALESCE((SELECT json_agg(el) FROM (SELECT id, initiated_by_user_id, initiated_by_twin_id, agent_name, message, log_level, timestamp FROM execution_logs WHERE company_id = $1) el), '[]'::json),
+                'action_authorizations', COALESCE((SELECT json_agg(aa) FROM (SELECT id, action_type, description, severity, initiated_by_user_id, status, authorized_by_user_id, notes, created_at, resolved_at FROM action_authorizations WHERE company_id = $1) aa), '[]'::json),
+                'document_reconciliations', COALESCE((SELECT json_agg(dr) FROM (SELECT id, title, description, source_a, source_b, resolved_to, time_ago, created_at FROM document_reconciliations WHERE company_id = $1) dr), '[]'::json),
+                'pipeline_runs', COALESCE((SELECT json_agg(pr) FROM (SELECT id, name, agent_name, status, progress, detail, started_at, updated_at FROM pipeline_runs WHERE company_id = $1) pr), '[]'::json)
+            )"
+        )
+        .bind(company_id_parsed)
+        .fetch_one(&state.company_pool)
+        .await
+        .map_err(|e| Error::new(e.to_string()))?;
+
+        let mut combined = main_json;
+        if let Some(obj) = combined.as_object_mut() {
+            if let Some(tel_obj) = telemetry_json.as_object() {
+                for (k, v) in tel_obj {
+                    obj.insert(k.clone(), v.clone());
+                }
+            }
+        }
+
+        let result_str = serde_json::to_string_pretty(&combined)
+            .map_err(|e| Error::new(format!("Failed to serialize company data: {}", e)))?;
+
+        Ok(result_str)
+    }
 }
+
 
 fn parse_uuid(s: &str) -> Result<Uuid> {
     Uuid::parse_str(s).map_err(|_| Error::new(format!("Invalid UUID: {s}")))

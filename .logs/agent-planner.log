@@ -1,49 +1,153 @@
-INFO:     Started server process [38980]
+INFO:     Started server process [10739]
 INFO:     Waiting for application startup.
-2026-05-30 03:34:43,530 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
+2026-06-01 14:05:51,225 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3007 (Press CTRL+C to quit)
-INFO:     127.0.0.1:52563 - "GET /health HTTP/1.1" 200 OK
-2026-05-30 03:35:34,184 [INFO] Adding chat message to workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
-2026-05-30 03:35:34,306 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:34,315 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 400 Bad Request"
-2026-05-30 03:35:34,316 [ERROR] Error querying connectors in planner: Client error '400 Bad Request' for url 'http://127.0.0.1:4001'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-2026-05-30 03:35:34,659 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:34,960 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:36,312 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:37,082 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:37,826 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,306 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,306 [INFO] Adding chat message to workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
-2026-05-30 03:35:39,318 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:52589 - "POST /chat HTTP/1.1" 200 OK
-2026-05-30 03:35:39,328 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-05-30 03:35:39,328 [INFO] Fetching workspace shares...
-2026-05-30 03:35:39,328 [INFO] Fetching workspace shares for workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
-2026-05-30 03:35:39,359 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,360 [INFO] Executing concurrent query fetches for main user context...
-2026-05-30 03:35:39,360 [INFO] Fetching connectors for groupId: grp_eng
-2026-05-30 03:35:39,366 [INFO] Fetching documents in workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0, zone: 0
-2026-05-30 03:35:39,370 [INFO] Fetching graph nodes for workspace: 4f89fae5-6974-4a4f-8b6d-52f1ef5c11e0
-2026-05-30 03:35:39,375 [INFO] Fetching available execution tools from gateway...
-2026-05-30 03:35:39,394 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,407 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,407 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,432 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,433 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-05-30 03:35:39,433 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
-2026-05-30 03:35:39,443 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,444 [INFO] User belongs to company: 87b4850a-debc-406a-81c1-c26d9213aca0. Fetching directory and squads...
-2026-05-30 03:35:39,444 [INFO] Fetching company users for company_id: 87b4850a-debc-406a-81c1-c26d9213aca0
-2026-05-30 03:35:39,449 [INFO] Fetching teams for company_id: 87b4850a-debc-406a-81c1-c26d9213aca0
-2026-05-30 03:35:39,459 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,463 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,463 [INFO] Fetching members and workflows for team: 70caac9a-04bd-4448-9720-b65961c6d902
-2026-05-30 03:35:39,463 [INFO] Fetching members and workflows for team: 712a906e-ef6c-4c76-beb5-557b821f4d2c
-2026-05-30 03:35:39,489 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,489 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,496 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,496 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-05-30 03:35:39,497 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:52589 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61960 - "GET /health HTTP/1.1" 200 OK
+2026-06-01 14:08:37,600 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:08:37,962 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:37,964 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:08:37,994 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:37,995 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-01 14:08:37,995 [INFO] Fetching workspace shares...
+2026-06-01 14:08:37,995 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:08:38,008 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,009 [INFO] Executing concurrent query fetches for main user context...
+2026-06-01 14:08:38,009 [INFO] Fetching connectors for groupId: None
+2026-06-01 14:08:38,013 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
+2026-06-01 14:08:38,017 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:08:38,022 [INFO] Fetching available execution tools from gateway...
+2026-06-01 14:08:38,046 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,101 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,103 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
+2026-06-01 14:08:38,189 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,190 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
+2026-06-01 14:08:38,230 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,231 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
+2026-06-01 14:08:38,239 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,424 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,426 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,426 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
+2026-06-01 14:08:38,437 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:08:38,438 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-01 14:09:17,525 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,531 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,574 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62144 - "POST /chat HTTP/1.1" 200 OK
+2026-06-01 14:09:17,590 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,601 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,602 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,613 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62144 - "POST /chat HTTP/1.1" 200 OK
+2026-06-01 14:09:17,616 [INFO] Triggering interactive sandbox deploy target=analytics workspace=ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,616 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-01 14:09:17,616 [INFO] Fetching workspace shares...
+2026-06-01 14:09:17,616 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,626 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,626 [INFO] Executing concurrent query fetches for main user context...
+2026-06-01 14:09:17,627 [INFO] Fetching connectors for groupId: None
+2026-06-01 14:09:17,632 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
+2026-06-01 14:09:17,637 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:17,641 [INFO] Fetching available execution tools from gateway...
+2026-06-01 14:09:17,650 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,652 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
+2026-06-01 14:09:17,682 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,683 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,684 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
+2026-06-01 14:09:17,694 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,695 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
+2026-06-01 14:09:17,705 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,839 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,840 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,840 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
+2026-06-01 14:09:17,848 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:17,849 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-01 14:09:17,851 [INFO] Dynamic requirements detected: provider=ecs, components=['postgres', 'kafka', 'spark', 'airflow', 'dbt']
+2026-06-01 14:09:18,093 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,167 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,168 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:18,179 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,180 [INFO] Mapping database queries to sandbox postgres port: 59803
+2026-06-01 14:09:18,197 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,209 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,221 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,232 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,242 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,243 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:18,257 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,258 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-01 14:09:18,258 [INFO] Fetching workspace shares...
+2026-06-01 14:09:18,258 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:18,270 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,271 [INFO] Executing concurrent query fetches for main user context...
+2026-06-01 14:09:18,271 [INFO] Fetching connectors for groupId: None
+2026-06-01 14:09:18,276 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
+2026-06-01 14:09:18,280 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:18,284 [INFO] Fetching available execution tools from gateway...
+2026-06-01 14:09:18,300 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,301 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
+2026-06-01 14:09:18,306 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,312 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,314 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
+2026-06-01 14:09:18,323 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,324 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
+2026-06-01 14:09:18,333 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,431 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,487 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,488 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
+2026-06-01 14:09:18,497 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:18,497 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-01 14:09:18,498 [INFO] Calling Claude to formulate dynamic deployment pipeline steps...
+2026-06-01 14:09:46,510 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-01 14:09:46,517 [INFO] Dynamic steps formulated successfully: 6
+2026-06-01 14:09:46,966 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:47,006 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:47,852 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:48,330 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:48,789 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:51,235 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:09:51,238 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
+2026-06-01 14:09:51,281 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62144 - "POST /deploy HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63182 - "OPTIONS /chat HTTP/1.1" 200 OK
+2026-06-01 14:24:00,985 [INFO] Adding chat message to workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
+2026-06-01 14:24:01,237 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,238 [INFO] Fetching chat history for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
+2026-06-01 14:24:01,260 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,260 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-01 14:24:01,261 [INFO] Fetching workspace shares...
+2026-06-01 14:24:01,261 [INFO] Fetching workspace shares for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
+2026-06-01 14:24:01,271 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,272 [INFO] Executing concurrent query fetches for main user context...
+2026-06-01 14:24:01,272 [INFO] Fetching connectors for groupId: None
+2026-06-01 14:24:01,276 [INFO] Fetching documents in workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c, zone: 0
+2026-06-01 14:24:01,281 [INFO] Fetching graph nodes for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
+2026-06-01 14:24:01,285 [INFO] Fetching available execution tools from gateway...
+2026-06-01 14:24:01,295 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,296 [INFO] Fetching selected resources for connector: 01e0c54d-1e4f-4efd-a9b6-fdf7cd559194 (postgresql)
+2026-06-01 14:24:01,318 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,353 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,354 [INFO] Fetching selected resources for connector: d4a73a1d-dfc2-41dc-9f73-1716f0a70517 (github)
+2026-06-01 14:24:01,364 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,365 [INFO] Fetching selected resources for connector: 856252af-b3d3-43e2-affc-be5669f3c076 (notion)
+2026-06-01 14:24:01,373 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,428 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,430 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,431 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-01 14:24:01,444 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,445 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-01 14:24:01,445 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-01 14:24:01,450 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-01 14:24:01,516 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,518 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,519 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-01 14:24:01,519 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-01 14:24:01,562 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,562 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,579 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,579 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-01 14:24:01,580 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-01 14:24:34,582 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-01 14:24:34,587 [INFO] Adding chat message to workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
+2026-06-01 14:24:34,619 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63182 - "POST /chat HTTP/1.1" 200 OK

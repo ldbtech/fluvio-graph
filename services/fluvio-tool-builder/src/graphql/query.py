@@ -1,6 +1,6 @@
 import strawberry
 from typing import Optional, List
-from src.graphql.types import GqlTool, GqlToolParameter, GqlToolRun
+from src.graphql.types import GqlTool, GqlToolParameter, GqlToolRun, GqlSandboxStatus, GqlSandboxContainerStatus
 
 # In-memory store for runs (singleton)
 tool_runs_store: List[GqlToolRun] = []
@@ -76,4 +76,57 @@ class Query:
     def tool_execution_history(self, tool_id: Optional[str] = None) -> List[GqlToolRun]:
         if tool_id:
             return [run for run in tool_runs_store if run.tool_id == tool_id]
+            
         return tool_runs_store
+
+    @strawberry.field(description="List all active sandboxes.")
+    async def list_sandboxes(self) -> List[GqlSandboxStatus]:
+        from src.sandbox.orchestrator import orchestrator
+        res = await orchestrator.list_sandboxes()
+        return [
+            GqlSandboxStatus(
+                sandbox_id=s["sandbox_id"],
+                status=s["status"],
+                provider=s.get("provider", "docker"),
+                cost_hourly=s.get("cost_hourly", 0.0),
+                efficiency_score=s.get("efficiency_score", 1.0),
+                agent_twin_monitored=s.get("agent_twin_monitored", False),
+                containers=[
+                    GqlSandboxContainerStatus(
+                        name=c["name"],
+                        component=c["component"],
+                        status=c["status"],
+                        image=c["image"],
+                        ports=c["ports"],
+                        arn=c.get("arn"),
+                        cost_hourly=c.get("cost_hourly", 0.0),
+                        efficiency_score=c.get("efficiency_score", 1.0)
+                    ) for c in s["containers"]
+                ]
+            ) for s in res
+        ]
+
+    @strawberry.field(description="Retrieve the status of a specific sandbox.")
+    async def get_sandbox_status(self, sandbox_id: str) -> GqlSandboxStatus:
+        from src.sandbox.orchestrator import orchestrator
+        s = await orchestrator.get_sandbox_status(sandbox_id)
+        return GqlSandboxStatus(
+            sandbox_id=s["sandbox_id"],
+            status=s["status"],
+            provider=s.get("provider", "docker"),
+            cost_hourly=s.get("cost_hourly", 0.0),
+            efficiency_score=s.get("efficiency_score", 1.0),
+            agent_twin_monitored=s.get("agent_twin_monitored", False),
+            containers=[
+                GqlSandboxContainerStatus(
+                    name=c["name"],
+                    component=c["component"],
+                    status=c["status"],
+                    image=c["image"],
+                    ports=c["ports"],
+                    arn=c.get("arn"),
+                    cost_hourly=c.get("cost_hourly", 0.0),
+                    efficiency_score=c.get("efficiency_score", 1.0)
+                ) for c in s["containers"]
+            ]
+        )

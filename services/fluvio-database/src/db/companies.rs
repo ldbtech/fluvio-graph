@@ -128,3 +128,18 @@ pub async fn accept_company_invite(
     .fetch_one(pool)
     .await?)
 }
+
+pub async fn delete_company(pool: &PgPool, id: Uuid) -> anyhow::Result<bool> {
+    sqlx::query("UPDATE users SET company_email = NULL, role = 'member' WHERE company_id = $1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    sqlx::query("DELETE FROM companies WHERE id = $1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(true)
+}
+
+

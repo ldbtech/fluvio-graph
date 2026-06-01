@@ -1,8 +1,9 @@
+from typing import Optional, List
 import strawberry
 import uuid
 import json
 import datetime
-from src.graphql.types import GqlToolRun
+from src.graphql.types import GqlToolRun, GqlSandboxStatus, GqlSandboxContainerStatus
 from src.graphql.query import tool_runs_store, mock_tools
 
 @strawberry.type
@@ -152,3 +153,63 @@ class Mutation:
 
         tool_runs_store.append(run)
         return run
+
+    @strawberry.mutation(description="Create and start a new containerized sandbox.")
+    async def create_sandbox(
+        self,
+        sandbox_id: str,
+        components: Optional[List[str]] = None,
+        provider: Optional[str] = "docker"
+    ) -> GqlSandboxStatus:
+        from src.sandbox.orchestrator import orchestrator
+        s = await orchestrator.create_sandbox(sandbox_id, components=components, provider=provider)
+        return GqlSandboxStatus(
+            sandbox_id=s["sandbox_id"],
+            status=s["status"],
+            provider=s.get("provider", "docker"),
+            cost_hourly=s.get("cost_hourly", 0.0),
+            efficiency_score=s.get("efficiency_score", 1.0),
+            agent_twin_monitored=s.get("agent_twin_monitored", False),
+            containers=[
+                GqlSandboxContainerStatus(
+                    name=c["name"],
+                    component=c["component"],
+                    status=c["status"],
+                    image=c["image"],
+                    ports=c["ports"],
+                    arn=c.get("arn"),
+                    cost_hourly=c.get("cost_hourly", 0.0),
+                    efficiency_score=c.get("efficiency_score", 1.0)
+                ) for c in s["containers"]
+            ]
+        )
+
+    @strawberry.mutation(description="Stop all active containers for a sandbox.")
+    async def stop_sandbox(self, sandbox_id: str) -> GqlSandboxStatus:
+        from src.sandbox.orchestrator import orchestrator
+        s = await orchestrator.stop_sandbox(sandbox_id)
+        return GqlSandboxStatus(
+            sandbox_id=s["sandbox_id"],
+            status=s["status"],
+            provider=s.get("provider", "docker"),
+            cost_hourly=s.get("cost_hourly", 0.0),
+            efficiency_score=s.get("efficiency_score", 1.0),
+            agent_twin_monitored=s.get("agent_twin_monitored", False),
+            containers=[
+                GqlSandboxContainerStatus(
+                    name=c["name"],
+                    component=c["component"],
+                    status=c["status"],
+                    image=c["image"],
+                    ports=c["ports"],
+                    arn=c.get("arn"),
+                    cost_hourly=c.get("cost_hourly", 0.0),
+                    efficiency_score=c.get("efficiency_score", 1.0)
+                ) for c in s["containers"]
+            ]
+        )
+
+    @strawberry.mutation(description="Clean up and remove all containers and networks for a sandbox.")
+    async def clean_sandbox(self, sandbox_id: str) -> bool:
+        from src.sandbox.orchestrator import orchestrator
+        return await orchestrator.clean_sandbox(sandbox_id)

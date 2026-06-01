@@ -30,3 +30,24 @@ class GqlToolRun:
     started_at: str = strawberry.field(name="startedAt")
     finished_at: Optional[str] = strawberry.field(name="finishedAt", default=None)
     duration_ms: Optional[int] = strawberry.field(name="durationMs", default=None)
+
+@strawberry.type
+class GqlSandboxContainerStatus:
+    name: str
+    component: str
+    status: str
+    image: str
+    ports: List[str]
+    arn: Optional[str] = strawberry.field(default=None)
+    cost_hourly: Optional[float] = strawberry.field(name="costHourly", default=0.0)
+    efficiency_score: Optional[float] = strawberry.field(name="efficiencyScore", default=1.0)
+
+@strawberry.type
+class GqlSandboxStatus:
+    sandbox_id: str = strawberry.field(name="sandboxId")
+    status: str
+    containers: List[GqlSandboxContainerStatus]
+    provider: Optional[str] = strawberry.field(default="docker")
+    cost_hourly: Optional[float] = strawberry.field(name="costHourly", default=0.0)
+    efficiency_score: Optional[float] = strawberry.field(name="efficiencyScore", default=1.0)
+    agent_twin_monitored: Optional[bool] = strawberry.field(name="agentTwinMonitored", default=False)

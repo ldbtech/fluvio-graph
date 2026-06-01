@@ -1,15 +1,42 @@
-INFO:     Started server process [38707]
+INFO:     Started server process [8525]
 INFO:     Waiting for application startup.
-2026-05-30 03:32:00,918  INFO      src.main  fluvio-connectors starting...
-2026-05-30 03:32:00,918  INFO      apscheduler.scheduler  Scheduler started
-2026-05-30 03:32:00,918  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
+2026-06-01 13:58:18,768  INFO      src.main  fluvio-connectors starting...
+2026-06-01 13:58:18,768  INFO      apscheduler.scheduler  Scheduler started
+2026-06-01 13:58:18,768  INFO      src.jobs.scheduler  Scheduler started — sync interval: 60m
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3006 (Press CTRL+C to quit)
-INFO:     127.0.0.1:52449 - "GET /health HTTP/1.1" 200 OK
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2026-05-30 03:34:41,133  INFO      src.jobs.scheduler  Scheduler stopped
-2026-05-30 03:34:41,133  INFO      src.main  fluvio-connectors stopped
-2026-05-30 03:34:41,133  INFO      apscheduler.scheduler  Scheduler has been shut down
-INFO:     Application shutdown complete.
-INFO:     Finished server process [38707]
+INFO:     127.0.0.1:61229 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61703 - "OPTIONS /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61706 - "OPTIONS /graphql HTTP/1.1" 200 OK
+2026-06-01 14:04:34,466  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:04:34,468  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61706 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61703 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:04:34,510  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:04:34,512  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61703 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:04:34,514  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61706 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:04:34,515  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:04:34,516  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61716 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61718 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61715 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:04:34,518  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61717 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:05:23,013  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61867 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:05:23,016  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61870 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:05:23,038  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:05:23,040  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61867 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61870 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:05:23,046  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:05:23,046  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61887 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61885 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-01 14:05:23,052  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+2026-06-01 14:05:23,054  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:61886 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61884 - "POST /graphql HTTP/1.1" 200 OK

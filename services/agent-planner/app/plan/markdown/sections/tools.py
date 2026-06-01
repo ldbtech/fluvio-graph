@@ -1,4 +1,5 @@
 from typing import Any
+import os
 
 
 def build_tools_section(tools: list[dict[str, Any]]) -> list[str]:
@@ -35,4 +36,23 @@ def build_tools_section(tools: list[dict[str, Any]]) -> list[str]:
         else:
             parts.append("- **Parameters**: None")
 
+        # Dynamically search and load detailed markdown documentation for the tool
+        safe_tool_id = tool_id.replace("-", "_")
+        md_path = f"/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/{safe_tool_id}/{safe_tool_id}.md"
+        if not os.path.exists(md_path):
+            md_path = f"/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/{safe_tool_id}/{tool_id}.md"
+
+        if os.path.exists(md_path):
+            try:
+                with open(md_path, "r") as f:
+                    doc_content = f.read().strip()
+                if doc_content:
+                    parts.append("- **Detailed Documentation**:")
+                    # Indent the markdown to render nicely nested in the list structure
+                    indented_doc = "\n".join(f"  {line}" for line in doc_content.split("\n"))
+                    parts.append(indented_doc)
+            except Exception:
+                pass
+
     return parts
+
