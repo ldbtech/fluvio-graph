@@ -1,0 +1,13 @@
+{
+  "table": "signup_trends_analytics",
+  "row_count": 27,
+  "columns": [
+    "month",
+    "new_users",
+    "cumulative_users"
+  ],
+  "nodes_created": 27,
+  "synced_at": "2026-06-03T16:27:26.141874+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/5c05d000-ab71-4344-b94a-048f47b5fa27/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/signup_trends_analytics/snapshots/2026-06-03T16-27-25.csv"
+}

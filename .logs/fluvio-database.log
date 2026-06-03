@@ -1,7 +1,8 @@
-[2m2026-06-01T18:05:56.109813Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-06-01T18:05:56.186863Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-06-01T18:05:56.200978Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-06-01T18:05:56.211672Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-06-01T18:05:56.216944Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-06-01T18:05:56.257750Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-06-01T18:05:56.257788Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-06-03T16:19:52.270169Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-06-03T16:19:52.333495Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-06-03T16:19:52.362678Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-06-03T16:19:52.392509Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-06-03T16:19:52.409565Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-06-03T16:19:52.419575Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-06-03T16:19:52.419650Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-06-03T16:22:25.704811Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mkind[0m[2m=[0mpostgresql

@@ -1,7 +1,13 @@
-[2m2026-06-01T17:58:24.322105Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-06-01T17:58:24.438434Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-06-01T17:58:24.454624Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-06-01T17:58:24.464317Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-06-01T17:58:24.468442Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-06-01T17:58:24.513321Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-06-01T17:58:24.513358Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-06-02T18:50:23.808173Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
+[2m2026-06-02T18:50:23.859163Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-06-02T18:50:23.878704Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-06-02T18:50:23.905044Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
+[2m2026-06-02T18:50:23.917847Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
+[2m2026-06-02T18:50:23.929695Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
+[2m2026-06-02T18:50:23.929749Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
+[2m2026-06-03T02:51:22.573829Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mkind[0m[2m=[0mpostgresql
+[2m2026-06-03T02:57:07.399308Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mkind[0m[2m=[0mpostgresql
+[2m2026-06-03T03:04:18.634450Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mkind[0m[2m=[0mpostgresql
+[2m2026-06-03T03:45:55.301940Z[0m [32m INFO[0m [2mfluvio_database::graphql::connectors_mutation[0m[2m:[0m connector created [3muser_id[0m[2m=[0m2a638162-449f-436c-9a45-a0669f57fe4a [3mkind[0m[2m=[0mpostgresql
+[2m2026-06-03T16:16:45.849891Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT id, firebase_uid, email, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,\n               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at\n        FROM users WHERE firebase_uid = $1\n    \n" [3mrows_affected[0m[2m=[0m1 [3mrows_returned[0m[2m=[0m1 [3melapsed[0m[2m=[0m1.0521385s [3melapsed_secs[0m[2m=[0m1.0521385 [3mslow_threshold[0m[2m=[0m1s
+[2m2026-06-03T16:16:45.849876Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT id, firebase_uid, email, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT id, firebase_uid, email, display_name, avatar_url, company_email, company_id,\n               role, must_change_password, policies, assigned_agent_roles, twin_manifest, created_at, updated_at\n        FROM users WHERE firebase_uid = $1\n    \n" [3mrows_affected[0m[2m=[0m1 [3mrows_returned[0m[2m=[0m1 [3melapsed[0m[2m=[0m1.051509417s [3melapsed_secs[0m[2m=[0m1.0515094170000001 [3mslow_threshold[0m[2m=[0m1s

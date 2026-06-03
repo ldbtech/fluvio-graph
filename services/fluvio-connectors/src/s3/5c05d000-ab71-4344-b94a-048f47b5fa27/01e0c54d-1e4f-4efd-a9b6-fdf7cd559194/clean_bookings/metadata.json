@@ -1,0 +1,19 @@
+{
+  "table": "clean_bookings",
+  "row_count": 5000,
+  "columns": [
+    "id",
+    "user_id",
+    "booking_type",
+    "flight_id",
+    "hotel_id",
+    "booking_date",
+    "travel_date",
+    "amount_paid",
+    "destination_country"
+  ],
+  "nodes_created": 5000,
+  "synced_at": "2026-06-03T16:30:22.507914+00:00",
+  "source_db": "postgresql",
+  "snapshot": "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-connectors/src/s3/5c05d000-ab71-4344-b94a-048f47b5fa27/01e0c54d-1e4f-4efd-a9b6-fdf7cd559194/clean_bookings/snapshots/2026-06-03T16-27-26.csv"
+}

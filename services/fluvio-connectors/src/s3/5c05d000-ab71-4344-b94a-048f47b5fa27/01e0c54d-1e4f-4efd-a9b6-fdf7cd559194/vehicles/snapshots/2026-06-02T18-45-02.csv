@@ -1,0 +1,12 @@
+id,model,trim,battery_capacity_kwh,drive_type,unit_price,estimated_range_mi
+1,Model S,Long Range,100,AWD,74990.00,405
+2,Model S,Plaid,100,Tri-Motor,89990.00,359
+3,Model 3,Rear-Wheel Drive,60,RWD,38990.00,272
+4,Model 3,Long Range,82,AWD,47740.00,341
+5,Model 3,Performance,82,AWD,54990.00,315
+6,Model X,Long Range,100,AWD,79990.00,348
+7,Model X,Plaid,100,Tri-Motor,94990.00,326
+8,Model Y,Long Range,82,AWD,47990.00,310
+9,Model Y,Performance,82,AWD,52490.00,285
+10,Cybertruck,Dual Motor,123,AWD,79990.00,340
+11,Cybertruck,Cyberbeast,123,Tri-Motor,99990.00,320

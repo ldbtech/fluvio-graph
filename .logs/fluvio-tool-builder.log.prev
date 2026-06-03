@@ -1,47 +1,52 @@
-INFO:     Started server process [8553]
+INFO:     Started server process [28297]
 INFO:     Waiting for application startup.
-2026-06-01 13:58:20,463  INFO      src.main  fluvio-tool-builder starting...
+2026-06-02 14:50:10,313  INFO      src.main  fluvio-tool-builder starting...
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3008 (Press CTRL+C to quit)
-INFO:     127.0.0.1:61235 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61256 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61256 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61639 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61691 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61692 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61692 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61691 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61785 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61785 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61785 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61785 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61851 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61852 - "POST /graphql HTTP/1.1" 200 OK
-2026-06-01 14:05:20,064  INFO      database-runtime  Executing read-only SQL: WITH customer_segments AS (SELECT cu.user_id, cu.membership_tier, COUNT(cb.booki...
-2026-06-01 14:05:20,606  ERROR     database-runtime  Error executing query: psql error: ERROR:  relation "clean_bookings" does not exist
-LINE 3: ...onthly_booking_rate FROM clean_users cu LEFT JOIN clean_book...
-                                                             ^
-2026-06-01 14:05:20,607  ERROR     tools-registry  Error executing tool action database/execute_query: Database query execution failed: psql error: ERROR:  relation "clean_bookings" does not exist
-LINE 3: ...onthly_booking_rate FROM clean_users cu LEFT JOIN clean_book...
-                                                             ^
-Traceback (most recent call last):
-  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/database/runtime.py", line 156, in execute_query
-    raise Exception(f"psql error: {stderr.decode().strip()}")
-Exception: psql error: ERROR:  relation "clean_bookings" does not exist
-LINE 3: ...onthly_booking_rate FROM clean_users cu LEFT JOIN clean_book...
-                                                             ^
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/registry.py", line 123, in execute_tool_action
-    result = await method(**kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-tool-builder/src/tools/database/runtime.py", line 159, in execute_query
-    raise Exception(f"Database query execution failed: {e}")
-Exception: Database query execution failed: psql error: ERROR:  relation "clean_bookings" does not exist
-LINE 3: ...onthly_booking_rate FROM clean_users cu LEFT JOIN clean_book...
-                                                             ^
-INFO:     127.0.0.1:61852 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61852 - "POST /graphql HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61851 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63752 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63794 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63794 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50462 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50576 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50624 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50688 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50794 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50847 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50889 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50889 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50945 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50945 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50945 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51033 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51287 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57567 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57568 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58117 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58118 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58577 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58579 - "POST /graphql HTTP/1.1" 200 OK
+2026-06-02 23:06:56,457  ERROR     sandbox-orchestrator  Failed to initialize Docker client: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))
+2026-06-02 23:06:56,457  ERROR     sandbox-orchestrator  Failed to initialize Docker client: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))
+2026-06-02 23:06:56,459  ERROR     sandbox-orchestrator  Failed to initialize Docker client: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))
+INFO:     127.0.0.1:60291 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60292 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61042 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61042 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63313 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63314 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61872 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61873 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63075 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63086 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63186 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63188 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63232 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63290 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65020 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65020 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-06-03 12:18:51,035  INFO      src.main  fluvio-tool-builder stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28297]

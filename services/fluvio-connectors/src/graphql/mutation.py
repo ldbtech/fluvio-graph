@@ -326,7 +326,8 @@ class Mutation:
                         if res.error is None:
                             meta_json = json.dumps({
                                 "columns": res.columns_list,
-                                "all_columns": res.columns_list
+                                "all_columns": res.columns_list,
+                                "database": input.database
                             })
                             await db_client.upsert_resource(
                                 user_id=user_id,
@@ -359,6 +360,7 @@ class Mutation:
             )
 
         except Exception as e:
+            logger.exception("sync_db_tables failed")
             return DBSyncResult(
                 connector_id    = input.connector_id,
                 tables          = [],
@@ -395,32 +397,105 @@ async def _run_sync(connector_id: str, user_id: str, job_id: str):
             await db_client.mark_synced(user_id, connector_id)
             return
 
-        # Build connector instance
-        connector_cls = _get_connector_class(kind)
-        conn = connector_cls(
-            access_token= access_token,
-            owner_id=     user_id,
-        )
-
-        # Sync each selected resource
-        for resource_data in selected:
-            from src.connectors.base import Resource
-            resource = Resource(
-                external_id= resource_data["externalId"],
-                name=        resource_data["name"],
+        is_db = kind in ["postgresql", "mysql", "mongodb", "redis", "snowflake", "bigquery"]
+        if is_db:
+            import json
+            creds = json.loads(access_token)
+            config = DBConfig(
+                dialect=  kind,
+                host=     creds.get("host", ""),
+                port=     creds.get("port", 5432),
+                database= creds.get("database", ""),
+                username= creds.get("username", ""),
+                password= creds.get("password", ""),
             )
-            result = await conn.sync_resource(
-                resource=     resource,
-                connector_id= connector_id,
-            )
-            if result.success and result.nodes_added > 0:
-                await db_client.update_resource_sync_stats(
-                    user_id=      user_id,
-                    connector_id= connector_id,
-                    external_id=  result.external_id,
-                    nodes_added=  result.nodes_added,
+            org_id = "org_fluviome"
+            try:
+                user_res = await db_client.post(
+                    "query($id: String!) { getUser(id: $id) { companyId } }",
+                    {"id": user_id},
+                    user_id
                 )
-                total_nodes += result.nodes_added
+                if user_res and user_res.get("getUser") and user_res["getUser"].get("companyId"):
+                    org_id = user_res["getUser"]["companyId"]
+            except Exception as e:
+                logger.warning(f"Could not fetch company ID for user {user_id}: {e}")
+
+            table_names = [r["externalId"] for r in selected]
+            
+            results = await sync_tables(
+                org_id = org_id,
+                connector_id = connector_id,
+                config = config,
+                table_names = table_names,
+                storage = _storage,
+                owner_id = user_id,
+            )
+            
+            synced_table_names = []
+            for table_name, tinfo in results.items():
+                if "error" not in tinfo:
+                    synced_table_names.append(table_name)
+                    rows = tinfo.get("rows", 0)
+                    cols = tinfo.get("columns", 0)
+                    cols_list = tinfo.get("columns_list", [])
+                    total_nodes += rows
+                    
+                    meta_json = json.dumps({
+                        "columns": cols_list,
+                        "all_columns": cols_list,
+                        "database": config.database
+                    })
+                    
+                    await db_client.upsert_resource(
+                        user_id=user_id,
+                        connector_id=connector_id,
+                        resource_kind="database_table",
+                        external_id=table_name,
+                        name=table_name,
+                        description=f"Table {table_name} with {cols} columns",
+                        meta=meta_json,
+                    )
+                    await db_client.update_resource_sync_stats(
+                        user_id=user_id,
+                        connector_id=connector_id,
+                        external_id=table_name,
+                        nodes_added=rows,
+                    )
+            
+            if synced_table_names:
+                await db_client.select_resources(
+                    user_id=user_id,
+                    connector_id=connector_id,
+                    external_ids=synced_table_names,
+                )
+        else:
+            # Build connector instance
+            connector_cls = _get_connector_class(kind)
+            conn = connector_cls(
+                access_token= access_token,
+                owner_id=     user_id,
+            )
+
+            # Sync each selected resource
+            for resource_data in selected:
+                from src.connectors.base import Resource
+                resource = Resource(
+                    external_id= resource_data["externalId"],
+                    name=        resource_data["name"],
+                )
+                result = await conn.sync_resource(
+                    resource=     resource,
+                    connector_id= connector_id,
+                )
+                if result.success and result.nodes_added > 0:
+                    await db_client.update_resource_sync_stats(
+                        user_id=      user_id,
+                        connector_id= connector_id,
+                        external_id=  result.external_id,
+                        nodes_added=  result.nodes_added,
+                    )
+                    total_nodes += result.nodes_added
 
         # Mark complete
         try:

@@ -17,6 +17,14 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("ANTHROPIC_API_KEY"),
     )
+    tool_builder_tools_dir: str = Field(
+        default="",
+        validation_alias=AliasChoices("TOOL_BUILDER_TOOLS_DIR"),
+        description=(
+            "Absolute path to fluvio-tool-builder/src/tools/. "
+            "If empty, auto-resolved relative to this file."
+        ),
+    )
 
 
 settings = Settings()

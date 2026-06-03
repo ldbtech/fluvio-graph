@@ -1,0 +1,7 @@
+{
+  "user_message": "Build a pipeline to clean orders and generate monthly revenue trends",
+  "workspace_context": "### Available Execution Tools\n#### Tool: Data Cleaning (ID: `data-cleaning`)\n- **Actions**: clean_table\n#### Tool: Spark (ID: `spark`)\n- **Actions**: execute_sql",
+  "environment_context": "{\"database\": {\"credential_ref\": \"cred:ws_test:postgres\"}}",
+  "expected_tool_ids": ["data-cleaning", "spark"],
+  "must_not_contain": ["VowayageAnalyticsJob", "clean_users", "clean_bookings", "httpsfluviomecom"]
+}

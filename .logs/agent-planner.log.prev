@@ -1,224 +1,1116 @@
-INFO:     Started server process [8534]
+INFO:     Started server process [28280]
 INFO:     Waiting for application startup.
-2026-06-01 13:58:19,224 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
+2026-06-02 14:50:09,208 [INFO] agent-planner starting on :3007 (gateway=http://127.0.0.1:4001)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3007 (Press CTRL+C to quit)
-INFO:     127.0.0.1:61231 - "GET /health HTTP/1.1" 200 OK
-2026-06-01 14:04:01,507 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:01,560 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,561 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:01,573 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,574 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:04:01,574 [INFO] Fetching workspace shares...
-2026-06-01 14:04:01,574 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:01,586 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,587 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:04:01,587 [INFO] Fetching connectors for groupId: None
-2026-06-01 14:04:01,592 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
-2026-06-01 14:04:01,597 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:01,602 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:04:01,631 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,682 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,683 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
-2026-06-01 14:04:01,811 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,812 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
-2026-06-01 14:04:01,829 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:01,830 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
-2026-06-01 14:04:01,839 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:02,449 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:02,451 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:02,452 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
-2026-06-01 14:04:02,470 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:02,471 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:61728 - "OPTIONS /plan/context HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61729 - "OPTIONS /plan/context HTTP/1.1" 200 OK
-2026-06-01 14:04:34,543 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:04:34,543 [INFO] Fetching workspace shares...
-2026-06-01 14:04:34,543 [INFO] Fetching workspace shares for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:04:34,550 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:04:34,550 [INFO] Fetching workspace shares...
-2026-06-01 14:04:34,550 [INFO] Fetching workspace shares for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:04:34,564 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,564 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,565 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:04:34,565 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:04:34,565 [INFO] Fetching connectors for groupId: grp_eng
-2026-06-01 14:04:34,570 [INFO] Fetching documents in workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c, zone: 0
-2026-06-01 14:04:34,574 [INFO] Fetching graph nodes for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:04:34,579 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:04:34,585 [INFO] Fetching connectors for groupId: grp_eng
-2026-06-01 14:04:34,591 [INFO] Fetching documents in workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c, zone: 0
-2026-06-01 14:04:34,597 [INFO] Fetching graph nodes for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:04:34,603 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:04:34,622 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,624 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,627 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,627 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,627 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-06-01 14:04:34,628 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-06-01 14:04:34,731 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,731 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,733 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,733 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,734 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
-2026-06-01 14:04:34,738 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
-2026-06-01 14:04:34,747 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,747 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,748 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
-2026-06-01 14:04:34,748 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
-2026-06-01 14:04:34,748 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:04:34,753 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:04:34,757 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:04:34,761 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:04:34,770 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,770 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,771 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,771 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,772 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
-2026-06-01 14:04:34,772 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
-2026-06-01 14:04:34,788 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
-2026-06-01 14:04:34,788 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
-2026-06-01 14:04:34,816 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,818 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,818 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,819 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,819 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,820 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:61729 - "POST /plan/context HTTP/1.1" 200 OK
-2026-06-01 14:04:34,827 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,829 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,831 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:34,832 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:61728 - "POST /plan/context HTTP/1.1" 200 OK
-2026-06-01 14:04:45,498 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,505 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,794 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:61630 - "POST /chat HTTP/1.1" 200 OK
-2026-06-01 14:04:45,814 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,827 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,828 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,845 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:61630 - "POST /chat HTTP/1.1" 200 OK
-2026-06-01 14:04:45,848 [INFO] Triggering interactive sandbox deploy target=analytics workspace=ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,848 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:04:45,848 [INFO] Fetching workspace shares...
-2026-06-01 14:04:45,848 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,865 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,866 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:04:45,866 [INFO] Fetching connectors for groupId: None
-2026-06-01 14:04:45,871 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
-2026-06-01 14:04:45,875 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:45,879 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:04:45,904 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,921 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,922 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
-2026-06-01 14:04:45,979 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,980 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
-2026-06-01 14:04:45,991 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:45,991 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
-2026-06-01 14:04:46,000 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,169 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,170 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,171 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
-2026-06-01 14:04:46,180 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,181 [INFO] Fetches completed. Compiling markdown plan...
-2026-06-01 14:04:46,182 [INFO] Dynamic requirements detected: provider=ecs, components=['postgres', 'kafka', 'spark', 'airflow', 'dbt']
-2026-06-01 14:04:46,326 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,400 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,400 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:46,413 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,414 [INFO] Mapping database queries to sandbox postgres port: 59803
-2026-06-01 14:04:46,426 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,437 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,450 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,462 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,475 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,476 [INFO] Fetching chat history for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:46,491 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,492 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:04:46,492 [INFO] Fetching workspace shares...
-2026-06-01 14:04:46,492 [INFO] Fetching workspace shares for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:46,504 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,505 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:04:46,505 [INFO] Fetching connectors for groupId: None
-2026-06-01 14:04:46,510 [INFO] Fetching documents in workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296, zone: 0
-2026-06-01 14:04:46,515 [INFO] Fetching graph nodes for workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:04:46,519 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:04:46,539 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,540 [INFO] Fetching selected resources for connector: 04df8f09-1ef8-49fc-a537-cf0ca8c44acc (postgresql)
-2026-06-01 14:04:46,545 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,551 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,552 [INFO] Fetching selected resources for connector: 98dd8dcf-cbb0-469f-b37b-e9c7bad0e1cf (notion)
-2026-06-01 14:04:46,560 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,561 [INFO] Fetching selected resources for connector: 9cfd9575-5759-4a21-ad51-294040741f7e (github)
-2026-06-01 14:04:46,570 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,671 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,706 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,706 [INFO] Fetching user profile for user_id: 3712133f-57b4-47e6-aefd-dcd9be00c13e
-2026-06-01 14:04:46,715 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:04:46,716 [INFO] Fetches completed. Compiling markdown plan...
-2026-06-01 14:04:46,716 [INFO] Calling Claude to formulate dynamic deployment pipeline steps...
-2026-06-01 14:05:20,009 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-2026-06-01 14:05:20,015 [INFO] Dynamic steps formulated successfully: 5
-2026-06-01 14:05:20,610 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:20,611 [INFO] Adding chat message to workspace: ec9adb6d-f26d-46dd-9d96-76e20b3d1296
-2026-06-01 14:05:20,629 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:61630 - "POST /deploy HTTP/1.1" 200 OK
-2026-06-01 14:05:23,062 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:05:23,063 [INFO] Fetching workspace shares...
-2026-06-01 14:05:23,063 [INFO] Fetching workspace shares for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:05:23,071 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
-2026-06-01 14:05:23,071 [INFO] Fetching workspace shares...
-2026-06-01 14:05:23,071 [INFO] Fetching workspace shares for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:05:23,079 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,080 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:05:23,080 [INFO] Fetching connectors for groupId: grp_eng
-2026-06-01 14:05:23,087 [INFO] Fetching documents in workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c, zone: 0
-2026-06-01 14:05:23,092 [INFO] Fetching graph nodes for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:05:23,096 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:05:23,101 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,102 [INFO] Executing concurrent query fetches for main user context...
-2026-06-01 14:05:23,102 [INFO] Fetching connectors for groupId: grp_eng
-2026-06-01 14:05:23,107 [INFO] Fetching documents in workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c, zone: 0
-2026-06-01 14:05:23,111 [INFO] Fetching graph nodes for workspace: 3559d8f7-b6ae-4627-b961-68a729ed605c
-2026-06-01 14:05:23,115 [INFO] Fetching available execution tools from gateway...
-2026-06-01 14:05:23,134 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,135 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,136 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,136 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,137 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,138 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,140 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,141 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,141 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-06-01 14:05:23,141 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
-2026-06-01 14:05:23,141 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
-2026-06-01 14:05:23,145 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
-2026-06-01 14:05:23,153 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,154 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,154 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
-2026-06-01 14:05:23,154 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:05:23,158 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:05:23,162 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
-2026-06-01 14:05:23,163 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:05:23,166 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
-2026-06-01 14:05:23,175 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,175 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,176 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,176 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,177 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
-2026-06-01 14:05:23,177 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
-2026-06-01 14:05:23,177 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
-2026-06-01 14:05:23,177 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
-2026-06-01 14:05:23,226 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,226 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,227 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,227 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,227 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,228 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,228 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:61897 - "POST /plan/context HTTP/1.1" 200 OK
-2026-06-01 14:05:23,231 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,231 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
-2026-06-01 14:05:23,232 [INFO] Fetches completed. Compiling markdown plan...
-INFO:     127.0.0.1:61898 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63750 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50455 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:40:48,125 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:40:48,125 [INFO] Fetching workspace shares...
+2026-06-02 15:40:48,125 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:40:48,194 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,195 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:40:48,195 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:40:48,200 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:40:48,204 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:40:48,208 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:40:48,232 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,232 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:40:48,239 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,380 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,381 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,381 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:40:48,390 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,390 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:40:48,390 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:40:48,395 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:40:48,404 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,405 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,406 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:40:48,406 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:40:48,428 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,429 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,429 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,430 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:40:48,430 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50455 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:42:00,860 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:42:00,860 [INFO] Fetching workspace shares...
+2026-06-02 15:42:00,860 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:00,893 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:00,895 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:42:00,895 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:42:00,900 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:42:00,904 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:00,908 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:42:00,933 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:00,934 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:00,937 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:42:01,129 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,131 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,132 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:42:01,141 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,141 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:42:01,141 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:01,146 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:01,155 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,156 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,156 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:42:01,156 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:42:01,179 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,179 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,180 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,180 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:01,181 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50570 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:42:18,302 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:42:18,304 [INFO] Fetching workspace shares...
+2026-06-02 15:42:18,304 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:18,332 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,333 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:42:18,333 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:42:18,338 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:42:18,342 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:18,346 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:42:18,364 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,365 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:42:18,368 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,498 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,501 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,501 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:42:18,512 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,512 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:42:18,512 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:18,516 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:18,526 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,527 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,527 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:42:18,527 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:42:18,561 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,562 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,562 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,563 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:18,563 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50618 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:42:50,700 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:42:50,701 [INFO] Fetching workspace shares...
+2026-06-02 15:42:50,701 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:50,760 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,761 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:42:50,761 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:42:50,766 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:42:50,770 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:42:50,774 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:42:50,790 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,791 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:42:50,794 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,933 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,935 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,936 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:42:50,949 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,949 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:42:50,949 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:50,954 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:42:50,966 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,966 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:50,967 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:42:50,967 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:42:51,008 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:51,010 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:51,010 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:51,024 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:42:51,024 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50682 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:08,463 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:08,464 [INFO] Fetching workspace shares...
+2026-06-02 15:43:08,465 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:08,510 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:08,510 [INFO] Fetching workspace shares...
+2026-06-02 15:43:08,510 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:08,525 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,526 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:08,526 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:08,531 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:08,539 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:08,543 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:08,549 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,549 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:08,550 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:08,555 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:08,560 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:08,565 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:08,615 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,616 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,619 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:08,619 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:08,630 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,634 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,761 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,762 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,763 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,764 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,764 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:08,769 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:08,778 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,779 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,779 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:08,779 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:08,784 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:08,788 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:08,789 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:08,793 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:08,801 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,803 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,803 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,804 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,804 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:08,804 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:08,822 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:08,822 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:08,845 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,845 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,846 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,846 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,847 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,847 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,848 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,849 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50782 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:08,864 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:08,864 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50783 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:17,973 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:17,975 [INFO] Fetching workspace shares...
+2026-06-02 15:43:17,975 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:17,993 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:17,994 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:17,994 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:17,998 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:18,002 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:18,009 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:18,022 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,023 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:18,033 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,034 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,063 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,064 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:18,072 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,073 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:18,073 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:18,078 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:18,090 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,091 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,092 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:18,092 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:18,113 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,113 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,113 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,114 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:18,114 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50841 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:31,187 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:31,188 [INFO] Fetching workspace shares...
+2026-06-02 15:43:31,188 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:31,204 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,205 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:31,205 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:31,209 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:31,213 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:31,218 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:31,249 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,250 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:31,259 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,266 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,270 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,271 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:31,279 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,279 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:31,279 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:31,283 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:31,292 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,292 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,293 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:31,293 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:31,313 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,314 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,314 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,315 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:31,316 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50883 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:35,928 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:35,928 [INFO] Fetching workspace shares...
+2026-06-02 15:43:35,928 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:35,954 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,955 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:35,955 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:35,961 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:35,965 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:35,973 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:35,983 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,983 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:35,986 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,987 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,988 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,989 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:35,997 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:35,998 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:35,998 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:36,003 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:36,012 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,012 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,013 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:36,013 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:36,032 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,033 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,033 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,033 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:36,035 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50883 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:41,364 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:41,365 [INFO] Fetching workspace shares...
+2026-06-02 15:43:41,365 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:41,387 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,388 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:41,388 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:41,392 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:41,399 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:41,406 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:41,420 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,420 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:41,426 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,444 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,445 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,446 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:41,454 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,455 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:41,455 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:41,459 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:41,466 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,467 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,467 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:41,468 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:41,502 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,502 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,503 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,504 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:41,504 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50939 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:46,002 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:46,002 [INFO] Fetching workspace shares...
+2026-06-02 15:43:46,002 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:46,015 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,015 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:46,016 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:46,021 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:46,027 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:46,031 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:46,041 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,041 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:46,043 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,046 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,099 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,099 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:46,109 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,110 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:46,110 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:46,115 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:46,124 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,124 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,125 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:46,125 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:46,149 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,150 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,150 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,151 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:46,151 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50939 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:43:50,228 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:43:50,229 [INFO] Fetching workspace shares...
+2026-06-02 15:43:50,229 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:50,251 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,252 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:43:50,252 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:43:50,259 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:43:50,265 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:43:50,272 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:43:50,284 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,286 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:43:50,290 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,291 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,291 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,292 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:43:50,301 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,302 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:43:50,303 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:50,309 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:43:50,317 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,317 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,318 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:43:50,318 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:43:50,342 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,345 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,346 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,349 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:43:50,349 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:50939 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:44:07,698 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:44:07,699 [INFO] Fetching workspace shares...
+2026-06-02 15:44:07,699 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:44:07,724 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,724 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:44:07,724 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:44:07,729 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-02 15:44:07,733 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-02 15:44:07,738 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:44:07,792 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,793 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,801 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,803 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,803 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:44:07,803 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:44:07,811 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,812 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:44:07,812 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:44:07,816 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:44:07,823 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,824 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,825 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:44:07,825 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:44:07,844 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,845 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,845 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,847 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:44:07,847 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:51027 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 15:47:44,055 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 15:47:44,057 [INFO] Fetching workspace shares...
+2026-06-02 15:47:44,058 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 15:47:44,084 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,085 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 15:47:44,085 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 15:47:44,090 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 15:47:44,094 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 15:47:44,097 [INFO] Fetching available execution tools from gateway...
+2026-06-02 15:47:44,120 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,134 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,135 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 15:47:44,223 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,225 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,226 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 15:47:44,234 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,234 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 15:47:44,235 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:47:44,238 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 15:47:44,247 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,247 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,248 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 15:47:44,248 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 15:47:44,270 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,271 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,271 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,272 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 15:47:44,272 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:51281 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51281 - "OPTIONS /chat HTTP/1.1" 200 OK
+2026-06-02 15:47:47,187 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 400 Bad Request"
+2026-06-02 15:47:47,189 [ERROR] GraphQL Gateway HTTP Error 400: {"errors":[{"message":"Variable \"$workspaceId\" is never used.","locations":[{"line":2,"column":29}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}},{"message":"Cannot query field \"getWorkspace\" on type \"Query\".","locations":[{"line":3,"column":3}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}
+INFO:     127.0.0.1:51281 - "POST /chat HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57553 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57554 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:49:53,057 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:49:53,057 [INFO] Fetching workspace shares...
+2026-06-02 22:49:53,058 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:49:53,100 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:49:53,100 [INFO] Fetching workspace shares...
+2026-06-02 22:49:53,100 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:49:53,124 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,126 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,127 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:49:53,127 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:49:53,127 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:49:53,133 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:49:53,139 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:49:53,147 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:49:53,154 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:49:53,159 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:49:53,165 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:49:53,174 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:49:53,329 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,329 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,330 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:49:53,330 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:49:53,380 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,382 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,470 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,471 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,472 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,473 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,473 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:49:53,477 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:49:53,486 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,487 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,487 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:49:53,487 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:49:53,487 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:49:53,491 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:49:53,495 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:49:53,499 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:49:53,509 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,510 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,510 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,510 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,511 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:49:53,511 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:49:53,511 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:49:53,511 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:49:53,547 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,547 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,548 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,548 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,549 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,549 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,549 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,550 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:49:53,550 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:57553 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:49:53,554 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:57554 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:53:23,488 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:53:23,489 [INFO] Fetching workspace shares...
+2026-06-02 22:53:23,489 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:53:23,503 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:53:23,503 [INFO] Fetching workspace shares...
+2026-06-02 22:53:23,503 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:53:23,514 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:23,516 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:53:23,517 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:53:23,521 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:53:23,532 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:53:23,541 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:53:23,552 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:23,557 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:53:23,557 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:53:23,630 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:53:23,657 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:53:23,678 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:53:23,707 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:23,707 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:23,708 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:53:23,708 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:53:23,712 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:23,715 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,708 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:53:53,712 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:53:53,713 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:53:53,713 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:53:53,713 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:53:53,714 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:53:53,723 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:53:53,723 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:53:53,723 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:53:53,723 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:53:53,723 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:53:53,723 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:53:53,724 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:53:53,741 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:53:53,756 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,757 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,757 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:53:53,757 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:53:53,763 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:53:53,768 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:53:53,768 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:53:53,773 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:53:53,813 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,813 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,815 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,816 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:53:53,816 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:53:53,833 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,834 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:53:53,835 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:53:53,856 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,857 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,857 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,858 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,858 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,859 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,859 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,860 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:53:53,860 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:58103 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:53:53,874 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:58102 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:56:03,674 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:56:03,675 [INFO] Fetching workspace shares...
+2026-06-02 22:56:03,675 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:56:03,692 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 22:56:03,692 [INFO] Fetching workspace shares...
+2026-06-02 22:56:03,692 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:56:03,708 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:03,709 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:56:03,710 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:56:03,714 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:56:03,718 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:56:03,723 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:56:03,728 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:03,728 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 22:56:03,728 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 22:56:03,733 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 22:56:03,737 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 22:56:03,740 [INFO] Fetching available execution tools from gateway...
+2026-06-02 22:56:03,755 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:03,756 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:03,757 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:56:03,757 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 22:56:03,763 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:03,767 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,760 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:56:33,764 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:56:33,765 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:56:33,766 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:56:33,767 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 22:56:33,768 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:56:33,768 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:56:33,769 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:56:33,769 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 22:56:33,770 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:56:33,770 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:56:33,770 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 22:56:33,770 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:56:33,778 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 22:56:33,787 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,787 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,788 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:56:33,788 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 22:56:33,788 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:56:33,792 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:56:33,796 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:56:33,800 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 22:56:33,812 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,813 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,813 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,814 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,814 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:56:33,814 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:56:33,830 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 22:56:33,830 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 22:56:33,866 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,866 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,867 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,867 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,867 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,868 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,868 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,869 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 22:56:33,869 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:58564 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 22:56:33,874 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:58563 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61029 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61031 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-06-02 23:44:55,690 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 23:44:55,691 [INFO] Fetching workspace shares...
+2026-06-02 23:44:55,691 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:44:55,706 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 23:44:55,706 [INFO] Fetching workspace shares...
+2026-06-02 23:44:55,706 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:44:55,793 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:44:55,794 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 23:44:55,794 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 23:44:55,801 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 23:44:55,810 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:44:55,819 [INFO] Fetching available execution tools from gateway...
+2026-06-02 23:44:55,830 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:44:55,833 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 23:44:55,833 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 23:44:55,842 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 23:44:55,849 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:44:55,855 [INFO] Fetching available execution tools from gateway...
+2026-06-02 23:44:55,860 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:44:55,861 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:44:55,861 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 23:44:55,869 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:44:55,870 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 23:44:55,872 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,848 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:45:25,854 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:45:25,855 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:45:25,856 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:45:25,856 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:45:25,857 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:45:25,857 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 23:45:25,869 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:45:25,870 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:45:25,871 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:45:25,872 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:45:25,873 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:45:25,873 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:45:25,873 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 23:45:25,888 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,889 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,889 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 23:45:25,890 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:45:25,897 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:45:25,904 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 23:45:25,904 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:45:25,910 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:45:25,920 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,921 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,921 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,922 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 23:45:25,922 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 23:45:25,939 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,940 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 23:45:25,940 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 23:45:25,973 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,973 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,974 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,974 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,975 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,975 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,975 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,976 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:45:25,976 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-02 23:45:25,983 [INFO] Fetches completed. Compiling markdown plan...
+2026-06-02 23:53:51,269 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 23:53:51,270 [INFO] Fetching workspace shares...
+2026-06-02 23:53:51,270 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:53:51,282 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-02 23:53:51,282 [INFO] Fetching workspace shares...
+2026-06-02 23:53:51,282 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:53:51,294 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:53:51,295 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:53:51,295 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 23:53:51,295 [INFO] Executing concurrent query fetches for main user context...
+2026-06-02 23:53:51,296 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 23:53:51,300 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 23:53:51,304 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:53:51,308 [INFO] Fetching available execution tools from gateway...
+2026-06-02 23:53:51,312 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-02 23:53:51,316 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-02 23:53:51,320 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-02 23:53:51,324 [INFO] Fetching available execution tools from gateway...
+2026-06-02 23:53:51,341 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:53:51,341 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:53:51,342 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 23:53:51,342 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-02 23:53:51,353 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:53:51,354 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,354 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:54:21,358 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:54:21,359 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:54:21,360 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:54:21,361 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-02 23:54:21,362 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:54:21,363 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:54:21,363 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:54:21,364 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-02 23:54:21,364 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:54:21,365 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:54:21,365 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-02 23:54:21,365 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 23:54:21,386 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-02 23:54:21,405 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,406 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,406 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 23:54:21,407 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:54:21,413 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:54:21,419 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-02 23:54:21,419 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:54:21,424 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-02 23:54:21,440 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,441 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,441 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,442 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,442 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 23:54:21,442 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 23:54:21,458 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-02 23:54:21,458 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-02 23:54:21,492 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,492 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,493 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,493 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,494 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63299 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-02 23:54:21,530 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,531 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,531 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,531 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-02 23:54:21,532 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63298 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61855 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61856 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:35:59,267 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:35:59,267 [INFO] Fetching workspace shares...
+2026-06-03 11:35:59,267 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:35:59,302 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:35:59,302 [INFO] Fetching workspace shares...
+2026-06-03 11:35:59,302 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:35:59,325 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:35:59,326 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:35:59,327 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:35:59,328 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:35:59,328 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:35:59,334 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:35:59,339 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:35:59,343 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:35:59,348 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:35:59,354 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:35:59,358 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:35:59,363 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:35:59,384 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:35:59,385 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:35:59,386 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:35:59,386 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:35:59,456 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:35:59,460 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,456 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:36:29,461 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:36:29,462 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:36:29,462 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:36:29,464 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:36:29,465 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:36:29,466 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:36:29,466 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:36:29,466 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:36:29,466 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:36:29,466 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:36:29,466 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:36:29,466 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:36:29,487 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:36:29,631 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,631 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,632 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:36:29,632 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:36:29,632 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:36:29,636 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:36:29,642 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:36:29,647 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:36:29,664 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,665 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,675 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,676 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,676 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:36:29,677 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:36:29,694 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:36:29,694 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:36:29,749 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,749 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,749 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,750 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,750 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,751 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,752 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,752 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:36:29,753 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:61856 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:36:29,765 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:61855 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:42:44,458 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:42:44,459 [INFO] Fetching workspace shares...
+2026-06-03 11:42:44,459 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:44,505 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:44,506 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:42:44,506 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:42:44,511 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:42:44,516 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:44,523 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:42:44,541 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:44,542 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:42:44,551 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:42:44,552 [INFO] Fetching workspace shares...
+2026-06-03 11:42:44,552 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:44,564 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:44,565 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:42:44,565 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:42:44,570 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:42:44,575 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:44,579 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:42:44,588 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:44,589 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:42:44,619 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:44,625 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,515 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:42:59,516 [INFO] Fetching workspace shares...
+2026-06-03 11:42:59,516 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:59,527 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:42:59,527 [INFO] Fetching workspace shares...
+2026-06-03 11:42:59,527 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:59,537 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,538 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,538 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:42:59,538 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:42:59,538 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:42:59,543 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:42:59,550 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:59,555 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:42:59,559 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:42:59,587 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:42:59,591 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:42:59,595 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:42:59,607 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,607 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,608 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:42:59,608 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:42:59,617 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:42:59,622 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:06,966 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:43:06,967 [INFO] Fetching workspace shares...
+2026-06-03 11:43:06,967 [INFO] Fetching workspace shares for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-03 11:43:06,986 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:06,987 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:43:06,987 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:43:06,993 [INFO] Fetching documents in workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26, zone: 0
+2026-06-03 11:43:06,999 [INFO] Fetching graph nodes for workspace: fe06b057-87c1-41a2-9811-cb6c1bdd3f26
+2026-06-03 11:43:07,006 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:43:07,017 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:07,018 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:43:07,028 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,546 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:14,549 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:14,550 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:14,551 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:14,552 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:14,553 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:14,554 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:14,569 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,570 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:14,570 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:14,576 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:14,587 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:14,588 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:14,588 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:14,589 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,589 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:14,589 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:14,590 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,590 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:14,590 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:14,597 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:14,597 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:14,628 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,629 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,629 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:14,629 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,630 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:14,635 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:14,640 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,641 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,642 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63063 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:43:14,650 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,651 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,652 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:14,652 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:14,676 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,676 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,676 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,677 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:14,678 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63078 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:43:16,999 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:43:17,000 [INFO] Fetching workspace shares...
+2026-06-03 11:43:17,000 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:43:17,011 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:17,012 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:43:17,012 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:43:17,017 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:43:17,023 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:43:17,028 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:43:17,053 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:17,053 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:43:17,063 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,628 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:29,649 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:29,652 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:29,655 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:29,656 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:29,656 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:29,657 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:29,661 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:29,661 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:29,662 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:29,663 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:29,663 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:29,663 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:29,788 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:29,836 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,841 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,842 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:29,844 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:29,861 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:29,880 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:29,881 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:29,896 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:29,930 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,935 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,953 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,954 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:29,960 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:29,961 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:29,961 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:29,961 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:30,020 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,020 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,021 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,021 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,022 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,024 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,028 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,032 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63170 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:43:30,072 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:30,073 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63171 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:43:37,031 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:37,046 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:37,047 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:37,054 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:37,058 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:37,060 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:37,060 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:37,115 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,116 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:37,117 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:37,126 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:37,153 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,164 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,165 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:37,165 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:37,196 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,196 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,197 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,197 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:37,198 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63224 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:43:47,062 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:47,069 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:47,070 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:43:47,072 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:47,072 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:43:47,075 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:43:47,075 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:43:47,104 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,106 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:43:47,106 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:47,114 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:43:47,128 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,130 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,131 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:43:47,131 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:43:47,165 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,165 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,165 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,166 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:43:47,167 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:63063 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65008 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65009 - "OPTIONS /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:52:25,605 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:52:25,607 [INFO] Fetching workspace shares...
+2026-06-03 11:52:25,607 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:52:25,658 [INFO] Initializing FederationClient connecting to: http://127.0.0.1:4001
+2026-06-03 11:52:25,658 [INFO] Fetching workspace shares...
+2026-06-03 11:52:25,658 [INFO] Fetching workspace shares for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:52:25,851 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:25,853 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:52:25,853 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:52:25,863 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:52:25,878 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:52:25,887 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:52:25,904 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:25,905 [INFO] Executing concurrent query fetches for main user context...
+2026-06-03 11:52:25,905 [INFO] Fetching connectors for groupId: grp_eng
+2026-06-03 11:52:25,909 [INFO] Fetching documents in workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd, zone: 0
+2026-06-03 11:52:25,915 [INFO] Fetching graph nodes for workspace: ecf798c3-d52e-4af7-b74f-a5cb276556dd
+2026-06-03 11:52:25,922 [INFO] Fetching available execution tools from gateway...
+2026-06-03 11:52:26,372 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:26,375 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:26,378 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:52:26,392 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:26,394 [ERROR] Failed to fetch user connectors: 'NoneType' object has no attribute 'get'
+2026-06-03 11:52:26,416 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:55,994 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:52:56,004 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:52:56,005 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:52:56,005 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:52:56,006 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:52:56,006 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:52:56,008 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:52:56,213 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,214 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:52:56,214 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:52:56,219 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:52:56,239 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,245 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,245 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:52:56,245 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:52:56,270 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,270 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,276 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,277 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,277 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:65008 - "POST /plan/context HTTP/1.1" 200 OK
+2026-06-03 11:52:56,381 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:52:56,382 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:52:56,382 [ERROR] Failed to fetch knowledge documents: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:52:56,383 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 504 Gateway Timeout"
+2026-06-03 11:52:56,383 [ERROR] GraphQL Gateway HTTP Error 504: {"errors":[{"message":"Your request has been timed out","extensions":{"code":"GATEWAY_TIMEOUT"}}]}
+2026-06-03 11:52:56,384 [ERROR] Failed to fetch semantic nodes: Server error '504 Gateway Timeout' for url 'http://127.0.0.1:4001'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+2026-06-03 11:52:56,384 [INFO] Fetching user profile for user_id: 2a638162-449f-436c-9a45-a0669f57fe4a
+2026-06-03 11:52:56,393 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,393 [INFO] User belongs to company: 5c05d000-ab71-4344-b94a-048f47b5fa27. Fetching directory and squads...
+2026-06-03 11:52:56,394 [INFO] Fetching company users for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:52:56,399 [INFO] Fetching teams for company_id: 5c05d000-ab71-4344-b94a-048f47b5fa27
+2026-06-03 11:52:56,415 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,416 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,416 [INFO] Fetching members and workflows for team: 30903580-563b-49e7-bb78-6c7c892bb421
+2026-06-03 11:52:56,416 [INFO] Fetching members and workflows for team: 6832f2f6-4c26-4765-b64d-81cfb2cc8e4e
+2026-06-03 11:52:56,437 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,438 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,438 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,438 [INFO] HTTP Request: POST http://127.0.0.1:4001 "HTTP/1.1 200 OK"
+2026-06-03 11:52:56,439 [INFO] Fetches completed. Compiling markdown plan...
+INFO:     127.0.0.1:65009 - "POST /plan/context HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-06-03 12:18:51,050 [INFO] agent-planner stopped
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28280]

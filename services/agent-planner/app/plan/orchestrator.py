@@ -106,7 +106,10 @@ async def generate_plan_context(
                         nodes.append(node)
 
     logger.info("Fetches completed. Compiling markdown plan...")
-    return generate_planner_markdown(
+    from app.context_budget import ContextBudget
+    from app.plan.markdown.builder import generate_planner_markdown_sections
+
+    raw_sections = generate_planner_markdown_sections(
         connectors_data=connectors_data,
         documents=documents,
         nodes=nodes,
@@ -115,4 +118,5 @@ async def generate_plan_context(
         teams_data=company_teams,
         current_user=current_user,
     )
+    return ContextBudget().assemble(raw_sections)
 

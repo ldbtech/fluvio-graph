@@ -4,7 +4,9 @@ from typing import Any
 def build_semantic_connectors_section(connectors_data: list[dict[str, Any]]) -> list[str]:
     md = ["\n## 2. Semantic Knowledge Graph Ingest (File & Wiki Sources)"]
     non_db_connectors = [
-        c for c in connectors_data if c["connector"].get("kind") != "database"
+        c for c in connectors_data 
+        if c["connector"].get("kind") not in ["database", "postgresql", "postgres", "mysql"]
+        and (c["connector"].get("status") or "").lower() != "disconnected"
     ]
 
     if not non_db_connectors:

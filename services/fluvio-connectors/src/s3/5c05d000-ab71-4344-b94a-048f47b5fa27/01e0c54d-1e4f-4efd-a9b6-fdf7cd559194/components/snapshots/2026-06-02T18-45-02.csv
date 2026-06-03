@@ -1,0 +1,15 @@
+id,part_number,name,supplier,weight_kg,unit_cost_usd
+1,PART-BAT-100,Battery Module (100 kWh),Panasonic,450.00,8500.00
+2,PART-BAT-082,Battery Pack (82 kWh),LG Energy,380.00,6800.00
+3,PART-BAT-060,Battery Pack (60 kWh),CATL,310.00,4900.00
+4,PART-DRV-FNT,Front Drive Unit,Tesla Gigafactory,95.00,2400.00
+5,PART-DRV-RR,Rear Drive Unit (Standard),Tesla Gigafactory,110.00,2800.00
+6,PART-DRV-BEAST,Rear Performance Motor,Tesla Gigafactory,125.00,3900.00
+7,PART-INF-HW4,Autopilot HW 4.0 Computer,Nvidia,4.50,1200.00
+8,PART-INF-SCRN,17-inch Center Display,LG Display,8.00,450.00
+9,PART-STR-YOKE,Steering Yoke Assembly,Bosch,6.20,250.00
+10,PART-STR-WHEEL,Standard Steering Wheel,Bosch,5.80,180.00
+11,PART-BRK-CAL,Performance Brake Calipers,Brembo,12.00,800.00
+12,PART-SUS-AIR,Active Air Suspension Unit,Bilstein,22.00,1500.00
+13,PART-BOD-CAST,Gigacasting Underbody Segment,IDRA Group,180.00,2200.00
+14,PART-INF-SND,Premium 15-Speaker Audio Amp,Harman Kardon,6.00,380.00

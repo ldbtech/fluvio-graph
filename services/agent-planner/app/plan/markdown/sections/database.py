@@ -5,7 +5,9 @@ from typing import Any
 def build_database_section(connectors_data: list[dict[str, Any]]) -> list[str]:
     md = ["\n## 1. Active Data Pipeline Schema Context (Database Sources)"]
     db_connectors = [
-        c for c in connectors_data if c["connector"].get("kind") == "database"
+        c for c in connectors_data 
+        if c["connector"].get("kind") in ["database", "postgresql", "postgres", "mysql"]
+        and (c["connector"].get("status") or "").lower() != "disconnected"
     ]
 
     if not db_connectors:
