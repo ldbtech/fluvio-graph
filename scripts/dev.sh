@@ -210,40 +210,41 @@ for entry in "${SERVICES[@]}"; do
 done
 
 
-# ── Start fluvio-auth (Node.js) ────────────────────────────────────────────────
+# ── Enterprise token coprocessor (only when FLUVIOME_ENTERPRISE_TOKEN is set) ─
 
-section "Starting fluvio-auth (Node.js)"
+if [[ -n "${FLUVIOME_ENTERPRISE_TOKEN:-}" ]]; then
+  section "Starting fluvioMe Enterprise coprocessor"
 
-AUTH_DIR="$ROOT/services/fluvio-auth"
-AUTH_PORT="${FLUVIO_AUTH_PORT:-4000}"
+  ENTERPRISE_DIR="$ROOT/services/fluvio-auth"
+  ENTERPRISE_PORT="${FLUVIOME_ENTERPRISE_COPROCESSOR_PORT:-4002}"
 
-if [[ ! -d "$AUTH_DIR/node_modules" ]]; then
-  log "Installing dependencies for fluvio-auth..."
-  (cd "$AUTH_DIR" && npm install)
-fi
-
-[[ -f "$LOG_DIR/fluvio-auth.log" ]] && \
-  mv "$LOG_DIR/fluvio-auth.log" "$LOG_DIR/fluvio-auth.log.prev"
-
-(
-  cd "$AUTH_DIR"
-  PORT="$AUTH_PORT" \
-    node src/index.js \
-      >> "$LOG_DIR/fluvio-auth.log" 2>&1 &
-  echo $! > "$ROOT/.pids/fluvio-auth.pid"
-)
-
-local_i=0
-until curl -sf "http://127.0.0.1:${AUTH_PORT}/health" &>/dev/null; do
-  sleep 0.5
-  ((local_i++))
-  if ((local_i >= 60)); then
-    fail "fluvio-auth failed to start"
-    tail -30 "$LOG_DIR/fluvio-auth.log" >&2
-    exit 1
+  if [[ ! -d "$ENTERPRISE_DIR/node_modules" ]]; then
+    (cd "$ENTERPRISE_DIR" && npm install)
   fi
-done
-ok "fluvio-auth healthy"
+
+  [[ -f "$LOG_DIR/fluvio-auth.log" ]] && mv "$LOG_DIR/fluvio-auth.log" "$LOG_DIR/fluvio-auth.log.prev"
+
+  (
+    cd "$ENTERPRISE_DIR"
+    FLUVIOME_ENTERPRISE_COPROCESSOR_PORT="$ENTERPRISE_PORT" \
+      node src/index.js >> "$LOG_DIR/fluvio-auth.log" 2>&1 &
+    echo $! > "$ROOT/.pids/fluvio-auth.pid"
+  )
+
+  local_i=0
+  until curl -sf "http://127.0.0.1:${ENTERPRISE_PORT}/health" &>/dev/null; do
+    sleep 0.5; ((local_i++))
+    if ((local_i >= 30)); then
+      fail "Enterprise coprocessor failed to start"
+      tail -20 "$LOG_DIR/fluvio-auth.log" >&2
+      exit 1
+    fi
+  done
+  ok "Enterprise coprocessor healthy :${ENTERPRISE_PORT}"
+  warn "Remember to uncomment the coprocessor block in services/fluvio-gateway/router.yaml"
+else
+  ok "Community mode — no enterprise token set (engine runs headless)"
+fi
 
 # ── Start fluvio-connectors (Python) ──────────────────────────────────────────
 
@@ -456,7 +457,8 @@ echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━�
 echo ""
 
 if [[ $NO_GATEWAY -eq 0 ]]; then
-  echo -e "  ${BOLD}Gateway     ${RESET}  http://127.0.0.1:4000"
+  echo -e "  ${BOLD}GraphQL API ${RESET}  http://127.0.0.1:4001"
+  echo -e "  ${BOLD}Sandbox UI  ${RESET}  http://127.0.0.1:4001 (Apollo Sandbox)"
   echo ""
 fi
 
@@ -469,7 +471,7 @@ done
 echo ""
 printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "fluvio-connectors:" "${FLUVIO_CONNECTORS_PORT:-3006}"
 printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "agent-planner:" "${FLUVIO_AGENT_PLANNER_PORT:-3007}"
-printf "  ${BOLD}%-20s${RESET} http://127.0.0.1:%s\n" "fluvio-auth (proxy):" "${FLUVIO_AUTH_PORT:-4000}"
+echo -e "  ${CYAN}Enterprise token gate → set FLUVIOME_ENTERPRISE_TOKEN in .env${RESET}"
 echo -e "  ${CYAN}Logs  →  ${LOG_DIR}/${RESET}"
 echo -e "  ${CYAN}Ctrl+C to stop all services${RESET}"
 echo ""

@@ -6,9 +6,12 @@ from app.gateway_client.client import FederationClient
 
 _ACCESS_DENIED_PHRASES = ("access denied", "forbidden", "not found", "unauthorized")
 
-_QUERY = """
-query VerifyWorkspaceAccess($workspaceId: String!) {
-  getWorkspace(workspaceId: $workspaceId) {
+# The federated supergraph exposes `myWorkspaces(userId)` (it has no
+# `getWorkspace`). Access is verified by listing the caller's workspaces and
+# checking membership.
+_MY_WORKSPACES = """
+query MyWorkspaces($userId: String!) {
+  myWorkspaces(userId: $userId) {
     id
   }
 }
@@ -18,12 +21,22 @@ query VerifyWorkspaceAccess($workspaceId: String!) {
 async def verify_workspace_access(
     client: FederationClient,
     workspace_id: str,
+    user_id: str | None = None,
 ) -> None:
-    """Raise HTTP 403 if the caller does not have access to workspace_id."""
+    """Raise HTTP 403 if the caller does not have access to workspace_id.
+
+    `user_id` defaults to the `x-user-id` header carried by the client, so
+    existing callers that pass only (client, workspace_id) keep working.
+    """
+    uid = user_id or client.headers.get("x-user-id")
+    if not uid:
+        raise HTTPException(status_code=401, detail="x-user-id is required to verify workspace access")
+
     try:
-        resp = await client.query(_QUERY, variables={"workspaceId": workspace_id})
+        resp = await client.query(_MY_WORKSPACES, variables={"userId": uid})
         data = resp.get("data") or resp
-        if not (data.get("getWorkspace") or {}).get("id"):
+        workspaces = data.get("myWorkspaces") or []
+        if not any((ws or {}).get("id") == workspace_id for ws in workspaces):
             raise HTTPException(status_code=403, detail="Workspace not found or access denied")
     except HTTPException:
         raise

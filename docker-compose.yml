@@ -1,0 +1,274 @@
+# fluvioMe — Headless Engine
+# License: BUSL-1.1  |  Change Date: 4 years from first release → Apache-2.0
+#
+# Quick start (community / non-profit / individual):
+#   docker compose up
+#
+# Enterprise (for-profit orgs at any scale):
+#   FLUVIOME_ENTERPRISE_TOKEN=<your-token-from-fluviome.com> docker compose up
+#
+# The engine is auth-free by default. Pass x-user-id in your requests or put
+# your own auth proxy in front of the gateway (:4001).
+
+version: "3.9"
+
+# ── Shared defaults ───────────────────────────────────────────────────────────
+
+x-common-env: &common-env
+  SURREAL_URL: http://surrealdb:8000
+  POSTGRES_URL: postgresql://fluviome:fluviome@postgres:5432/fluviome
+  GATEWAY_URL: http://gateway:4001/graphql
+  FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
+
+x-restart: &restart
+  restart: unless-stopped
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Data stores ─────────────────────────────────────────────────────────────
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    <<: *restart
+    command: start --log info --user root --pass root surrealkv://data
+    volumes:
+      - surreal_data:/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    <<: *restart
+    environment:
+      POSTGRES_USER: fluviome
+      POSTGRES_PASSWORD: fluviome
+      POSTGRES_DB: fluviome
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluviome"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Rust subgraphs ───────────────────────────────────────────────────────────
+
+  fluvio-graph:
+    build:
+      context: .
+      dockerfile: services/fluvio-graph/Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  fluvio-twin:
+    build:
+      context: .
+      dockerfile: services/fluvio-twin/Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3002/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  fluvio-database:
+    build:
+      context: .
+      dockerfile: services/fluvio-database/Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3005
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3005/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  fluvio-ingestion:
+    build:
+      context: .
+      dockerfile: services/fluvio-ingestion/Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3004
+    ports:
+      - "3004:3004"
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+      fluvio-database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3004/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  fluvio-collab:
+    build:
+      context: .
+      dockerfile: services/fluvio-collab/Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3003
+      # Collaboration features require an enterprise token.
+      # Without FLUVIOME_ENTERPRISE_TOKEN this service starts but gates features.
+    ports:
+      - "3003:3003"
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3003/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Python services ──────────────────────────────────────────────────────────
+
+  fluvio-connectors:
+    build:
+      context: services/fluvio-connectors
+      dockerfile: Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3006
+    ports:
+      - "3006:3006"
+    depends_on:
+      fluvio-database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3006/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  fluvio-tool-builder:
+    build:
+      context: services/fluvio-tool-builder
+      dockerfile: Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3008
+    ports:
+      - "3008:3008"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3008/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  agent-planner:
+    build:
+      context: services/agent-planner
+      dockerfile: Dockerfile
+    <<: *restart
+    environment:
+      <<: *common-env
+      PORT: 3007
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
+    ports:
+      - "3007:3007"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3007/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Apollo Router (GraphQL API — the headless entry point) ───────────────────
+
+  gateway:
+    build:
+      context: services/fluvio-gateway
+      dockerfile: Dockerfile
+    <<: *restart
+    environment:
+      FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
+    ports:
+      - "4001:4001"   # ← THIS is the public API surface. Point your SDK/clients here.
+    depends_on:
+      fluvio-graph:
+        condition: service_healthy
+      fluvio-twin:
+        condition: service_healthy
+      fluvio-database:
+        condition: service_healthy
+      fluvio-ingestion:
+        condition: service_healthy
+      fluvio-tool-builder:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # ── Enterprise coprocessor (only active when FLUVIOME_ENTERPRISE_TOKEN is set) ─
+  # Gating: collaboration, SSO, audit logs, multi-tenant, white-label
+
+  enterprise-gate:
+    build:
+      context: services/fluvio-auth
+      dockerfile: Dockerfile
+    <<: *restart
+    environment:
+      FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
+      FLUVIOME_PUBLIC_KEY: ${FLUVIOME_PUBLIC_KEY:-}
+      FLUVIOME_ENTERPRISE_COPROCESSOR_PORT: 4002
+    ports:
+      - "4002:4002"
+    profiles:
+      - enterprise  # only starts with: docker compose --profile enterprise up
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4002/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  surreal_data:
+  pg_data:

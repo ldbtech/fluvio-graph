@@ -14,7 +14,7 @@
     {
       "name": "arguments",
       "paramType": "String",
-      "description": "JSON string containing parameters defined in contracts.py (e.g., report_name, datasource_name, dataset_id, report_id)",
+      "description": "JSON string of parameters defined in contracts.py. For 'generate_pdf_report': report_name, database_url, planner-authored latex_content (required, full document), and planner-authored 'chart_code' (list of Python seaborn/matplotlib snippets; each runs with pd/np/plt/sns/db_url/output_dir/load_df(sql) bound and saves PNGs into output_dir, referenced from the LaTeX via \\includegraphics). No auto-report fallback. For 'publish_report': report_name, datasource_name. For 'trigger_refresh': dataset_id. For 'get_share_link': report_id.",
       "required": true
     }
   ]

@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 from app.auth import verify_workspace_access
 from app.config import settings
-from app.credential_vault import scrub_credentials
+from app.credential_vault import scrub_credentials, CredentialRef, resolve_credentials
 from app.fetch import fetch_chat_history
 from app.fetch.connectors import fetch_connectors_with_resources
 from app.fetch.tools import fetch_available_tools
@@ -32,7 +32,7 @@ from app.gateway_client.client import FederationClient
 from app.memory.rag import fetch_similar_deployments, format_rag_examples
 from app.plan.orchestrator import generate_plan_context
 from app.schemas import PlanContextRequest, PlanContextResponse
-from app.schema_inspector import extract_schema_from_resources, format_schema_for_prompt
+from app.schema_inspector import extract_schema_from_resources, format_schema_for_prompt, explain_sql
 from app.tool_graph import ToolCapabilityGraph
 from app.toolbox import toolbox
 from app.workspace_config import build_environment_context, resolve_workspace_config
@@ -106,6 +106,11 @@ async def compile_plan(
         workspace_id=body.workspace_id,
     )
 
+    # Build a ToolRegistry scoped to this workspace's active tools. Must be
+    # constructed before the system prompt, which embeds the toolbox section.
+    active_tool_ids = {t.get("id") for t in active_tools if t.get("id")}
+    registry = toolbox.registry_for(active_tool_ids)
+
     # Build enriched system prompt — toolbox registry goes in FIRST so Claude
     # opens the toolbox before attempting to plan any steps
     toolbox_section = registry.format_for_prompt()
@@ -149,9 +154,23 @@ async def compile_plan(
 
     user_prompt += "\nOutput ONLY the JSON array. Do not put backticks around it."
 
-    # Build a ToolRegistry scoped to this workspace's active tools
-    active_tool_ids = {t.get("id") for t in active_tools if t.get("id")}
-    registry = toolbox.registry_for(active_tool_ids)
+    # Resolve a Postgres URL for a SQL step's credential_ref, mirroring how the
+    # worker builds it at execution time. Used for real EXPLAIN validation below.
+    def _resolve_db_url(step: dict) -> str | None:
+        token = step.get("credential_ref")
+        if not token:
+            return None
+        try:
+            ref = CredentialRef(ref=token)
+            creds = resolve_credentials(ref, cfg.connector_configs)
+        except Exception:
+            return None
+        if ref.connector_kind in ("postgres", "postgresql", "database", "mysql") and creds:
+            return (
+                f"postgresql://{creds.get('username','')}:{creds.get('password','')}@"
+                f"{creds.get('host','localhost')}:{creds.get('port', 5432)}/{creds.get('database','')}"
+            )
+        return None
 
     # Validate-and-retry loop — all validation goes through the live toolbox registry
     messages: list[dict] = [{"role": "user", "content": user_prompt}]
@@ -203,6 +222,39 @@ async def compile_plan(
             if attempt < 3:
                 messages.append({"role": "assistant", "content": raw_text})
                 messages.append({"role": "user", "content": registry.build_retry_prompt(errors)})
+            continue
+
+        # Real EXPLAIN validation — catch semantic SQL errors (missing joins,
+        # wrong table for a column, etc.) now and auto-repair, instead of letting
+        # them fail at execution time as a "permanent error."
+        explain_errors: list[str] = []
+        for i, step in enumerate(validated):
+            if step.get("tool_id") not in ("spark", "dbt"):
+                continue
+            sql = (step.get("arguments") or {}).get("query") or (step.get("arguments") or {}).get("sql")
+            if not sql:
+                continue
+            db_url = _resolve_db_url(step)
+            if not db_url:
+                continue  # can't EXPLAIN without a DB — fall back to static checks
+            ok, msg = await explain_sql(sql, db_url)
+            if not ok:
+                explain_errors.append(f"Step {i + 1} SQL is invalid (EXPLAIN failed): {msg}")
+
+        if explain_errors:
+            last_error = "; ".join(explain_errors)
+            logger.warning("Attempt %d: EXPLAIN validation failed — %s", attempt, last_error)
+            if attempt < 3:
+                messages.append({"role": "assistant", "content": raw_text})
+                messages.append({"role": "user", "content": (
+                    "The following SQL failed real database EXPLAIN validation. The "
+                    "error comes directly from the database. Fix the queries so every "
+                    "referenced column resolves — consult the Exact Database Schema "
+                    "above to see which table owns each column, and join the tables "
+                    "needed to bring those columns into scope. Re-output ONLY the "
+                    "corrected JSON array.\n\n"
+                    + last_error
+                )})
             continue
 
         steps = validated

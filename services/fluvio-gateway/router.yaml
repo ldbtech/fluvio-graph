@@ -13,6 +13,7 @@ cors:
   allow_headers:
     - content-type
     - x-user-id
+    - x-fluviome-token
     - apollo-require-preflight
     - x-apollo-operation-name
 
@@ -24,5 +25,17 @@ headers:
     request:
       - propagate:
           named: x-user-id
+      # Enterprise token forwarded to subgraphs so they can gate features.
+      # Set FLUVIOME_ENTERPRISE_TOKEN in .env; absent = community mode.
+      - propagate:
+          named: x-fluviome-token
 
-
+# Enterprise token coprocessor — uncomment when fluviome.com token service is live.
+# Until then the engine runs in headless community mode with no auth layer.
+#
+# coprocessor:
+#   url: http://127.0.0.1:4002
+#   router:
+#     request:
+#       headers: true
+#       body: false

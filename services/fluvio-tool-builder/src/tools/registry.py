@@ -136,6 +136,21 @@ class DynamicRegistry:
             else:
                 serialized_result = result
 
+            # Honor a runtime that signals failure via its return value (many
+            # runtimes return {"status": "failed", "error": ...} instead of
+            # raising). Without this, an honest failure is masked as success.
+            if isinstance(serialized_result, dict) and serialized_result.get("status") == "failed":
+                err = serialized_result.get("error") or "Tool reported failure without detail."
+                log_stream.append(f"Action {action} reported failure: {err}")
+                return {"status": "failed", "error": err}
+
+            # A bare False/None from a boolean-returning action means the operation
+            # did not succeed — never report that as success.
+            if serialized_result is False or serialized_result is None:
+                msg = f"Action '{action}' on tool '{tool_id}' returned no success result."
+                log_stream.append(msg)
+                return {"status": "failed", "error": msg}
+
             return {
                 "status": "success",
                 "result": serialized_result

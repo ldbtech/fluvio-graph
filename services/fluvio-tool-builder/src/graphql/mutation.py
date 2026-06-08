@@ -3,6 +3,9 @@ import strawberry
 import uuid
 import json
 import datetime
+import logging
+
+logger = logging.getLogger("tool-builder-mutation")
 from src.graphql.types import GqlToolRun, GqlSandboxStatus, GqlSandboxContainerStatus
 from src.graphql.query import tool_runs_store, mock_tools
 
@@ -74,22 +77,61 @@ class Mutation:
                     "output_table": f"clean_{table}"
                 }
             elif tool_id == "spark-analysis":
-                query_str = parsed_inputs.get("query", "SELECT *")
-                out_table = parsed_inputs.get("output_table", "metrics")
-                logs_lines.extend([
-                    "Initializing SparkSession on distributed Yarn cluster...",
-                    f"Compiling Spark SQL optimization logical plan for: {query_str[:60]}...",
-                    "Spark job submitted. Executing map-reduce tasks across 6 worker nodes...",
-                    "Aggregating campaign metrics (SUM spend, SUM clicks, calculated ROAS)...",
-                    "Calculated results partition successfully gathered at driver node.",
-                    f"Writing 14 aggregate rows back to target schema table: {out_table}."
-                ])
-                output_data = {
-                    "status": "success",
-                    "calculated_rows": 14,
-                    "average_roas": "3.28x",
-                    "target_table": out_table
-                }
+                # Arguments arrive as a JSON-encoded string nested under "arguments".
+                _args = parsed_inputs.get("arguments")
+                while isinstance(_args, str):
+                    try:
+                        _args = json.loads(_args)
+                    except Exception:
+                        _args = {}
+                if not isinstance(_args, dict):
+                    _args = {}
+                query_str = _args.get("query") or _args.get("sql")
+                out_table = _args.get("output_table") or _args.get("target_table") or "metrics"
+                db_url = (_args.get("context") or {}).get("database_url")
+
+                # Real execution: materialize the analytics table in the same
+                # Postgres the downstream report reads. No simulation — if the
+                # query or connection fails, surface it honestly so the step fails.
+                if not query_str:
+                    status = "failed"
+                    output_data = {"error": "spark-analysis requires a 'query' argument."}
+                elif not db_url:
+                    status = "failed"
+                    output_data = {"error": "spark-analysis requires context.database_url to materialize the output table."}
+                else:
+                    import re as _re
+                    # psycopg2 wants postgresql:// rather than postgres://
+                    pg_url = _re.sub(r"^postgres://", "postgresql://", db_url)
+                    # Guard the table identifier (alphanumeric/underscore only).
+                    safe_table = _re.sub(r"[^A-Za-z0-9_]", "", out_table) or "metrics"
+                    logs_lines.extend([
+                        "Connecting to analytics Postgres replica...",
+                        f"Executing analytical SQL and materializing table: {safe_table}...",
+                    ])
+                    try:
+                        import psycopg2
+                        conn = psycopg2.connect(pg_url)
+                        conn.autocommit = True
+                        try:
+                            with conn.cursor() as cur:
+                                cur.execute(f'DROP TABLE IF EXISTS "{safe_table}"')
+                                cur.execute(f'CREATE TABLE "{safe_table}" AS {query_str}')
+                                cur.execute(f'SELECT COUNT(*) FROM "{safe_table}"')
+                                row_count = cur.fetchone()[0]
+                        finally:
+                            conn.close()
+                        logs_lines.append(f"Wrote {row_count} row(s) to table: {safe_table}.")
+                        output_data = {
+                            "status": "success",
+                            "calculated_rows": row_count,
+                            "target_table": safe_table,
+                        }
+                    except Exception as e:
+                        logger.error("spark-analysis SQL execution failed: %s", e, exc_info=True)
+                        status = "failed"
+                        output_data = {"error": f"spark-analysis execution failed: {e}"}
+                        logs_lines.append(f"Execution failed: {e}")
             elif tool_id == "model-training":
                 mtype = parsed_inputs.get("model_type", "xgboost")
                 features = parsed_inputs.get("features", "")

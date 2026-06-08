@@ -22,7 +22,7 @@ from app.toolbox import toolbox, ToolManifest
 
 # tool_id/action → list of output patterns
 _PRODUCES: dict[str, list[str]] = {
-    "data-cleaning/clean_table":              ["clean_{table}"],
+    "data-cleaning/run_cleaning":             ["clean_{table}"],
     "spark/execute_sql":                      ["{output_table}_analytics"],
     "spark/submit_job":                       ["{output_table}_analytics"],
     "dbt/run_models":                         ["{model}_analytics"],
@@ -34,7 +34,7 @@ _PRODUCES: dict[str, list[str]] = {
 
 # tool_id/action → list of input patterns consumed
 _CONSUMES: dict[str, list[str]] = {
-    "data-cleaning/clean_table":              ["{table}"],
+    "data-cleaning/run_cleaning":             ["{table}"],
     "spark/execute_sql":                      ["clean_{table}"],
     "spark/submit_job":                       ["clean_{table}"],
     "dbt/run_models":                         ["clean_{table}"],
@@ -46,9 +46,9 @@ _CONSUMES: dict[str, list[str]] = {
 
 # (prerequisite_key, dependent_key) — enforces execution ordering
 _DEPENDENCY_CHAIN: list[tuple[str, str]] = [
-    ("data-cleaning/clean_table",   "spark/execute_sql"),
-    ("data-cleaning/clean_table",   "spark/submit_job"),
-    ("data-cleaning/clean_table",   "dbt/run_models"),
+    ("data-cleaning/run_cleaning",  "spark/execute_sql"),
+    ("data-cleaning/run_cleaning",  "spark/submit_job"),
+    ("data-cleaning/run_cleaning",  "dbt/run_models"),
     ("spark/execute_sql",           "dashboard-syncer/publish_report"),
     ("spark/execute_sql",           "dashboard-syncer/generate_pdf_report"),
     ("spark/submit_job",            "dashboard-syncer/publish_report"),

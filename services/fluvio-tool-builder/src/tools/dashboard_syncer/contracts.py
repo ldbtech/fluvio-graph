@@ -71,10 +71,25 @@ class DashboardSyncerTool(ABC):
         self,
         context: DashboardExecutionContext,
         report_name: str,
-        database_url: Optional[str] = None
+        database_url: Optional[str] = None,
+        latex_content: Optional[str] = None,
+        chart_code: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
-        Generates a PDF report using Seaborn and Matplotlib, compiles via LaTeX or ReportLab fallback.
+        Generate a PDF report. The planner is the brain and authors EVERYTHING:
+        the full LaTeX document (`latex_content`, required) and the actual
+        seaborn/matplotlib plotting program (`chart_code`) that produces its
+        figures. The runtime just runs the code and compiles the document — there
+        is no auto-generated fallback (on failure the orchestrator retries).
+
+        `chart_code` is a list of Python snippets. Each runs in a namespace
+        pre-bound with `pd`, `np`, `plt`, `sns`, `db_url`, `output_dir`, and a
+        `load_df(sql)` helper. A snippet reads the cleaned/analytics tables it
+        needs and saves one or more PNGs into `output_dir`; reference each saved
+        file from the LaTeX via `\\includegraphics{<name>.png}`.
+
+        Raises (returns status="failed") if `latex_content` is missing or if any
+        chart snippet errors.
         """
         pass
 

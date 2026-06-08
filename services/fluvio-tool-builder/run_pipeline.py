@@ -57,25 +57,37 @@ async def main():
     # ----------------------------------------------------
     print("\n--- Phase 1: Data Cleansing & Preparation ---")
     
-    # Step 1: Clean Users Table
+    # Step 1: Clean Users Table — author the exact SQL the data needs.
     await run_step(
         tool_id="data-cleaning",
-        action="clean_table",
+        action="run_cleaning",
         arguments={
             "context": db_context,
             "table_name": "users",
-            "operations": ["normalize_headers", "drop_nulls", "deduplicate"]
+            "statements": [
+                "DELETE FROM {table} WHERE email IS NULL OR email = '';",
+                "CREATE TABLE {table}_dedup AS SELECT DISTINCT * FROM {table};",
+                "DROP TABLE {table};",
+                "ALTER TABLE {table}_dedup RENAME TO {table};",
+            ],
         }
     )
-    
+
     # Step 2: Clean Bookings Table
     await run_step(
         tool_id="data-cleaning",
-        action="clean_table",
+        action="run_cleaning",
         arguments={
             "context": db_context,
             "table_name": "bookings",
-            "operations": ["normalize_headers", "drop_nulls", "deduplicate", "standardize_currency"]
+            "statements": [
+                "DELETE FROM {table} WHERE id IS NULL;",
+                "UPDATE {table} SET amount = regexp_replace(amount, '[^0-9.]', '', 'g')::numeric "
+                "WHERE amount IS NOT NULL AND amount != '';",
+                "CREATE TABLE {table}_dedup AS SELECT DISTINCT * FROM {table};",
+                "DROP TABLE {table};",
+                "ALTER TABLE {table}_dedup RENAME TO {table};",
+            ],
         }
     )
     

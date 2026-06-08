@@ -1,1 +1,13 @@
 [Auth Proxy] Gateway running on http://localhost:4000 forwarding to Router at port 4001 (Emulator: false, Project: fluvio-web)
+[Auth Proxy] Verification failed: TypeError: fetch failed
+    at node:internal/deps/undici/undici:15482:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async callDatabaseGraphQL (/Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-auth/src/index.js:63:20)
+    at async /Users/alidaho/Developer/AWS/rust/kg-engine/services/fluvio-auth/src/index.js:166:23 {
+  [cause]: AggregateError [ECONNREFUSED]: 
+      at internalConnectMultiple (node:net:1134:18)
+      at afterConnectMultiple (node:net:1715:7) {
+    code: 'ECONNREFUSED',
+    [errors]: [ [Error], [Error] ]
+  }
+}

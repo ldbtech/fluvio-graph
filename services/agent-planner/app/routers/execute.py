@@ -15,7 +15,7 @@ import logging
 import uuid
 from typing import Any, AsyncIterator
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -172,9 +172,13 @@ async def job_status(
 async def job_stream(
     job_id: str,
     x_user_id: str | None = Header(default=None, alias="x-user-id"),
+    # Browser EventSource (SSE) cannot set custom headers, so the frontend passes
+    # the user id as a query param. Accept either.
+    x_user_id_q: str | None = Query(default=None, alias="x-user-id"),
 ) -> StreamingResponse:
+    x_user_id = x_user_id or x_user_id_q
     if not x_user_id:
-        raise HTTPException(status_code=401, detail="x-user-id header is required")
+        raise HTTPException(status_code=401, detail="x-user-id is required (header or query param)")
     record = job_store.get_job(job_id)
     if not record:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")

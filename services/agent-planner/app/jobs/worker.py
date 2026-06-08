@@ -114,6 +114,25 @@ async def _execute_step_with_reliability(
         if context:
             arguments["context"] = context
 
+    # Inject the requesting user's identity so the email tool can resolve "me"
+    # without the planner ever handling the address.
+    if tool_id == "email-sender":
+        context = dict(arguments.get("context") or {})
+        if not context.get("user_email"):
+            try:
+                data = await client.query(
+                    "query($id: String!){ getUser(id: $id){ email companyEmail } }",
+                    variables={"id": job.user_id},
+                )
+                u = ((data.get("data") or data).get("getUser")) or {}
+                if u.get("email"):
+                    context["user_email"] = u["email"]
+                if u.get("companyEmail"):
+                    context["company_email"] = u["companyEmail"]
+            except Exception as exc:
+                logger.warning("Could not resolve user email for 'me' recipient: %s", exc)
+        arguments["context"] = context
+
     idem_key = idempotency.key(job.job_id, step_index)
     if await idempotency.already_done(idem_key):
         logger.info("Step %d already completed (idempotency hit) — skipping", step_index)
@@ -142,7 +161,7 @@ async def _execute_step_with_reliability(
             return await _call_tool(client, tool_id, action, arguments)
 
     tool_run = await with_retry(
-        attempt(),
+        attempt,  # factory: a fresh coroutine is created per attempt
         attempts=3,
         base_delay=1.0,
         label=f"{tool_id}/{action}",
@@ -311,6 +330,11 @@ def _append_step_output(emit, step: dict, tool_run: dict) -> None:
         emit(f"✅ Dashboard published. URL: {url}\n")
     elif tool_id == "dashboard-syncer" and action == "generate_pdf_report":
         emit(f"✅ PDF report generated. URL: {out.get('web_url', '')}\n")
+    elif tool_id == "email-sender":
+        rcpts = ", ".join(out.get("recipients") or [])
+        atts = ", ".join(out.get("attachments") or [])
+        extra = f" (attached: {atts})" if atts else ""
+        emit(f"📧 Email sent to {rcpts}{extra}.\n")
     else:
         emit("✅ Completed.\n")
 

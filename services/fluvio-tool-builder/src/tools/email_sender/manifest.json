@@ -1,0 +1,21 @@
+{
+  "id": "email-sender",
+  "name": "Email Report Sender",
+  "description": "Sends a composed email (plan summary, PDF report attachment, and/or BI share links) to one or more recipients via SMTP. Use as the final step to deliver a generated report to the user or their team.",
+  "category": "delivery",
+  "is_data_science": false,
+  "parameters": [
+    {
+      "name": "action",
+      "paramType": "String",
+      "description": "Action to run: 'send_report'",
+      "required": true
+    },
+    {
+      "name": "arguments",
+      "paramType": "String",
+      "description": "JSON string of parameters for send_report: 'to' (list of recipient email addresses; the literal token \"me\" resolves to the authenticated user's own email), optional 'cc' (list), 'subject' (string), 'body' (string you author summarizing the plan/report), optional 'cc', optional 'attachments' (list of file paths or bare filenames resolved against the reports directory — e.g. the generated <db_name>_executive_report.pdf), optional 'links' (list of URLs such as a Tableau share link or the report web URL), optional 'body_is_html' (bool). SMTP transport is configured via environment; the tool fails honestly if SMTP is not configured or a send/attachment fails.",
+      "required": true
+    }
+  ]
+}

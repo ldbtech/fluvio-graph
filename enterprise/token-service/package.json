@@ -1,0 +1,24 @@
+{
+  "name": "@fluviome/token-service",
+  "version": "1.0.0",
+  "description": "fluvioMe enterprise token issuer — Stripe billing → signed JWT",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "keygen": "node src/keygen.js",
+    "test": "node --test src/*.test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.13",
+    "stripe": "^15.12.0",
+    "uuid": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "BUSL-1.1"
+}

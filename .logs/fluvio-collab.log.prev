@@ -1,6 +1,6 @@
-[2m2026-06-02T18:50:25.550233Z[0m [32m INFO[0m [2mfluvio_collab[0m[2m:[0m fluvio-collab starting...
-[2m2026-06-02T18:50:25.550529Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Database service → http://localhost:3005/graphql
-[2m2026-06-02T18:50:25.550553Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Graph service    → http://127.0.0.1:3001/graphql
-[2m2026-06-02T18:50:25.550563Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Ingestion service→ http://localhost:3004/graphql
-[2m2026-06-02T18:50:25.558948Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m fluvio-collab listening on http://0.0.0.0:3003
-[2m2026-06-02T18:50:25.558978Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3003/graphql
+[2m2026-06-04T14:56:09.289153Z[0m [32m INFO[0m [2mfluvio_collab[0m[2m:[0m fluvio-collab starting...
+[2m2026-06-04T14:56:09.290210Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Database service → http://localhost:3005/graphql
+[2m2026-06-04T14:56:09.290294Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Graph service    → http://127.0.0.1:3001/graphql
+[2m2026-06-04T14:56:09.290330Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m Ingestion service→ http://localhost:3004/graphql
+[2m2026-06-04T14:56:09.297779Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m fluvio-collab listening on http://0.0.0.0:3003
+[2m2026-06-04T14:56:09.297819Z[0m [32m INFO[0m [2mfluvio_collab::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3003/graphql

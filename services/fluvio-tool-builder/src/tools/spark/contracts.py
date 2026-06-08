@@ -14,6 +14,9 @@ class SparkExecutionContext(BaseModel):
     app_name: str = "FluviomeSparkApp"
     environment: str = "local"  # local | dev | prod
     sandbox_id: Optional[str] = None
+    # Postgres connection URL used when Spark falls back to the local SQL engine.
+    # Supplied by the planner from the active connector — no tenant-specific default.
+    database_url: Optional[str] = None
 
 # ============================
 # Spark Job Configuration

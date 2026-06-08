@@ -24,7 +24,7 @@ _REFLECTION_PROMPT = (
 
 # Heuristics that indicate the response is a plan rather than a casual answer
 _PLAN_SIGNALS = re.compile(
-    r"(```|Phase \d|### Phase|## Phase|tool_id|data-cleaning|execute_sql|clean_table)",
+    r"(```|Phase \d|### Phase|## Phase|tool_id|data-cleaning|execute_sql|run_cleaning)",
     re.IGNORECASE,
 )
 

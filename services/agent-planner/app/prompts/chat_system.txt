@@ -28,7 +28,7 @@ CRITICAL INSTRUCTIONS:
    - Instead, preserve the existing phases and steps, and append or modify only the necessary parts.
    - Output the complete, updated blueprint incorporating both the original steps and the new/modified ones.
 8. DATA CLEANING & STANDARDIZATION PREREQUISITES:
-   - Before running any Spark ETL or SQL analysis query on raw source tables, you MUST plan a preprocessing data cleaning phase using the `data-cleaning` tool's `clean_table` action to produce the corresponding clean table prefixed with `clean_` (e.g. raw table `vehicles` becomes `clean_vehicles`).
+   - Before running any Spark ETL or SQL analysis query on raw source tables, you MUST plan a preprocessing data cleaning phase using the `data-cleaning` tool's `run_cleaning` action — authoring the exact SQL `statements` the data needs — to produce the corresponding clean table prefixed with `clean_` (e.g. raw table `vehicles` becomes `clean_vehicles`).
    - All downstream Spark analysis and reports MUST reference these clean tables.
 
 Below is the active Workspace blueprint context, including active database schemas, semantic connectors, company IAM policies, teams/squads, active twin manifests, knowledge documents, and available execution tools:

@@ -66,12 +66,44 @@ class SparkRuntime(SparkTool):
             logger.error(f"Error checking/starting docker container: {e}")
         return False
 
+    async def _execute_sql_postgres(self, db_url: str, query: str, output_table: str) -> bool:
+        """Execute the analytical SQL directly against Postgres (the local SQL
+        engine) and materialize ``output_table`` there — the same store the report
+        charts read. Raises on error so the real DB message surfaces honestly."""
+        import re as _re
+        import psycopg2  # type: ignore
+
+        pg_url = _re.sub(r"^postgres://", "postgresql://", db_url)
+        safe_table = _re.sub(r"[^A-Za-z0-9_]", "", output_table) or "metrics"
+
+        def _run() -> int:
+            conn = psycopg2.connect(pg_url)
+            conn.autocommit = True
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f'DROP TABLE IF EXISTS "{safe_table}"')
+                    cur.execute(f'CREATE TABLE "{safe_table}" AS {query}')
+                    cur.execute(f'SELECT COUNT(*) FROM "{safe_table}"')
+                    return cur.fetchone()[0]
+            finally:
+                conn.close()
+
+        rows = await asyncio.to_thread(_run)
+        logger.info("Spark(local SQL) wrote %s row(s) to %s.", rows, safe_table)
+        return True
+
     async def execute_sql(
         self,
         context: SparkExecutionContext,
         query: str,
         output_table: str
     ) -> bool:
+        # When a Postgres connection is supplied, run against the local SQL engine
+        # so the materialized table lands in the queryable warehouse the rest of
+        # the pipeline (and report charts) read. This is the documented fallback.
+        if context.database_url:
+            return await self._execute_sql_postgres(context.database_url, query, output_table)
+
         await self._ensure_container_running(context.sandbox_id)
         container_name = f"fluvio-sandbox-{context.sandbox_id}-spark" if context.sandbox_id else "fluvio-spark"
         
@@ -94,56 +126,13 @@ class SparkRuntime(SparkTool):
             if proc.returncode == 0:
                 logger.info(f"Query executed successfully and written to {output_table}.")
                 return True
-            else:
-                logger.error(f"Failed to execute Spark SQL: {stderr.decode()}")
-                logger.info("Falling back to executing query on PostgreSQL local engine...")
-                
-                # Auto-detect database URL by checking where clean_users exists
-                db_url = "postgres://localhost/vowayage"
-                if not context.sandbox_id:
-                    try:
-                        check_proc = await asyncio.create_subprocess_exec(
-                            "psql", db_url, "-t", "-A", "-c", "SELECT count(*) FROM clean_users",
-                            stdout=asyncio.subprocess.PIPE,
-                            stderr=asyncio.subprocess.PIPE
-                        )
-                        await check_proc.communicate()
-                        if check_proc.returncode != 0:
-                            db_url = "postgres://localhost/fluvio_company"
-                    except Exception:
-                        db_url = "postgres://localhost/fluvio_company"
-                
-                logger.info(f"Using database URL for fallback: {db_url}")
-                
-                # Check query to make it safe for PostgreSQL CREATE TABLE AS SELECT
-                # Let's drop output table first, then create it
-                fallback_sql = f"DROP TABLE IF EXISTS {output_table}; CREATE TABLE {output_table} AS {query};"
-                
-                if context.sandbox_id:
-                    fallback_cmd = [
-                        "docker", "exec", "-i", f"fluvio-sandbox-{context.sandbox_id}-postgres",
-                        "psql", "-U", "postgres", "-d", "vowayage",
-                        "-c", fallback_sql
-                    ]
-                else:
-                    fallback_cmd = [
-                        "psql", db_url,
-                        "-c", fallback_sql
-                    ]
-                
-                logger.info(f"Running fallback SQL on Postgres: {fallback_sql}")
-                fallback_proc = await asyncio.create_subprocess_exec(
-                    *fallback_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                fb_stdout, fb_stderr = await fallback_proc.communicate()
-                if fallback_proc.returncode == 0:
-                    logger.info(f"PostgreSQL fallback query executed successfully. Table '{output_table}' created.")
-                    return True
-                else:
-                    logger.error(f"PostgreSQL fallback failed: {fb_stderr.decode().strip()}")
-                    return False
+            # No silent fallback to another engine: fail honestly so the
+            # orchestrator retries and, if it persists, the user reports it.
+            logger.error(
+                "Spark SQL execution failed for output '%s': %s",
+                output_table, stderr.decode().strip(),
+            )
+            return False
         except Exception as e:
             logger.error(f"Exception during Spark SQL query execution: {e}")
             return False

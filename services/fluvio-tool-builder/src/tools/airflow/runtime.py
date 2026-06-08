@@ -22,47 +22,44 @@ class AirflowRuntime(AirflowTool):
         dag_id: str,
         conf: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        if context.sandbox_id:
-            container_name = f"fluvio-sandbox-{context.sandbox_id}-airflow"
-            cmd = ["docker", "exec", container_name, "airflow", "dags", "trigger", dag_id]
-            if conf:
-                cmd.extend(["--conf", json.dumps(conf)])
-            
-            try:
-                logger.info(f"Triggering Airflow DAG '{dag_id}' inside sandbox container '{container_name}'...")
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                stdout, stderr = await proc.communicate()
-                if proc.returncode == 0:
-                    output = stdout.decode().strip()
-                    logger.info(f"Airflow CLI output: {output}")
-                    run_id_match = re.search(r"created:\s+([^\s,]+)", output)
-                    run_id = run_id_match.group(1) if run_id_match else f"manual__{uuid.uuid4()}"
-                    return {
-                        "status": "success",
-                        "dag_id": dag_id,
-                        "run_id": run_id,
-                        "state": "queued",
-                        "output": output
-                    }
-                else:
-                    logger.warning(f"Airflow CLI failed in container. Falling back to mock. Error: {stderr.decode().strip()}")
-            except Exception as e:
-                logger.warning(f"Error executing Airflow CLI in container: {e}. Falling back to mock.")
-        
-        # Fallback to simulation
-        logger.info(f"Simulating Airflow DAG '{dag_id}' on {context.host_url}...")
-        await asyncio.sleep(1.0)
-        run_id = f"manual__{uuid.uuid4()}"
+        if not context.sandbox_id:
+            return {
+                "status": "failed",
+                "error": "Airflow runs only inside a sandbox container; no sandbox_id provided.",
+            }
+
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-airflow"
+        cmd = ["docker", "exec", container_name, "airflow", "dags", "trigger", dag_id]
+        if conf:
+            cmd.extend(["--conf", json.dumps(conf)])
+
+        try:
+            logger.info(f"Triggering Airflow DAG '{dag_id}' inside sandbox container '{container_name}'...")
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate()
+        except Exception as e:
+            logger.error(f"Error executing Airflow CLI in container: {e}")
+            return {"status": "failed", "dag_id": dag_id, "error": str(e)}
+
+        if proc.returncode != 0:
+            err = stderr.decode().strip()
+            logger.error(f"Airflow DAG trigger failed: {err}")
+            return {"status": "failed", "dag_id": dag_id, "error": err}
+
+        output = stdout.decode().strip()
+        logger.info(f"Airflow CLI output: {output}")
+        run_id_match = re.search(r"created:\s+([^\s,]+)", output)
+        run_id = run_id_match.group(1) if run_id_match else f"manual__{uuid.uuid4()}"
         return {
             "status": "success",
             "dag_id": dag_id,
             "run_id": run_id,
             "state": "queued",
-            "conf": conf or {}
+            "output": output,
         }
 
     async def get_dag_run_status(
@@ -71,37 +68,35 @@ class AirflowRuntime(AirflowTool):
         dag_id: str,
         run_id: str
     ) -> Dict[str, Any]:
-        if context.sandbox_id:
-            container_name = f"fluvio-sandbox-{context.sandbox_id}-airflow"
-            cmd = ["docker", "exec", container_name, "airflow", "dags", "state", dag_id, run_id]
-            
-            try:
-                logger.info(f"Checking state for DAG run '{run_id}' inside sandbox container '{container_name}'...")
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                stdout, stderr = await proc.communicate()
-                if proc.returncode == 0:
-                    state = stdout.decode().strip()
-                    return {
-                        "status": "success",
-                        "dag_id": dag_id,
-                        "run_id": run_id,
-                        "state": state
-                    }
-                else:
-                    logger.warning(f"Airflow CLI state query failed. Falling back to mock. Error: {stderr.decode().strip()}")
-            except Exception as e:
-                logger.warning(f"Error querying Airflow CLI in container: {e}. Falling back to mock.")
+        if not context.sandbox_id:
+            return {
+                "status": "failed",
+                "error": "Airflow runs only inside a sandbox container; no sandbox_id provided.",
+            }
 
-        # Fallback to simulation
-        logger.info(f"Checking status for DAG run '{run_id}' of DAG '{dag_id}'...")
-        await asyncio.sleep(0.5)
+        container_name = f"fluvio-sandbox-{context.sandbox_id}-airflow"
+        cmd = ["docker", "exec", container_name, "airflow", "dags", "state", dag_id, run_id]
+
+        try:
+            logger.info(f"Checking state for DAG run '{run_id}' inside sandbox container '{container_name}'...")
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate()
+        except Exception as e:
+            logger.error(f"Error querying Airflow CLI in container: {e}")
+            return {"status": "failed", "dag_id": dag_id, "run_id": run_id, "error": str(e)}
+
+        if proc.returncode != 0:
+            err = stderr.decode().strip()
+            logger.error(f"Airflow DAG state query failed: {err}")
+            return {"status": "failed", "dag_id": dag_id, "run_id": run_id, "error": err}
+
         return {
             "status": "success",
             "dag_id": dag_id,
             "run_id": run_id,
-            "state": "success"
+            "state": stdout.decode().strip(),
         }

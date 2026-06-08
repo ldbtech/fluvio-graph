@@ -1,114 +1,727 @@
-# kg-engine
+# fluvioMe — Headless Data Pipeline & Knowledge Graph Engine
 
-Rust **HTTP service** for building a **multi-domain knowledge graph** from documents and connectors: PDF ingestion, **Gmail** sync, chunk embedding with [fastembed](https://github.com/qdrant/fastembed), **semantic similarity** edges, and **Anthropic Claude** chat over retrieved graph context. The binary only starts the API (the old CLI has been removed).
+[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-1.87%2B-orange.svg)](https://rustup.rs/)
+[![Docker](https://img.shields.io/badge/Docker-compose%20up-2496ED.svg)](docker-compose.yml)
+
+> **Your digital twin and company brain — in your own infrastructure.**
+
+fluvioMe is an open-source, headless engine for automated data pipelines, knowledge graphs, and self-serve BI reporting (PowerBI, Tableau, PDFs). Empower stakeholders with instant reports without waiting for engineering backlogs.
 
 ---
 
-## What you get
+## Table of Contents
 
-- **REST API (Axum)** on **http://0.0.0.0:8001** — PDF upload, Gmail connect/sync, paged graph endpoints, and chat. Durable graph storage is **SurrealDB** (no on-disk JSON snapshots).
+- [License](#license)
+- [What is fluvioMe?](#what-is-fluviome)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Services](#services)
+  - [fluvio-graph](#fluvio-graph)
+  - [fluvio-twin](#fluvio-twin)
+  - [fluvio-database](#fluvio-database)
+  - [fluvio-ingestion](#fluvio-ingestion)
+  - [fluvio-collab](#fluvio-collab)
+  - [fluvio-connectors](#fluvio-connectors)
+  - [fluvio-tool-builder](#fluvio-tool-builder)
+  - [agent-planner](#agent-planner)
+  - [fluvio-gateway](#fluvio-gateway)
+- [GraphQL API](#graphql-api)
+- [Configuration](#configuration)
+- [Enterprise](#enterprise)
+- [Contributing](#contributing)
+- [Repository Layout](#repository-layout)
 
 ---
 
-## Prerequisites
+## License
 
-- **Rust** — **1.85 or newer** (`edition = "2024"`). Install via [rustup](https://rustup.rs/), then `rustup update stable`.
-- **Anthropic API key** — required for `/chat`. Create a key in the [Anthropic console](https://console.anthropic.com/).
-- **SurrealDB** — kg-engine persists graph nodes (for example after `POST /twin/ingest`) to Surreal. By default it connects to **`ws://127.0.0.1:8000`** with namespace **`fluvio`** and database **`graph`** (root/root). Run a SurrealDB server on that port, or set `SURREAL_URL=embedded` in `.env` to use the embedded `surrealkv://./fluvio_surreal_data` store instead (no separate process; the `surreal sql` CLI will not see that data).
-- **Gmail (optional)** — Google OAuth client credentials in **`~/.fluvio/config.json`** (see comments in `src/ingestion_registry/email/auth/oauth.rs` for the expected JSON shape and redirect URI `http://localhost:8001/connect/gmail/callback`).
-- **Network (first run)** — the embedding model is downloaded on first use into `.fastembed_cache/` (gitignored).
+```
+Business Source License 1.1 (BUSL-1.1)
+Change Date: Four years from first tagged release
+Change License: Apache License 2.0
+```
+
+| Who | Use | Cost |
+|-----|-----|------|
+| Students, researchers, academics | Any non-commercial purpose | **Free · lifetime · no limits** |
+| Non-profit organizations | Any non-commercial purpose | **Free · lifetime · no limits** |
+| Open-source projects | Non-commercial | **Free · lifetime · no limits** |
+| Personal / hobby projects | Non-commercial | **Free · lifetime · no limits** |
+| **Any for-profit company** (any size, any stage) | Any production use | **Requires enterprise license** |
+
+**No trial period. No 24-hour limits. No feature expiry. No nag screens.**
+Non-commercial use is free and unlimited forever — no token, no registration required.
+
+After the Change Date, each release automatically converts to **Apache License 2.0** for all use.
+
+> See [`LICENSE`](LICENSE) for the full text.
+> To obtain a commercial license: [fluviome.com](https://fluviome.com) or [hello@fluviome.com](mailto:hello@fluviome.com).
+
+---
+
+## What is fluvioMe?
+
+fluvioMe gives your company a **semantic memory** that lives in your own servers:
+
+```
+Your data sources (PDFs, DBs, APIs, docs, code, Notion, GitHub)
+        ↓
+   fluvio-ingestion    chunk · tag · embed
+        ↓
+   fluvio-graph        SurrealDB knowledge graph — nodes, edges, 384-dim vectors
+        ↓
+   agent-planner       natural language → pipeline plan → compile → deploy
+        ↓
+   BI outputs          PowerBI · Tableau · PDF reports · dashboards
+```
+
+**Headless** means:
+
+- **No built-in UI** — API-first. Embed via SDK, REST, or the bundled Apollo Sandbox.
+- **No auth layer** — bring your own identity provider, or omit entirely for open/internal use.
+- **Runs anywhere** — Docker, Kubernetes, EC2, bare metal, your laptop.
+- **No vendor lock-in** — all data stays in your SurrealDB and Postgres instances.
+
+---
+
+## Quick Start
+
+### Community (non-commercial — free forever)
+
+```bash
+# Prerequisites: Docker + Docker Compose
+docker compose up
+```
+
+GraphQL API at **http://localhost:4001** (Apollo Sandbox included).
+Agent planner REST at **http://localhost:3007**.
+
+### Enterprise (any for-profit use)
+
+```bash
+# 1. Get your token at https://fluviome.com
+# 2. Add to .env:
+echo "FLUVIOME_ENTERPRISE_TOKEN=your-token-here" >> .env
+# 3. Start with enterprise gate:
+docker compose --profile enterprise up
+```
+
+### Local development (without Docker)
+
+```bash
+# Prerequisites
+# - Rust 1.87+     https://rustup.rs/
+# - SurrealDB      surreal start --user root --pass root surrealkv://./fluvio_surreal_data
+# - PostgreSQL 16  brew services start postgresql@16
+# - Python 3.13    for agent-planner and connectors
+# - Rover CLI      https://www.apollographql.com/docs/rover/getting-started
+
+cp .env.example .env          # fill in ANTHROPIC_API_KEY at minimum
+bash scripts/dev.sh
+```
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                  Client  (SDK / REST / Apollo Sandbox)           │
+└───────────────────────────────┬──────────────────────────────────┘
+                                │  x-user-id header  (BYO auth)
+                                ▼
+┌──────────────────────────────────────────────────────────────────┐
+│           Apollo Router  :4001   (GraphQL Supergraph)            │
+│      Federates all subgraphs into one unified /graphql schema    │
+└────┬──────────┬──────────┬──────────┬──────────┬────────────────┘
+     │          │          │          │          │
+  :3001      :3002      :3003      :3004      :3005      :3008
+fluvio-    fluvio-    fluvio-    fluvio-    fluvio-    fluvio-
+graph      twin       collab     ingestion  database   tool-builder
+(SurrealDB)(SurrealDB)(SurrealDB)(SurrealDB)(Postgres)  (Python)
+  │
+BGE-small
+embedding model
+(in-process, no API)
+
+                            agent-planner  :3007  (Python / FastAPI)
+                             ↕  Anthropic API  (claude-sonnet-4)
+```
+
+All Rust services are **Apollo Federation 2.5** subgraphs.
+The gateway composes them into a single `/graphql` endpoint at `:4001`.
+
+**Enterprise gate** (optional, `:4002`) — validates `FLUVIOME_ENTERPRISE_TOKEN`,
+injects `x-fluviome-tier` header. Only starts when the env var is set.
+
+---
+
+## Services
+
+---
+
+### fluvio-graph
+
+**Port:** `3001`
+**Language:** Rust — Axum · async-graphql · SurrealDB
+**Role:** Knowledge graph storage, embedding, and retrieval — the semantic memory of fluvioMe.
+
+#### What it does
+
+`fluvio-graph` is the core persistence and query engine for all knowledge graph operations. It:
+
+- Stores **nodes** (semantic entities extracted from documents, databases, and connectors) and **edges** (typed relationships between entities) in **SurrealDB**
+- Embeds all node text using **BGE-small-EN-v1.5** (384-dimensional vectors) via `fastembed` — loaded in-process on startup, no external embedding API required
+- Provides **cosine similarity vector search** over SurrealDB for semantic retrieval (RAG)
+- Provides **BFS graph traversal** and a request-scoped **Dijkstra shortest-path** over the knowledge graph
+- Supports **cross-user network search** — "who in my team knows about X?"
+- Exposes all operations as a **GraphQL subgraph** federated into the Apollo supergraph
+
+#### Data model
+
+```
+Node {
+  id:          UUID  — content-addressed or randomly generated
+  owner_id:    UUID  — which user owns this node
+  domain:      Pdf | Email | Whatsapp | Calendar | Codebase | Web | Custom
+  kind:        Entity | Topic | Artifcat | Event | Conversation | ExternalRef
+               ⚠️  "Artifcat" is a preserved typo in the SurrealDB schema — do not rename
+  source_uri:  String — opaque locator (file path, message-id, GitHub URL, …)
+  source_text: String — canonical text used for embedding + LLM context windows
+  embeddings:  Vec<f32> — 384-dim BGE-small vector (excluded from GQL responses)
+  metadata:    HashMap<String, String> — arbitrary key-value tags
+  zone:        i16 — 0 = own data, 1 = network / shared
+}
+
+Edge {
+  id:                       UUID
+  from:                     NodeId
+  to:                       NodeId
+  label:                    String — relationship type (e.g. "mentions", "authored_by")
+  token:                    i32    — approximate LLM token cost of traversing this edge
+  relationship_probability: f64   — confidence [0.0, 1.0]
+}
+```
+
+SurrealDB table: `nodes`. Edges are stored as SurrealDB `RELATE` records.
+
+#### GraphQL API
+
+**Queries:**
+
+```graphql
+# Fetch a single node by UUID
+node(id: String!): GqlNode
+
+# All nodes for the authenticated user, optionally filtered
+nodes(
+  domain:      String    # "Pdf" | "Email" | "Codebase" | …
+  zone:        Int       # 0 = own, 1 = network
+  workspaceId: String
+): [GqlNode!]!
+
+# Semantic similarity search — embeds query, returns top-K closest nodes
+search(
+  query:       String!
+  config:      GqlQueryConfig
+  workspaceId: String
+): [GqlScoredNode!]!
+
+# Cross-user network search — "who in my team knows about X?"
+# Returns sparse GqlScoredNode with owner_id and node_id in metadata;
+# full node content is intentionally omitted for privacy
+networkSearch(
+  query:   String!
+  userIds: [String!]!
+  topK:    Int           # default: 20
+): [GqlScoredNode!]!
+
+# BFS expansion — all nodes within `depth` hops of a given node
+neighbors(id: String!, depth: Int): [GqlNode!]!
+
+# Dijkstra shortest path between two nodes
+# Builds a request-scoped in-memory subgraph, dropped after the query
+shortestPath(from: String!, to: String!): GqlPath!
+```
+
+**Mutations:**
+
+```graphql
+# Create or update a node.
+# If id is supplied and the node exists, embeddings are preserved when
+# the embeddings field is omitted — safe to add metadata without re-embedding.
+upsertNode(input: GqlNodeInput!): GqlNode!
+
+# Delete a node by UUID
+deleteNode(id: String!): Boolean!
+
+# Create or update a directed edge
+upsertEdge(input: GqlEdgeInput!): GqlEdge!
+
+# Stub — reserved for future batch persistence (currently returns {nodesSaved: 0, edgesSaved: 0})
+saveGraph(zone: Int): GqlSaveResult!
+
+# Delete all graph data owned by the authenticated user
+deleteUserGraph: Boolean!
+
+# Delete all nodes scoped to a specific workspace
+deleteWorkspaceNodes(workspaceId: String!): Boolean!
+```
+
+**Types:**
+
+```graphql
+type GqlNode {
+  id:                  String!
+  domain:              GqlDomain!
+  sourceUri:           String!
+  sourceText:          String!
+  kind:                GqlNodeKind!
+  metadata:            [GqlMetadataEntry!]!
+  zone:                Int!
+  embeddingDimensions: Int!     # 0 = not yet embedded
+  isEmbedded:          Boolean!
+  # embeddings vector is intentionally excluded — too large for wire transfer
+}
+
+enum GqlDomain { Pdf Email Whatsapp Calendar Codebase Web Custom }
+
+enum GqlNodeKind {
+  Entity
+  Topic
+  Artifcat      # ⚠️ preserved typo — matches SurrealDB records; do not rename
+  Event
+  Conversation
+  ExternalRef
+}
+
+type GqlScoredNode {
+  node:  GqlNode!
+  score: Float!   # cosine similarity [0.0, 1.0]
+}
+
+type GqlPath {
+  nodes: [GqlNode!]!
+  found: Boolean!
+}
+
+type GqlSaveResult {
+  nodesSaved: Int!
+  edgesSaved: Int!
+}
+
+input GqlNodeInput {
+  id:         String        # omit to create new
+  domain:     GqlDomain!
+  sourceUri:  String!
+  sourceText: String!
+  kind:       GqlNodeKind!
+  metadata:   [GqlMetadataInput!]
+  zone:       Int           # default: 0
+  embeddings: [Float!]      # optional; existing embeddings preserved if omitted on update
+}
+
+input GqlEdgeInput {
+  from:                    String!
+  to:                      String!
+  label:                   String!
+  token:                   Int    # default: 1
+  relationshipProbability: Float  # default: 0.9
+}
+
+input GqlQueryConfig {
+  similarityTopK:   Int  # default: 20
+  expansionDepth:   Int  # default: 2
+  maxSubgraphNodes: Int  # default: 200
+  maxZone:          Int  # 0 = own only, 1 = include network
+}
+```
+
+#### Authentication
+
+`fluvio-graph` performs **no JWT validation**. The Apollo Router injects the caller's identity as the `x-user-id` header (a UUID) after your auth proxy validates it. Resolvers read it from Axum request extensions.
+
+If the header is missing, resolvers return:
+```
+x-user-id header missing — request must go through the gateway.
+In dev, set 'x-user-id: <uuid>' in GraphiQL headers.
+```
+
+In development: open Apollo Sandbox at `http://localhost:4001`, add `{"x-user-id": "your-uuid"}` to the request headers panel.
+
+#### Embedding model
+
+| Detail | Value |
+|--------|-------|
+| Model | `BGE-small-EN-v1.5` |
+| Dimensions | 384 |
+| Library | `fastembed` (Rust) |
+| Runtime | In-process — no external API, no network call |
+| Cache | Downloaded from HuggingFace on first startup; subsequent starts load from local cache |
+| Concurrency | `Arc<RwLock<EmbeddingContext>>` — write lock per embed call |
+
+#### SurrealDB environment variables
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `SURREAL_URL` | `ws://127.0.0.1:8000` | Use `embedded` for in-process KV store |
+| `SURREAL_USER` | `root` | |
+| `SURREAL_PASS` | `root` | |
+| `SURREAL_NS` | `fluvio` | |
+| `SURREAL_DB` | `graph` | |
+
+`SURREAL_URL=embedded` runs SurrealDB in-process using `surrealkv` — no separate SurrealDB process required. Note: the `surreal sql` CLI cannot inspect embedded data.
+
+#### Source layout
+
+```
+services/fluvio-graph/src/
+├── main.rs                 entry point — tracing setup, loads .env, calls serve()
+├── lib.rs                  re-exports server module
+├── server.rs               Axum app — AppState, CORS, user_id middleware, /health, serve()
+├── graph.rs                FluvioGraph trait + DomainGraph impl — in-memory graph for Dijkstra/BFS
+├── registry.rs             GraphRegistry — multi-graph coordinator (future multi-tenant)
+├── query_context.rs        request-scoped in-memory subgraph for path queries
+├── embeddings.rs           EmbeddingContext wrapping fastembed BGE-small
+├── graphql/
+│   ├── mod.rs              build_schema(), graphql_router(), extract_user_id_from_headers()
+│   ├── query.rs            QueryRoot: node, nodes, search, networkSearch, neighbors, shortestPath
+│   ├── mutation.rs         MutationRoot: upsertNode, deleteNode, upsertEdge, saveGraph,
+│   │                         deleteUserGraph, deleteWorkspaceNodes
+│   ├── subscription.rs     SubscriptionRoot (reserved for graph event streaming)
+│   └── types.rs            GqlNode, GqlEdge, GqlScoredNode, GqlPath, all input types,
+│                             enum conversions, GqlNodeKind (with preserved Artifcat typo)
+└── storage/
+    ├── mod.rs
+    ├── surreal.rs          SurrealStorage — connect, init_schema, upsert/get/delete nodes & edges,
+    │                         BFS, similarity_search_nodes, network_similarity_search,
+    │                         delete_user_graph, delete_workspace_nodes, cosine_sim
+    └── cache.rs            reserved — optional in-memory LRU cache
+```
+
+#### Running standalone
+
+```bash
+# External SurrealDB
+PORT=3001 SURREAL_URL=ws://127.0.0.1:8000 cargo run -p fluvio-graph
+
+# Embedded SurrealDB (no separate process)
+PORT=3001 SURREAL_URL=embedded cargo run -p fluvio-graph
+
+# Docker (build from workspace root)
+docker build -f services/fluvio-graph/Dockerfile -t fluviome/graph .
+docker run \
+  -e PORT=3001 \
+  -e SURREAL_URL=ws://host.docker.internal:8000 \
+  -p 3001:3001 \
+  fluviome/graph
+```
+
+Health: `GET http://localhost:3001/health` → `"ok"`
+
+---
+
+### fluvio-twin
+
+**Port:** `3002`
+**Language:** Rust — Axum · async-graphql · SurrealDB
+**Role:** Digital twin and workspace management. Each user has a personal workspace that aggregates their knowledge, documents, and pipeline state. Manages workspace creation, member sharing, and workspace-scoped access.
+
+---
+
+### fluvio-database
+
+**Port:** `3005`
+**Language:** Rust — Axum · async-graphql · PostgreSQL (sqlx)
+**Role:** Relational persistence for users, companies, teams, connectors, and chat history. SurrealDB holds the graph; Postgres holds structured business entities. Also owns the `getUserByFirebaseUid` / `createUser` mutations used during auth sync.
+
+---
+
+### fluvio-ingestion
+
+**Port:** `3004`
+**Language:** Rust — Axum · async-graphql · SurrealDB
+**Role:** Pipeline ingestion subgraph. Receives raw documents and data source payloads, chunks and tags them, then pushes structured nodes into `fluvio-graph`. Handles PDF text extraction, chunking strategy, and source metadata.
+
+---
+
+### fluvio-collab
+
+**Port:** `3003`
+**Language:** Rust — Axum · async-graphql · SurrealDB
+**Role:** Real-time collaboration — workspace sharing, team graph access, workspace invitations, and approval workflows.
+
+> **Enterprise-gated** — requires `FLUVIOME_ENTERPRISE_TOKEN`. The service starts in community mode without the token but gates collaboration mutations behind the tier check.
+
+---
+
+### fluvio-connectors
+
+**Port:** `3006`
+**Language:** Python — FastAPI · Strawberry GraphQL
+**Role:** Data source connectors. Bridges external systems into fluvioMe:
+
+| Connector | What it ingests |
+|-----------|----------------|
+| PostgreSQL / MySQL | Schema sync → knowledge graph nodes |
+| GitHub | Repositories, issues, PRs → graph nodes |
+| Notion | Pages and databases → graph nodes |
+| Row-to-node | Tabular rows → typed nodes with embeddings |
+
+---
+
+### fluvio-tool-builder
+
+**Port:** `3008`
+**Language:** Python — FastAPI · Strawberry GraphQL
+**Role:** Tool execution engine. Exposes `executeTool(toolId, inputs)` called by the agent-planner worker. Tools are defined as YAML manifests and executed in sandboxed environments.
+
+Built-in tools: `spark` (SQL), `dbt`, `dashboard-syncer` (Tableau / PowerBI), `email-sender`, `pdf-report`, `kafka`, `latex`.
+
+---
+
+### agent-planner
+
+**Port:** `3007`
+**Language:** Python — FastAPI · Anthropic SDK (claude-sonnet-4)
+**Role:** AI orchestration layer — natural language → pipeline plan → compile → deploy.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/chat` | POST | Conversation loop → generates pipeline plan Markdown |
+| `/history/{workspace_id}` | GET | Chat history for a workspace |
+| `/plan/compile` | POST | Compile approved plan Markdown → validated JSON step array |
+| `/plan/context` | POST | Raw knowledge graph context assembly |
+| `/deploy` | POST | Enqueue pipeline job → returns `job_id` immediately |
+| `/jobs/{job_id}/status` | GET | Poll: queued / running / completed / failed |
+| `/jobs/{job_id}/stream` | GET | SSE stream of real-time execution logs |
+| `/deployments/{workspace_id}` | GET | Deployment audit history |
+| `/sandbox/provision` | POST | Provision Docker sandbox |
+| `/sandbox/resolve` | POST | Resolve sandbox port mappings |
+| `/circuit-breakers` | GET | Per-tool circuit breaker states |
+| `/health` | GET | Health check |
+
+Requires `ANTHROPIC_API_KEY`. Uses `claude-sonnet-4-20250514` for plan generation, reflection, and step compilation.
+
+Pipeline features: circuit breaker (Phase 7), idempotent step execution (Phase 9), audit trail + rollback (Phase 11), plan reflection (Phase 18), RAG deployment memory (Phase 19), intent disambiguation (Phase 20), tool capability graph (Phase 22), SQL EXPLAIN validation (Phase 23).
+
+---
+
+### fluvio-gateway
+
+**Port:** `4001`
+**Tech:** Apollo Router
+**Role:** GraphQL federation gateway. Composes all subgraphs into a single unified `/graphql` schema. Propagates `x-user-id` and `x-fluviome-token` headers to all downstream services.
+
+This is the **only public API surface** — the SDK, web UI, and agent-planner all call `:4001`.
+
+Apollo Sandbox available at `http://localhost:4001` for interactive schema exploration.
+
+---
+
+## GraphQL API
+
+Full introspected schema available at `http://localhost:4001` via Apollo Sandbox.
+
+**Common operations:**
+
+```graphql
+# Knowledge graph — nodes
+query {
+  nodes(workspaceId: "ws-id") {
+    id sourceText domain kind isEmbedded embeddingDimensions
+  }
+}
+
+# Semantic search
+query {
+  search(query: "customer churn analysis", workspaceId: "ws-id") {
+    node { id sourceText domain }
+    score
+  }
+}
+
+# Create a node
+mutation {
+  upsertNode(input: {
+    domain: Custom
+    sourceUri: "notion://page/abc123"
+    sourceText: "Q3 revenue declined 12% due to churn in SMB segment"
+    kind: Topic
+    metadata: [{ key: "workspace_id", value: "ws-id" }]
+  }) { id isEmbedded }
+}
+
+# Workspaces
+query { myWorkspaces(userId: "uid") { id name } }
+mutation { createWorkspace(input: { name: "Q4 Pipeline", userId: "uid" }) { id } }
+
+# Graph traversal
+query { neighbors(id: "node-uuid", depth: 2) { id sourceText } }
+query { shortestPath(from: "uuid-a", to: "uuid-b") { nodes { id } found } }
+```
+
+**Agent planner (REST, not GraphQL):**
+
+```bash
+# Natural language planning
+curl -X POST http://localhost:3007/chat \
+  -H "x-user-id: your-uuid" \
+  -H "content-type: application/json" \
+  -d '{"workspace_id":"ws-id","message":"Run a monthly churn report from the orders table"}'
+
+# Compile plan → steps
+curl -X POST http://localhost:3007/plan/compile \
+  -H "x-user-id: your-uuid" \
+  -H "content-type: application/json" \
+  -d '{"workspace_id":"ws-id","approved_markdown":"..."}'
+
+# Deploy
+curl -X POST http://localhost:3007/deploy \
+  -H "x-user-id: your-uuid" \
+  -H "content-type: application/json" \
+  -d '{"workspace_id":"ws-id","steps":[...]}'
+```
 
 ---
 
 ## Configuration
 
-Create a **`.env`** file in the repository root (gitignored — **do not commit secrets**). The server loads it via [dotenvy](https://crates.io/crates/dotenvy) when present; you can also `export …` in your shell.
-
-Typical `.env`:
+Copy `.env.example` to `.env`:
 
 ```bash
-ANTHROPIC_API_KEY=<your-anthropic-api-key>
+# ── Required ──────────────────────────────────────────────────────────────────
+ANTHROPIC_API_KEY=sk-ant-...       # agent-planner AI features
 
-# Surreal — optional; omit these to use defaults (ws://127.0.0.1:8000, root/root, fluvio/graph).
-SURREAL_URL=ws://127.0.0.1:8000
+# ── SurrealDB ─────────────────────────────────────────────────────────────────
+SURREAL_URL=ws://127.0.0.1:8000    # or "embedded" for in-process
 SURREAL_USER=root
 SURREAL_PASS=root
 SURREAL_NS=fluvio
 SURREAL_DB=graph
 
-# Embedded Surreal only (no server on 8000): use instead of the block above
-# SURREAL_URL=embedded
-```
+# ── PostgreSQL ────────────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://fluviome:fluviome@localhost:5432/fluviome
 
-**Embedded Surreal only** (no separate Surreal process): set `SURREAL_URL=embedded` and comment out or remove the other `SURREAL_*` lines if you like; the `surreal sql` CLI will not see that data.
+# ── Service ports (all have sensible defaults) ────────────────────────────────
+FLUVIO_GRAPH_PORT=3001
+FLUVIO_TWIN_PORT=3002
+FLUVIO_COLLAB_PORT=3003
+FLUVIO_INGESTION_PORT=3004
+FLUVIO_DATABASE_PORT=3005
+FLUVIO_CONNECTORS_PORT=3006
+FLUVIO_AGENT_PLANNER_PORT=3007
+FLUVIO_TOOL_BUILDER_PORT=3008
+
+# ── Enterprise (omit entirely for community / non-commercial use) ─────────────
+FLUVIOME_ENTERPRISE_TOKEN=         # issued at https://fluviome.com
+FLUVIOME_PUBLIC_KEY=               # RS256 public key for offline token verification
+```
 
 ---
 
-## Build and run the server
+## Enterprise
 
-From the repo root:
+Enterprise tokens are issued at **[fluviome.com](https://fluviome.com)**.
+
+Any for-profit company — at any stage and any size — requires an enterprise license. See [License](#license).
+
+**Enterprise-gated features:**
+
+| Feature | Service |
+|---------|---------|
+| Real-time collaboration | `fluvio-collab` |
+| SSO / SAML / OIDC | enterprise coprocessor |
+| Audit logs & compliance exports | `agent-planner` audit store |
+| White-label deployments | gateway config |
+| Managed cloud hosting | fluviome.com |
+| SLA & priority support | fluviome.com |
+
+**How the token works:**
 
 ```bash
-cargo build --release
-./target/release/kg-engine
+# 1. Sign up at fluviome.com → subscribe → token emailed to you
+# 2. Add to .env:
+FLUVIOME_ENTERPRISE_TOKEN=eyJhbGci...
+
+# 3. Community mode (default):
+docker compose up
+
+# 4. Enterprise mode (enables gate at :4002):
+docker compose --profile enterprise up
 ```
 
-During development:
+The token is a **self-contained RS256 JWT** — no internet call required for verification. Your engine verifies it offline using the public key embedded in `FLUVIOME_PUBLIC_KEY`. Tokens are re-issued automatically via Stripe webhook on each renewal. Cancellation lets the existing token expire naturally at its 366-day boundary.
 
-```bash
-cargo run
+Token payload:
+
+```json
+{
+  "sub":        "org_<uuid>",
+  "org":        "acme-corp",
+  "org_name":   "Acme Corp",
+  "tier":       "starter | growth | enterprise",
+  "features":   ["collaboration", "sso", "audit_logs", "white_label"],
+  "stripe_sub": "sub_xxx",
+  "iat": ..., "exp": ..., "iss": "https://fluviome.com"
+}
 ```
 
-The process exits immediately if `ANTHROPIC_API_KEY` is not set. On success you should see logs pointing at **http://localhost:8001**.
+---
+
+## Contributing
+
+Non-commercial contributions are welcome.
+
+- **Bug reports:** open a GitHub Issue
+- **Questions:** [hello@fluviome.com](mailto:hello@fluviome.com)
+- **Enterprise enquiries:** [fluviome.com/#contact](https://fluviome.com/#contact)
+
+By contributing you agree your code may be distributed under the BUSL-1.1 license and, after the Change Date, under Apache 2.0.
+
+`CONTRIBUTING.md` coming soon.
 
 ---
 
-## HTTP API (summary)
+## Repository Layout
 
-CORS is open for local UI development (`tower-http`).
-
-| Area | Method | Path | Notes |
-|------|--------|------|--------|
-| Ingest | `POST` | `/ingest/pdf` | Multipart PDF upload; chunk, embed, wire edges; persists into the workspace layout. |
-| Graph | `GET` | `/graph` | JSON sample (capped); use paging endpoints for large graphs. |
-| Graph | `GET` | `/graph/meta` | Metadata for UI. |
-| Graph | `GET` | `/graph/nodes` | Paged nodes. |
-| Graph | `POST` | `/graph/edges_subset` | Edges for a subset of node IDs. |
-| Chat | `POST` | `/chat` | JSON: `question`, `history` as `{ "role", "content" }[]`; returns `answer` and `sources`. |
-| Gmail | `GET` | `/connect/gmail` | Start OAuth (JSON or browser redirect with `?redirect=1`). |
-| Gmail | `GET` | `/connect/gmail/callback` | OAuth callback. |
-| Gmail | `GET` | `/connect/gmail/status` | Connection status. |
-| Gmail | `POST` | `/sync/gmail` | Kick off sync (202); poll progress below. |
-| Gmail | `GET` | `/sync/gmail/progress` | Sync progress. |
-| Workspace | `GET` | `/workspace/projects` | List saved projects. |
-| Workspace | `POST` | `/workspace/archive`, `/workspace/load`, `/workspace/delete` | JSON body `{ "id": "<project-id>" }`. |
-| Workspace | `POST` | `/workspace/reset` | Clears the in-memory graph and workspace snapshots; **no JSON body**. |
-
-**Durable storage** — All ingested nodes/edges (codebase, PDF, video, email) are persisted into **SurrealDB** via `src/storage/surreal.rs`. The in-memory `IngestionPipeline` graph is a per-process working set only; nothing is snapshotted to JSON. Surreal records are keyed by `owner_id` (Postgres user id) and `zone` so reads can be scoped per user.
+```
+kg-engine/
+├── Cargo.toml                     Rust workspace (resolver = "2")
+├── Cargo.lock
+├── docker-compose.yml             full stack: community + --profile enterprise
+├── .dockerignore
+├── FLUVIOME_PLAN.md               product & architecture plan
+│
+├── crates/
+│   ├── fluvio-types/              shared domain types (Node, Edge, Domain, GraphQuery, …)
+│   ├── fluvio-common/             shared config, error handling, tracing utilities
+│   ├── fluvio-embed/              embedding utilities (shared)
+│   └── fluvio-auth/               Rust auth crate (internal — not the Node coprocessor)
+│
+├── services/
+│   ├── fluvio-graph/              knowledge graph subgraph — Rust, SurrealDB    :3001
+│   ├── fluvio-twin/               digital twin / workspace subgraph — Rust      :3002
+│   ├── fluvio-database/           relational subgraph — Rust, PostgreSQL        :3005
+│   ├── fluvio-ingestion/          ingestion subgraph — Rust, SurrealDB          :3004
+│   ├── fluvio-collab/             collaboration subgraph — Rust [enterprise]    :3003
+│   ├── fluvio-connectors/         data source connectors — Python, FastAPI      :3006
+│   ├── fluvio-tool-builder/       tool execution engine — Python, FastAPI       :3008
+│   ├── fluvio-gateway/            Apollo Router gateway                         :4001
+│   └── fluvio-auth/               enterprise token coprocessor — Node.js [ent]  :4002
+│
+├── services/agent-planner/        AI planning service — Python, FastAPI         :3007
+│
+├── enterprise/
+│   ├── token-service/             Stripe → JWT issuer (Node.js)                 :4003
+│   └── auth-adapter/              legacy auth adapter
+│
+└── scripts/
+    └── dev.sh                     full local dev stack launcher
+```
 
 ---
 
-## Repository layout (high level)
-
-| Path | Role |
-|------|------|
-| `src/main.rs` | Starts the HTTP server only. |
-| `src/server.rs` | Axum routes: ingest, graph, chat, Gmail, workspace. |
-| `src/graph/` | Graph types, embeddings, registry. |
-| `src/storage/surreal.rs` | SurrealDB persistence (durable nodes/edges per user). |
-| `src/ingestion.rs` | Ingestion pipeline wiring (in-RAM working set). |
-| `src/query.rs` | RAG-style retrieval over the graph. |
-| `src/ingestion_registry/` | Connectors and document types (e.g. PDF, Gmail). |
-
----
-
-## Troubleshooting
-
-- **`ANTHROPIC_API_KEY` errors** — Ensure `.env` exists in the directory you run from, or export the variable.
-- **`SurrealDB connect failed`** — Start Surreal on `127.0.0.1:8000`, or set `SURREAL_URL=embedded` if you intentionally run without a server.
-- **`SELECT * FROM nodes` empty in `surreal sql`** — Confirm the CLI uses the same endpoint and `USE NS fluvio DB graph` as kg-engine (see startup log `[SurrealDB] Connected to …`). If you use `SURREAL_URL=embedded`, data is not on the network server.
-- **Port 8001 in use** — Stop the other process or change the bind address in `src/server.rs`.
-- **Gmail OAuth** — Confirm `~/.fluvio/config.json` exists and redirect URIs match your Google Cloud OAuth client.
-- **First embedding run is slow** — Model download; watch the console for fastembed progress.
-
-This codebase is **private / not open source** for now: deep ingest and graph-backed reasoning can be misused against third-party repositories or documents without authorization. The product landing reflects the same stance.
+*Licensed under [BUSL-1.1](LICENSE). Free forever for non-commercial use. Enterprise license required for any for-profit use.*
+*© fluvioMe — [fluviome.com](https://fluviome.com)*

@@ -1,6 +1,6 @@
 {
   "user_message": "Deploy a Tableau dashboard for customer segmentation",
-  "workspace_context": "### Available Execution Tools\n#### Tool: Data Cleaning (ID: `data-cleaning`)\n- **Actions**: clean_table\n#### Tool: Spark (ID: `spark`)\n- **Actions**: execute_sql, submit_job, get_job_status\n#### Tool: Dashboard Syncer (ID: `dashboard-syncer`)\n- **Actions**: publish_report, trigger_refresh, get_share_link, generate_pdf_report",
+  "workspace_context": "### Available Execution Tools\n#### Tool: Data Cleaning (ID: `data-cleaning`)\n- **Actions**: run_cleaning\n#### Tool: Spark (ID: `spark`)\n- **Actions**: execute_sql, submit_job, get_job_status\n#### Tool: Dashboard Syncer (ID: `dashboard-syncer`)\n- **Actions**: publish_report, trigger_refresh, get_share_link, generate_pdf_report",
   "environment_context": "{\"database\": {\"credential_ref\": \"cred:ws_test:postgres\"}, \"connectors\": {\"tableau\": {\"credential_ref\": \"cred:ws_test:tableau\"}}}",
   "expected_tool_ids": ["data-cleaning", "spark", "dashboard-syncer"],
   "must_not_contain": ["VowayageAnalyticsJob", "vowayage", "2GGPYQyd", "\"run\"", "\"apply\"", "delete_report"]

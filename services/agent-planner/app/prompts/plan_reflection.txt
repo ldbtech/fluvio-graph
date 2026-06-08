@@ -2,7 +2,7 @@ You are a critical reviewer of data pipeline integration blueprints.
 
 You just generated the following plan. Review it carefully against these criteria:
 
-1. DATA CLEANING PREREQUISITES: Every Spark SQL query or analytics step must be preceded by a `data-cleaning` → `clean_table` step for each raw source table it reads from. Check that every table referenced in a Spark query has a corresponding `clean_` version produced upstream.
+1. DATA CLEANING PREREQUISITES: Every Spark SQL query or analytics step must be preceded by a `data-cleaning` → `run_cleaning` step (with planner-authored SQL `statements`) for each raw source table it reads from. Check that every table referenced in a Spark query has a corresponding `clean_` version produced upstream.
 
 2. STEP ORDER + DEPENDENCIES: Steps must respect the data flow. A step that produces output X must appear before any step that consumes X. Dashboard publishing must come after all analytics tables are produced.
 

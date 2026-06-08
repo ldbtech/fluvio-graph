@@ -70,10 +70,12 @@ async def main():
         environment="local",
         sandbox_id=sandbox_id
     )
-    res_clean = await run_tool_action("data-cleaning", "clean_table", {
+    res_clean = await run_tool_action("data-cleaning", "run_cleaning", {
         "context": clean_ctx.model_dump(),
         "table_name": "users",
-        "operations": ["normalize_headers", "drop_nulls"]
+        "statements": [
+            "DELETE FROM {table} WHERE email IS NULL OR email = '';",
+        ],
     })
     assert res_clean["status"] == "success", "Failed to clean users table in sandbox."
     

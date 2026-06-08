@@ -1,9 +1,34 @@
-from pydantic import AliasChoices, Field
+from pathlib import Path
+
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The planner usually runs with CWD = services/agent-planner (no .env there); the
+# real secrets live in the repo-root .env. Point at both so the key resolves no
+# matter how the process is launched. Repo root is four levels up from this file
+# (app/ → agent-planner/ → services/ → repo root).
+_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
+_LOCAL_ENV = Path(__file__).resolve().parents[1] / ".env"
+
+
+def _key_from_env_files() -> str | None:
+    """Read ANTHROPIC_API_KEY straight from the .env files.
+
+    Used as a fallback when the process environment carries an *empty*
+    ANTHROPIC_API_KEY (e.g. a parent shell exported a blank one), which would
+    otherwise shadow the real value in .env.
+    """
+    from dotenv import dotenv_values
+    for path in (_LOCAL_ENV, _ROOT_ENV):
+        if path.exists():
+            val = (dotenv_values(path).get("ANTHROPIC_API_KEY") or "").strip()
+            if val:
+                return val
+    return None
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(_ROOT_ENV, _LOCAL_ENV), extra="ignore")
 
     port: int = Field(
         default=3007,
@@ -25,6 +50,14 @@ class Settings(BaseSettings):
             "If empty, auto-resolved relative to this file."
         ),
     )
+
+    @field_validator("anthropic_api_key", mode="after")
+    @classmethod
+    def _fallback_blank_key(cls, v: str | None) -> str | None:
+        # A blank/whitespace env var must not shadow the real .env value.
+        if v and v.strip():
+            return v.strip()
+        return _key_from_env_files()
 
 
 settings = Settings()

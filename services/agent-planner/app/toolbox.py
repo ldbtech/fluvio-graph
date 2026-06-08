@@ -62,19 +62,21 @@ class ToolManifest:
         return ", ".join(f"`{a}`" for a in sorted(self.valid_actions))
 
     def format_for_prompt(self) -> str:
-        """Compact markdown block suitable for inclusion in a system prompt."""
+        """Full skill block for the system prompt.
+
+        The complete `.md` skill documentation is included verbatim — this is the
+        agent's "skill manual" for the tool, read in full the same way an agent
+        reads a SKILL.md. Do NOT truncate: the skill doc is the source of truth
+        for how the agent decides to use the tool and what arguments to author.
+        """
         lines = [
-            f"### Tool: {self.name}  (id: `{self.tool_id}`, category: {self.category})",
+            f"### Skill: {self.name}  (tool_id: `{self.tool_id}`, category: {self.category})",
             f"{self.description}",
             f"**Valid actions**: {self.actions_summary()}",
         ]
         if self.documentation:
-            # Include the doc but keep it bounded
-            doc_preview = self.documentation[:1500]
-            if len(self.documentation) > 1500:
-                doc_preview += "\n_(documentation truncated)_"
-            lines.append("\n**Documentation**:")
-            lines.append(doc_preview)
+            lines.append("\n**Skill manual (read in full):**")
+            lines.append(self.documentation.strip())
         return "\n".join(lines)
 
 
