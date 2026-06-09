@@ -23,6 +23,42 @@ multi-tenant isolation, SLA, audit logs, SSO coprocessor, and priority support.
 
 ---
 
+## Engine Data Flow (verified against code)
+
+fluvioMe gives a company a semantic memory that lives on its own servers:
+
+```
+Your data sources (PDFs, DBs, APIs, docs, code, Notion, GitHub)
+        │
+        ▼
+   fluvio-ingestion    extract → chunk (~512 tok, 64 overlap) → tag → embed
+        │              BGE-small via fastembed → 384-dim vectors
+        │              edge_wirer auto-connects nodes by cosine similarity
+        ▼
+   fluvio-graph        SurrealDB knowledge graph — nodes, edges, 384-dim vectors
+        │              cosine vector search over stored embeddings
+        ▼
+   agent-planner       natural language → pipeline plan → compile → deploy
+        │              /chat → /plan/compile → /deploy (async job queue)
+        ▼
+   BI outputs          PowerBI · Tableau · PDF reports · dashboards
+                       (dashboard-syncer + email-sender tools)
+```
+
+**Code anchors (don't drift from these):**
+- Extractors: `services/fluvio-ingestion/src/extractor/` (pdf, docx, text, codebase, detect)
+- Chunking: `pipeline/chunker.rs` — ~512 token chunks, 64 token overlap
+- Embedding: `pipeline/embedder.rs` — fastembed `BGESmallENV15`, **384 dimensions**
+- Auto edge-wiring: `pipeline/edge_wirer.rs` — pairwise cosine sim above threshold
+- Graph storage + search: `services/fluvio-graph/src/storage/surreal.rs` (`embeddings: Vec<f32>`, `cosine_sim`)
+- Planning: agent-planner (see `docs/agent-planner-architecture.pptx` for full UML)
+
+**Key insight:** the graph is not a passive vector store — `fluvio-ingestion`
+computes pairwise cosine similarity between node embeddings and **auto-wires the
+edges**, so the knowledge graph builds its own connective structure on ingest.
+
+---
+
 ## Current Codebase (what we're converting FROM)
 
 Monorepo: `~/Developer/AWS/rust/kg-engine/`
@@ -181,26 +217,43 @@ Headless option:
 
 ---
 
-## Migration Plan (rough phases)
+## Migration Plan (phases)
 
-### Phase A — Strip Auth from Core (prerequisite)
-1. Remove `fluvio-auth` service from OSS build
-2. Remove `coprocessor` config from `router.yaml`
-3. Make all subgraph resolvers trust `x-user-id` header without JWT verification
-4. Add optional `FLUVIOME_AUTH_MODE=none|header|jwt|enterprise` env flag
-5. Document: "In production, put your own auth proxy in front"
+### Phase A — Strip Auth from Core ✅ DONE
+1. ✅ `fluvio-auth` removed from default runtime → repurposed as enterprise gate (:4002)
+2. ✅ No coprocessor in `router.yaml` (commented stub ready); router :4001 is direct entry
+3. ✅ Subgraphs trust `x-user-id` header; gateway propagates it + `x-fluviome-token`
+4. ✅ Enterprise coprocessor only starts when `FLUVIOME_ENTERPRISE_TOKEN` is set
+5. ✅ Documented in `/docs` + plan
 
-### Phase B — Headless API Hardening
-1. Expose a clean public REST API surface (or just GQL) with versioned schema
-2. Remove all Firebase-specific types/mutations from the schema
-3. Extract workspace creation into a simple bootstrap API (no Firebase dependency)
-4. Add API token issuance for enterprise (simple JWT, not Firebase)
+### Phase B — Headless API Hardening  ◀ NEXT (planning session)
+**Identity model (LOCKED): generic `external_id`.**
+1. Rename `firebase_uid` → `external_id` across the database subgraph:
+   - `services/fluvio-database/src/graphql/types.rs` (fields)
+   - `services/fluvio-database/src/graphql/query.rs` (`get_user_by_firebase_uid` → `get_user_by_external_id`)
+   - `services/fluvio-database/src/graphql/mutation.rs` (`createUser` input + INSERT/ON CONFLICT)
+   - `services/fluvio-database/src/db/users.rs` + `db/queries.rs`
+   - SQL migration: `ALTER TABLE users RENAME COLUMN firebase_uid TO external_id;`
+2. `agent-planner/app/auth.py` already uses `myWorkspaces` — verify no firebase refs remain
+3. The engine accepts ANY opaque user id via `x-user-id`; BYO-auth maps their IdP subject → `external_id`
+4. Remove remaining Firebase strings from `fluvio-collab` client types
+5. Enterprise JWT issuance already built (token-service)
+
+### Phase B2 — TypeScript SDK (LOCKED: thin client first)
+Create `sdk/typescript/` → `@fluviome/sdk`:
+- `FluviomeClient({ endpoint, plannerUrl, userId, enterpriseToken })`
+- `planner.chat()` / `planner.compile()` / `deploy()` / `jobs.stream()` → wrap :3007 REST
+- `graph.search()` / `workspaces.list()` → wrap :4001 GraphQL
+- Inject `x-user-id` + optional `x-fluviome-token` on every call
+- README with the plan→compile→deploy example (already drafted in /docs)
+- Python SDK (`fluviome`) mirrors it afterward
 
 ### Phase C — Packaging
-1. Write `Dockerfile` for each service + `docker-compose.yml` for full stack
-2. Write Helm chart (`charts/fluviome/`)
-3. Write `npx fluviome init` scaffold CLI
-4. Write getting-started docs (README, quickstart)
+1. ✅ `Dockerfile` for every service (5 Rust multi-stage, 3 Python, gateway, enterprise gate) + `docker-compose.yml`
+2. ✅ `requirements.txt` for all Python services (connectors, tool-builder, agent-planner)
+3. Write Helm chart (`charts/fluviome/`)  ◀ TODO
+4. Write `npx fluviome init` scaffold CLI  ◀ TODO
+5. Getting-started docs ✅ (the `/docs` page)
 
 ### Phase D — Open Source Release
 1. Create `fluviome-engine` GitHub org / repo
@@ -241,4 +294,11 @@ agent-planner/app/auth.py                    ← workspace auth (will simplify)
 
 ## Context Files Already Documented
 - `docs/agent-planner-architecture.pptx` — full UML of agent-planner (13 slides)
+- `docs/MCP_MIGRATION_PLAN.md` — plan to convert tools to MCP (internal + external); decision locked
 - `services/agent-planner/app/**` — full Python/FastAPI agent-planner codebase
+
+## Decisions locked (later sessions)
+- **SDK = thin client, NOT the engine.** `fluviome-client` (`@fluviome/client` / `pip install fluviome-client`) is pure TS/Python talking to the running Rust engine over HTTP (`:4001` gateway + `:3007` planner). Does not exist yet — to be scaffolded.
+- **`fluviome-core` = different/harder model** (embed the Rust engine in the package via PyO3/maturin or napi-rs/WASM). Deferred; client SDK comes first.
+- **MCP migration** (`docs/MCP_MIGRATION_PLAN.md`): make `fluvio-tool-builder` an MCP server, `agent-planner` an MCP client; expose internally + externally. Replaces the double-JSON `executeTool` transport; orchestration/reliability stays.
+- **Docker registry:** publish images to GHCR (`ghcr.io/ldbtech/<service>`); compose supports `image:` + `build:`; CI to build/push on release. Not done yet.
