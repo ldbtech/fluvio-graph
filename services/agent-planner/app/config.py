@@ -50,6 +50,11 @@ class Settings(BaseSettings):
             "If empty, auto-resolved relative to this file."
         ),
     )
+    mcp_server_url: str = Field(
+        default="http://127.0.0.1:3008/mcp",
+        validation_alias=AliasChoices("MCP_SERVER_URL", "TOOL_BUILDER_MCP_URL"),
+        description="fluvio-tool-builder MCP Streamable-HTTP endpoint (tools/list + tools/call).",
+    )
 
     @field_validator("anthropic_api_key", mode="after")
     @classmethod

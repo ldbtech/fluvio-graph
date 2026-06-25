@@ -111,6 +111,48 @@ impl QueryRoot {
         Ok(results)
     }
 
+    // ── Capability search (CSP reuse-first) ─────────────────────────────────────
+
+    /// Semantic search over the caller's CSP `Capability` nodes. Powers
+    /// reuse-first: before synthesizing a new capability, the planner checks
+    /// here for an existing general verb that already covers the goal.
+    async fn search_capabilities(
+        &self,
+        ctx:   &Context<'_>,
+        goal:  String,
+        top_k: Option<i32>,
+    ) -> Result<Vec<GqlScoredNode>> {
+        let state   = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+        let k = top_k.unwrap_or(8).max(1) as usize;
+
+        let embedding = {
+            let mut embedder = state.embedder.write().await;
+            embedder.embed(&goal)
+                .map_err(|e| Error::new(format!("embed failed: {e:?}")))?
+        };
+
+        let rows = state.surreal
+            .capability_search_nodes(user_id, &embedding, k)
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        let query_norm: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+        let results = rows.into_iter().map(|row| {
+            let node = row.to_node();
+            let dot: f32 = embedding.iter().zip(&node.embeddings).map(|(a, b)| a * b).sum();
+            let node_norm: f32 = node.embeddings.iter().map(|x| x * x).sum::<f32>().sqrt();
+            let score = if node_norm == 0.0 || query_norm == 0.0 {
+                0.0f64
+            } else {
+                (dot / (query_norm * node_norm)) as f64
+            };
+            GqlScoredNode { node: GqlNode::from(node), score }
+        }).collect();
+
+        Ok(results)
+    }
+
     // ── Network search ────────────────────────────────────────────────────────
 
     /// Cross-user semantic search — "who in my network knows about X?"

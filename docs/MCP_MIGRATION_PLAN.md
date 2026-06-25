@@ -151,20 +151,23 @@ server. It coexists with the FastAPI app already running on `:3008`.
   still works simultaneously.
 - Naming convention chosen: `<snake_tool_id>__<action>` (e.g. `dashboard_syncer__publish_report`).
 
-### Phase M2 — agent-planner becomes an MCP client (compile path)
-- Add `mcp` client to `agent-planner/requirements.txt`.
-- New `app/mcp_client.py`: connect to `http://fluvio-tool-builder:3008/mcp`, cache `tools/list`.
-- In `routers/compile.py`: replace `toolbox.registry_for(...).format_for_prompt()` with the
-  MCP tool schemas passed to Claude as real `tools` (or rendered from JSON Schema).
-- Keep `toolbox.validate_steps()` as a fallback validator during transition.
-- ✅ Done when: compiled steps validate against MCP `inputSchema`, not the manifest.
+### Phase M2 — agent-planner becomes an MCP client (compile path) ✅ DONE & VERIFIED
+- ✅ `app/capabilities/mcp_client.py`: `list_tools()` (full specs), `list_tool_names()`,
+  `format_tools_for_prompt()`, `call_tool()`. `mcp_server_url` config (default :3008/mcp).
+- ✅ `routers/compile.py`: injects the **live MCP tool schemas** (name + args + required,
+  derived from each tool's `inputSchema`) into the system prompt, best-effort.
+- ✅ `toolbox.validate_steps()` kept as the fallback validator (non-breaking).
+- ✅ Verified live: the prompt section renders real schemas (`airflow__get_dag_run_status`
+  → `args: context, dag_id, run_id · required: …`).
 
-### Phase M3 — agent-planner worker calls tools via MCP (deploy path)
-- In `jobs/worker.py`, replace `_call_tool` (the `executeTool` double-encode) with an MCP
-  `tools/call` to `dashboard_syncer__publish_report` etc.
-- **Reliability wrapper unchanged** — `with_retry`, circuit breaker, idempotency still wrap
-  the call. Only the innermost "make the call" line changes.
-- ✅ Done when: a full deploy runs end-to-end through MCP with retry/rollback intact.
+### Phase M3 — agent-planner worker calls tools via MCP (deploy path) ✅ DONE & VERIFIED
+- ✅ `jobs/worker.py`: `_call_tool` now prefers typed MCP `tools/call`
+  (`tool_id__action`), falling back to the legacy `executeTool` mutation **only** when the
+  MCP server is unreachable. A tool that runs and fails does NOT fall back (no double-run).
+- ✅ **Reliability wrapper unchanged** — `with_retry`, circuit breaker, idempotency still
+  wrap `_call_tool`. Only the innermost invoke line changed.
+- ✅ Verified live: `_call_tool(None, "database", "list_tables", …)` — `client=None` proves
+  the legacy path is impossible — returned `status: success` with real DB tables via MCP.
 
 ### Phase M4 — External exposure
 - Expose the `/mcp` endpoint through the gateway (or a documented direct URL).

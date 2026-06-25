@@ -82,3 +82,10 @@ INFO:     127.0.0.1:60933 - "POST /graphql HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60934 - "POST /graphql HTTP/1.1" 200 OK
 2026-06-07 02:05:02,999  INFO      httpx  HTTP Request: POST http://localhost:3005/graphql "HTTP/1.1 200 OK"
 INFO:     127.0.0.1:60935 - "POST /graphql HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-06-09 13:54:52,835  INFO      src.jobs.scheduler  Scheduler stopped
+2026-06-09 13:54:52,837  INFO      src.main  fluvio-connectors stopped
+2026-06-09 13:54:52,842  INFO      apscheduler.scheduler  Scheduler has been shut down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [66739]

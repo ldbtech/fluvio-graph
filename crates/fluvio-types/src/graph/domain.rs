@@ -258,6 +258,7 @@ impl DomainGraph {
                 (NodeKindFilter::Artifcat,     NodeKind::Artifcat)     => true,
                 (NodeKindFilter::Event,        NodeKind::Event)        => true,
                 (NodeKindFilter::Conversation, NodeKind::Conversation) => true,
+                (NodeKindFilter::Capability,   NodeKind::Capability)   => true,
                 (NodeKindFilter::ExternalRef,  NodeKind::ExternalRef(_)) => true,
                 _ => false,
             },

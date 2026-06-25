@@ -86,6 +86,67 @@ impl MutationRoot {
         })
     }
 
+    /// Register or update a CSP capability as a `Capability` graph node.
+    /// The spec is embedded server-side (BGE-small, 384-dim) so the capability
+    /// becomes semantically searchable for reuse-first. Keyed by name, so a
+    /// re-synthesis of the same capability updates the same node.
+    async fn upsert_capability(
+        &self,
+        ctx:   &Context<'_>,
+        input: GqlCapabilityInput,
+    ) -> Result<GqlNode> {
+        let state   = ctx.data::<AppState>()?;
+        let user_id = extract_user_id(ctx)?;
+
+        // Stable, content-addressed id keyed by capability name → upsert by name.
+        let node_id = NodeId::from_content("csp_capability", &input.name);
+
+        // Embed the spec so reuse-first search works.
+        let embeddings = {
+            let mut embedder = state.embedder.write().await;
+            embedder.embed(&input.spec)
+                .map_err(|e| Error::new(format!("embed failed: {e:?}")))?
+        };
+
+        let mut metadata: HashMap<String, String> = HashMap::new();
+        metadata.insert("name".into(),   input.name.clone());
+        metadata.insert("status".into(), input.status.unwrap_or_else(|| "synthesized".into()));
+        if let Some(c) = input.code      { metadata.insert("generated_code".into(), c); }
+        if let Some(s) = input.signature { metadata.insert("signature".into(),      s); }
+        if let Some(t) = input.mcp_tools { metadata.insert("mcp_tools".into(),       t); }
+        if let Some(g) = input.tags      { metadata.insert("tags".into(),            g); }
+        if let Some(j) = input.spec_json { metadata.insert("spec_json".into(),       j); }
+
+        let node = Node {
+            id:          node_id,
+            domain:      Domain::Custom("csp_capability".into()),
+            source_uri:  format!("csp://capability/{}", input.name),
+            source_text: input.spec.clone(),
+            embeddings,
+            metadata,
+            kind:        NodeKind::Capability,
+            zone:        0,
+        };
+
+        state.surreal.upsert_node(user_id, &node, 0).await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        tracing::info!(user_id = %user_id, capability = %input.name, "capability upserted");
+
+        Ok(GqlNode {
+            id:          node.id.to_string(),
+            domain:      GqlDomain::from(&node.domain),
+            source_uri:  node.source_uri,
+            source_text: node.source_text,
+            kind:        GqlNodeKind::from(&node.kind),
+            metadata:    node.metadata.into_iter()
+                .map(|(k, v)| GqlMetadataEntry { key: k, value: v })
+                .collect(),
+            embeddings:  node.embeddings,
+            zone:        node.zone as i32,
+        })
+    }
+
     // ── Delete node ───────────────────────────────────────────────────────────
 
     async fn delete_node(

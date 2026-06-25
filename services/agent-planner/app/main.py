@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.observability.logging import configure_logging, get_logger
 from app.observability.middleware import TracingMiddleware
-from app.routers import chat, compile, execute
+from app.routers import chat, compile, execute, capabilities
 
 configure_logging()
 logger = get_logger("agent-planner")
@@ -62,6 +62,7 @@ async def health() -> dict:
 app.include_router(chat.router)
 app.include_router(compile.router)
 app.include_router(execute.router)
+app.include_router(capabilities.router)
 
 
 if __name__ == "__main__":

@@ -109,6 +109,10 @@ pub enum NodeKind {
     Event,
     /// A chat, thread, or discussion.
     Conversation,
+    /// A synthesized or registered CSP capability — a general, reusable verb.
+    /// `source_text` holds the spec (embedded for reuse-first search); the
+    /// generated code + signature live in `metadata`.
+    Capability,
     /// A pointer into another graph (used in the MetaGraph only).
     ExternalRef(ExternalRef),
 }
@@ -124,6 +128,7 @@ pub enum NodeKindFilter {
     Artifcat,
     Event,
     Conversation,
+    Capability,
     ExternalRef,
 }
 

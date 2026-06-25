@@ -72,7 +72,17 @@ impl SurrealNodeRow {
             source_text: self.source_text.clone(),
             embeddings:  self.embeddings.clone(),
             metadata:    self.metadata.clone(),
-            kind:        NodeKind::Artifcat,
+            // Reconstruct kind from the stored string (written as `{:?}` of the
+            // NodeKind variant). ExternalRef carries data we can't rebuild here,
+            // so anything unrecognised falls back to Artifcat (prior behaviour).
+            kind: match self.kind.as_str() {
+                "Entity"       => NodeKind::Entity,
+                "Topic"        => NodeKind::Topic,
+                "Event"        => NodeKind::Event,
+                "Conversation" => NodeKind::Conversation,
+                "Capability"   => NodeKind::Capability,
+                _              => NodeKind::Artifcat,
+            },
             zone:        self.zone,
         }
     }
@@ -276,10 +286,30 @@ impl SurrealStorage {
         start_id: &NodeId,
         depth:    usize,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
-        let id    = format!("nodes:{start_id}");
+        // Build a safely-quoted record id — a bare `nodes:<uuid>` is mis-parsed
+        // because the hyphenated UUID looks like an arithmetic expression.
+        let id = format!("type::record('nodes', '{start_id}')");
+        // Build the set of node ids reachable within `depth` hops in EITHER
+        // direction (outgoing + incoming edges, any edge label). The previous
+        // `->{0,depth}->` range syntax is not valid SurrealQL; instead union the
+        // id list at each hop level 1..=depth and flatten.
+        let d = depth.max(1);
+        let mut out_path = String::new();
+        let mut in_path  = String::new();
+        let mut hops: Vec<String> = Vec::new();
+        for _ in 0..d {
+            out_path.push_str("->?->nodes");
+            in_path.push_str("<-?<-nodes");
+            hops.push(format!("{out_path}.id"));
+            hops.push(format!("{in_path}.id"));
+        }
+        let union = hops.join(", ");
+        // `SELECT VALUE <expr> FROM <single record>` wraps its result in an
+        // extra array level, so the inner id list must be flattened once more
+        // before `id INSIDE …` can match scalar ids.
         let query = format!(
-            "SELECT * FROM nodes WHERE id INSIDE \
-             (SELECT VALUE ->{{0,{depth}}}->nodes.id FROM {id})"
+            "SELECT * FROM nodes WHERE id INSIDE array::flatten(\
+             (SELECT VALUE array::distinct(array::flatten([{union}])) FROM {id}))"
         );
 
         let mut result = self.db.query(query).await
@@ -343,8 +373,45 @@ impl SurrealStorage {
     
         scored.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
         scored.truncate(top_k);
-    
+
         Ok(scored.into_iter().map(|(_, row)| row).collect())
+    }
+
+    /// Vector similarity search over an owner's **Capability** nodes only.
+    /// Capabilities are owner-scoped and not bound to a workspace/zone, so the
+    /// whole company brain can reuse a synthesized verb. Powers CSP reuse-first.
+    pub async fn capability_search_nodes(
+        &self,
+        owner_id:  Uuid,
+        query_vec: &[f32],
+        top_k:     usize,
+    ) -> anyhow::Result<Vec<SurrealNodeRow>> {
+        let query = format!(
+            "SELECT * FROM nodes WHERE owner_id = '{owner_id}' AND kind = 'Capability'"
+        );
+        let mut result = self.db.query(query).await
+            .map_err(|e| anyhow::anyhow!("capability_search_nodes: {e}"))?;
+        let rows: Vec<SurrealNodeRow> = rows_from_json(&mut result, "capability_search_nodes")?;
+
+        let mut scored: Vec<(f32, SurrealNodeRow)> = rows
+            .into_iter()
+            .filter(|r| !r.embeddings.is_empty())
+            .map(|r| (cosine_sim(query_vec, &r.embeddings), r))
+            .collect();
+        scored.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        scored.truncate(top_k);
+        Ok(scored.into_iter().map(|(_, row)| row).collect())
+    }
+
+    /// List all of an owner's Capability nodes (no scoring) — used to seed the
+    /// CSP registry on startup so reuse works without any LLM call.
+    pub async fn list_capability_nodes(&self, owner_id: Uuid) -> anyhow::Result<Vec<SurrealNodeRow>> {
+        let query = format!(
+            "SELECT * FROM nodes WHERE owner_id = '{owner_id}' AND kind = 'Capability'"
+        );
+        let mut result = self.db.query(query).await
+            .map_err(|e| anyhow::anyhow!("list_capability_nodes: {e}"))?;
+        rows_from_json(&mut result, "list_capability_nodes")
     }
 
     /// Delete all nodes associated with a workspace.

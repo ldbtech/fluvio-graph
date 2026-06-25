@@ -126,6 +126,17 @@ async def compile_plan(
     if tool_graph_section:
         system_prompt += f"\n\n{tool_graph_section}"
 
+    # Phase M2 — feed the live MCP tool schemas to Claude. Best-effort: if the
+    # MCP server is reachable, its real inputSchemas augment the static toolbox
+    # manifest; if not, the existing toolbox section still drives planning.
+    try:
+        from app.capabilities.mcp_client import list_tools, format_tools_for_prompt
+        mcp_section = format_tools_for_prompt(await list_tools())
+        if mcp_section:
+            system_prompt += f"\n\n{mcp_section}"
+    except Exception as exc:
+        logger.warning("MCP schema injection skipped: %s", exc)
+
     # Build user prompt
     if body.approved_markdown:
         user_prompt = (
@@ -151,6 +162,24 @@ async def compile_plan(
 
     if rag_section:
         user_prompt += f"\n\n{rag_section}"
+
+    # Phase C4 — reuse-first: surface an existing graph capability that already
+    # covers this goal so the planner prefers reusing it over re-deriving steps.
+    goal_text = body.message or body.approved_markdown or ""
+    if goal_text:
+        try:
+            from app.capabilities.resolver import find_reusable_capability
+            cap = await find_reusable_capability(client, goal_text)
+            if cap:
+                user_prompt += (
+                    "\n\n[REUSABLE CAPABILITY — prefer this over re-deriving]\n"
+                    f"A synthesized capability already covers this goal: "
+                    f"`{cap['name']}` ({cap.get('signature', 'run(args)')}), "
+                    f"semantic match {cap['score']:.2f}. "
+                    f"Tools it uses: {cap.get('mcp_tools') or 'none'}."
+                )
+        except Exception as exc:
+            logger.warning("capability reuse hint skipped: %s", exc)
 
     user_prompt += "\nOutput ONLY the JSON array. Do not put backticks around it."
 

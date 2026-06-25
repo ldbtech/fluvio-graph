@@ -295,6 +295,7 @@ agent-planner/app/auth.py                    ← workspace auth (will simplify)
 ## Context Files Already Documented
 - `docs/agent-planner-architecture.pptx` — full UML of agent-planner (13 slides)
 - `docs/MCP_MIGRATION_PLAN.md` — plan to convert tools to MCP (internal + external); decision locked
+- `docs/CSP_KG_INTEGRATION_PLAN.md` — CSP × knowledge graph × MCP; capabilities as `Capability` KG nodes, CSP in agent-planner, reuse-first via vector search
 - `services/agent-planner/app/**` — full Python/FastAPI agent-planner codebase
 
 ## Decisions locked (later sessions)

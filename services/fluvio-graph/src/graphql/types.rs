@@ -42,6 +42,7 @@ pub enum GqlNodeKind {
     Artifcat,
     Event,
     Conversation,
+    Capability,
     ExternalRef,
 }
 
@@ -53,6 +54,7 @@ impl From<&fluvio_types::NodeKind> for GqlNodeKind {
             fluvio_types::NodeKind::Artifcat      => Self::Artifcat,
             fluvio_types::NodeKind::Event         => Self::Event,
             fluvio_types::NodeKind::Conversation  => Self::Conversation,
+            fluvio_types::NodeKind::Capability    => Self::Capability,
             fluvio_types::NodeKind::ExternalRef(_)=> Self::ExternalRef,
         }
     }
@@ -204,6 +206,30 @@ pub struct GqlMetadataInput {
     pub value: String,
 }
 
+/// Input for registering or updating a CSP capability as a graph node.
+/// `spec` is embedded server-side (BGE-small, 384-dim) so reuse-first search
+/// is semantic; `code` + the rest travel in the node's metadata.
+#[derive(InputObject, Clone, Debug)]
+pub struct GqlCapabilityInput {
+    /// Stable capability name, e.g. "score_churn_risk". Doubles as the node key.
+    pub name:           String,
+    /// The capability spec / docstring / signature summary — the text embedded.
+    pub spec:           String,
+    /// Generated `def run(args)` source (empty for registered, non-synthesized).
+    pub code:           Option<String>,
+    /// Human/LLM-readable signature, e.g. "run(rows: list, by: str) -> dict".
+    pub signature:      Option<String>,
+    /// MCP tool names this capability calls, comma-separated.
+    pub mcp_tools:      Option<String>,
+    /// Synthesizer tags, comma-separated.
+    pub tags:           Option<String>,
+    /// "synthesized" (default) or "registered".
+    pub status:         Option<String>,
+    /// Full CSP JSON-RPC spec as a JSON string — lets another instance
+    /// reconstruct the capability from the graph alone (cross-process reuse).
+    pub spec_json:      Option<String>,
+}
+
 /// Query tuning config — mirrors QueryConfig.
 #[derive(InputObject, Clone, Debug)]
 pub struct GqlQueryConfig {
@@ -250,6 +276,7 @@ impl From<GqlNodeKind> for fluvio_types::NodeKind {
             GqlNodeKind::Artifcat     => fluvio_types::NodeKind::Artifcat,
             GqlNodeKind::Event        => fluvio_types::NodeKind::Event,
             GqlNodeKind::Conversation => fluvio_types::NodeKind::Conversation,
+            GqlNodeKind::Capability   => fluvio_types::NodeKind::Capability,
             GqlNodeKind::ExternalRef  => fluvio_types::NodeKind::Artifcat, // fallback
         }
     }

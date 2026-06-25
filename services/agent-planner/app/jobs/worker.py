@@ -53,17 +53,46 @@ mutation ExecuteTool($toolId: String!, $inputs: String!) {
 idempotency = IdempotencyStore()
 
 
+async def _invoke_via_mcp(tool_id: str, action: str, arguments: dict) -> dict:
+    """Invoke a tool through the MCP server (Phase M3). Returns a tool_run-shaped
+    dict {status, output, logs}. Raises on transport failure (→ legacy fallback)."""
+    from app.capabilities.mcp_client import call_tool as mcp_call
+    name = f"{tool_id.replace('-', '_')}__{action}"
+    payload = await mcp_call(name, arguments)            # raises if MCP unreachable
+    inner = (payload or {}).get("result") or {}
+    if inner.get("status") == "success":
+        return {
+            "status": "success",
+            "output": json.dumps(inner.get("result", {})),
+            "logs":   "\n".join((payload or {}).get("logs", [])),
+        }
+    return {"status": "failed", "output": inner.get("error", "MCP tool reported failure")}
+
+
+async def _invoke_via_graphql(client: FederationClient, tool_id: str, action: str, arguments: dict) -> dict:
+    """Legacy path — the double-JSON-encoded executeTool mutation."""
+    inputs_str = json.dumps({"action": action, "arguments": json.dumps(arguments)})
+    resp = await client.query(_EXECUTE_MUTATION, variables={"toolId": tool_id, "inputs": inputs_str})
+    data = resp.get("data") or resp
+    return data.get("executeTool") or {}
+
+
 async def _call_tool(
     client: FederationClient,
     tool_id: str,
     action: str,
     arguments: dict,
 ) -> dict:
-    """Single attempt to call executeTool. Raises ToolError on failure."""
-    inputs_str = json.dumps({"action": action, "arguments": json.dumps(arguments)})
-    resp = await client.query(_EXECUTE_MUTATION, variables={"toolId": tool_id, "inputs": inputs_str})
-    data = resp.get("data") or resp
-    tool_run = data.get("executeTool") or {}
+    """Single attempt to run a tool. Phase M3: prefer typed MCP `tools/call`;
+    fall back to the legacy `executeTool` mutation only if the MCP server is
+    unreachable. A tool that *runs and fails* does NOT fall back (no double-run).
+    Raises ToolError on tool failure. Retry / circuit-breaker wrap this unchanged."""
+    try:
+        tool_run = await _invoke_via_mcp(tool_id, action, arguments)
+    except Exception as exc:
+        logger.info("MCP call unavailable (%s) — falling back to executeTool", exc)
+        tool_run = await _invoke_via_graphql(client, tool_id, action, arguments)
+
     status = tool_run.get("status", "")
     if status not in ("completed", "success"):
         raise classify_tool_error(tool_id, action, status, tool_run.get("output", ""))
