@@ -34,7 +34,7 @@ RUN touch services/fluvio-graph/src/main.rs && \
 FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 curl && \
+    ca-certificates libssl3 libgomp1 curl && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m -u 1001 fluviome
 
