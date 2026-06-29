@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
 COPY services/fluvio-graph/Cargo.toml    ./services/fluvio-graph/Cargo.toml
 COPY services/fluvio-twin/Cargo.toml     ./services/fluvio-twin/Cargo.toml

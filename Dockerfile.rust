@@ -1,0 +1,84 @@
+# syntax=docker/dockerfile:1
+#
+# Shared multi-stage build for ALL Rust services. The workspace dependencies and
+# every binary are compiled ONCE in the `builder` stage; each service is then a
+# thin runtime target that copies its own binary. With BuildKit the builder is
+# built a single time and shared across all targets — first build ~40min instead
+# of ~2.5hr (the old per-service Dockerfiles each rebuilt the whole dep graph).
+#
+# docker-compose selects a service via `target:` (e.g. target: fluvio-graph).
+
+# ── Builder: deps + all binaries, once ───────────────────────────────────────
+# rust:1-slim = latest stable 1.x. Several deps (async-graphql 7.2 → rustc 1.89,
+# darling/fastnum → 1.88) require newer than 1.87, which is why the repo pins
+# `stable` in rust-toolchain.toml. Using the latest base satisfies them without a
+# fragile rustup network sync.
+FROM rust:1-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev libclang-dev clang && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Dependency cache layer: manifests + crates + stubbed service mains → build deps.
+# (rust-toolchain.toml is intentionally NOT copied, so the base image's toolchain
+#  is used directly — no rustup network sync.)
+COPY Cargo.toml Cargo.lock ./
+COPY crates/ ./crates/
+COPY services/fluvio-graph/Cargo.toml     ./services/fluvio-graph/Cargo.toml
+COPY services/fluvio-twin/Cargo.toml      ./services/fluvio-twin/Cargo.toml
+COPY services/fluvio-database/Cargo.toml  ./services/fluvio-database/Cargo.toml
+COPY services/fluvio-ingestion/Cargo.toml ./services/fluvio-ingestion/Cargo.toml
+COPY services/fluvio-collab/Cargo.toml    ./services/fluvio-collab/Cargo.toml
+RUN for svc in fluvio-graph fluvio-twin fluvio-database fluvio-ingestion fluvio-collab; do \
+      mkdir -p services/$svc/src && echo 'fn main(){}' > services/$svc/src/main.rs; \
+    done
+RUN cargo build --release \
+      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab \
+      2>&1 | tail -5
+
+# Real sources → final compile of all binaries (deps already cached above).
+COPY services/fluvio-graph/src/     ./services/fluvio-graph/src/
+COPY services/fluvio-twin/src/      ./services/fluvio-twin/src/
+COPY services/fluvio-database/src/  ./services/fluvio-database/src/
+COPY services/fluvio-ingestion/src/ ./services/fluvio-ingestion/src/
+COPY services/fluvio-collab/src/    ./services/fluvio-collab/src/
+RUN find services -name main.rs -exec touch {} + && \
+    cargo build --release \
+      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab
+
+# ── Shared runtime base ───────────────────────────────────────────────────────
+FROM debian:bookworm-slim AS runtime-base
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libssl3 libgomp1 curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -m -u 1001 fluviome
+WORKDIR /app
+USER fluviome
+
+# ── Per-service runtime targets ───────────────────────────────────────────────
+FROM runtime-base AS fluvio-graph
+COPY --from=builder /workspace/target/release/fluvio-graph ./fluvio-graph
+EXPOSE 3001
+ENTRYPOINT ["./fluvio-graph"]
+
+FROM runtime-base AS fluvio-twin
+COPY --from=builder /workspace/target/release/fluvio-twin ./fluvio-twin
+EXPOSE 3002
+ENTRYPOINT ["./fluvio-twin"]
+
+FROM runtime-base AS fluvio-database
+COPY --from=builder /workspace/target/release/fluvio-database ./fluvio-database
+EXPOSE 3005
+ENTRYPOINT ["./fluvio-database"]
+
+FROM runtime-base AS fluvio-ingestion
+COPY --from=builder /workspace/target/release/fluvio-ingestion ./fluvio-ingestion
+EXPOSE 3004
+ENTRYPOINT ["./fluvio-ingestion"]
+
+FROM runtime-base AS fluvio-collab
+COPY --from=builder /workspace/target/release/fluvio-collab ./fluvio-collab
+EXPOSE 3003
+ENTRYPOINT ["./fluvio-collab"]

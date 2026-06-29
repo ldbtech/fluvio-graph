@@ -10,7 +10,6 @@
 # The engine is auth-free by default. Pass x-user-id in your requests or put
 # your own auth proxy in front of the gateway (:4001).
 
-version: "3.9"
 
 # ── Shared defaults ───────────────────────────────────────────────────────────
 
@@ -65,7 +64,8 @@ services:
   fluvio-graph:
     build:
       context: .
-      dockerfile: services/fluvio-graph/Dockerfile
+      dockerfile: Dockerfile.rust
+      target: fluvio-graph
     <<: *restart
     environment:
       <<: *common-env
@@ -84,7 +84,8 @@ services:
   fluvio-twin:
     build:
       context: .
-      dockerfile: services/fluvio-twin/Dockerfile
+      dockerfile: Dockerfile.rust
+      target: fluvio-twin
     <<: *restart
     environment:
       <<: *common-env
@@ -103,7 +104,8 @@ services:
   fluvio-database:
     build:
       context: .
-      dockerfile: services/fluvio-database/Dockerfile
+      dockerfile: Dockerfile.rust
+      target: fluvio-database
     <<: *restart
     environment:
       <<: *common-env
@@ -122,7 +124,8 @@ services:
   fluvio-ingestion:
     build:
       context: .
-      dockerfile: services/fluvio-ingestion/Dockerfile
+      dockerfile: Dockerfile.rust
+      target: fluvio-ingestion
     <<: *restart
     environment:
       <<: *common-env
@@ -143,7 +146,8 @@ services:
   fluvio-collab:
     build:
       context: .
-      dockerfile: services/fluvio-collab/Dockerfile
+      dockerfile: Dockerfile.rust
+      target: fluvio-collab
     <<: *restart
     environment:
       <<: *common-env

@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
        arm64) RARCH=aarch64-unknown-linux-gnu ;; \
        *) echo "unsupported TARGETARCH=$TARGETARCH" && exit 1 ;; \
      esac \
-  && curl -fsSL "https://github.com/apollographql/router/releases/download/v${ROUTER_VERSION}/router-v${ROUTER_VERSION}-${RARCH}.tar.gz" -o /tmp/router.tgz \
+  && curl -fL --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+       "https://github.com/apollographql/router/releases/download/v${ROUTER_VERSION}/router-v${ROUTER_VERSION}-${RARCH}.tar.gz" -o /tmp/router.tgz \
   && tar -xzf /tmp/router.tgz -C /tmp \
   && mv "$(find /tmp -type f -name router | head -1)" /usr/local/bin/router \
   && chmod +x /usr/local/bin/router \
