@@ -14,6 +14,24 @@ their own commits, separate from move/refactor commits.
 
 ## Noted (not fixed here)
 
+- **No repo-level LICENSE file exists** despite the "added license" commit
+  (abed98e) — that commit only brought in `node_modules` licence files. The BSL
+  licence text + Additional Use Grant must be added in Phase 7 (§12 of the
+  restructure plan). `[workspace.package] license` is intentionally left unset
+  until then.
+- **`node_modules` directories are committed to git** under `docs/`,
+  `enterprise/auth-adapter`, `enterprise/token-service`, and
+  `services/fluvio-auth` (hundreds of vendored files). Should be gitignored and
+  removed from tracking in a dedicated commit.
+- **Local data/log/scratch files live in the repo root** (`fluvio_surreal.db`,
+  `fluvio_surreal_data/`, `fluvio_surreal_collab_data/`, `history.txt`,
+  `.logs/`, `scratch/`, `.DS_Store` files) — candidates for gitignore cleanup.
+- The macOS dev machine's disk hit 100% full during this work; this repo's
+  6.6GiB `target/` was cleaned to proceed. Docker Desktop's daemon was also
+  non-functional (CLI panic), so the §13 Phase 0 compose smoke test could not
+  be run — `cargo check/test --workspace` is the regression oracle instead
+  until docker is available.
+
 - `NodeKind::Artifcat` is a preserved typo ("Artifcat" strings exist in
   SurrealDB records) — documented in `fluvio-types`; do not "fix".
 - `services/agent-mcp/` is entirely untracked in git at the start of this

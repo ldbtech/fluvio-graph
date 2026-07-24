@@ -1,7 +1,9 @@
 [package]
 name        = "fluvio-common"
-version     = "0.1.0"
-edition     = "2024"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
 description = "Shared error types, tracing setup, and env helpers for Fluvio microservices"
 
 [lib]

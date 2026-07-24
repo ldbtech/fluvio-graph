@@ -13,8 +13,13 @@ members = [
     "services/fluvio-twin",
     "services/fluvio-collab",
     "services/fluvio-ingestion",
-    "services/fluvio-collab",
 ]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2024"
+repository   = "https://github.com/ldbtech/fluvio-graph"
+rust-version = "1.85"
 
 [workspace.dependencies]
 fluvio-types  = { path = "crates/fluvio-types" }
@@ -69,4 +74,5 @@ pdf-extract = { version = "0.10" }
 memmap2     = { version = "0.9" }
 image       = { version = "0.25", default-features = false, features = ["jpeg"] }
 
-dashmap = { version = "6" }
+dashmap    = { version = "6" }
+tokenizers = { version = "0.19" }

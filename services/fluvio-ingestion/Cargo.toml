@@ -1,7 +1,9 @@
 [package]
 name    = "fluvio-ingestion"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 fluvio-types  = { workspace = true }
@@ -32,10 +34,10 @@ pdf-extract   = { workspace = true }
 memmap2       = { workspace = true }
 
 # Concurrent job store
-dashmap       = "6"
+dashmap       = { workspace = true }
 
 # Tokenizer for chunk size counting
-tokenizers    = "0.19"
+tokenizers    = { workspace = true }
 
 # Embeddings
 fastembed     = { workspace = true }
