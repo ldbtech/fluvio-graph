@@ -1,8 +1,8 @@
 //! GraphQL types for connector operations.
 
 use async_graphql::*;
-use crate::db::queries::connectors::Connector;
-use crate::db::queries::resources::ConnectorResource;
+use fluvio_database::db::queries::connectors::Connector;
+use fluvio_database::db::queries::resources::ConnectorResource;
 
 #[derive(SimpleObject, Clone)]
 pub struct GqlConnector {

@@ -3,7 +3,7 @@
 use async_graphql::*;
 use uuid::Uuid;
 use crate::server::AppState;
-use crate::db::{connectors, resources};
+use fluvio_database::db::{connectors, resources};
 use super::connectors_type::{GqlConnector, GqlConnectorResource};
 
 /// Get all connectors for the authenticated user.

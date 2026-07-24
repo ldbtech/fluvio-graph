@@ -5,7 +5,7 @@ use uuid::Uuid;
 use serde_json::json;
 
 use crate::server::AppState;
-use crate::db::{connectors, resources};
+use fluvio_database::db::{connectors, resources};
 use super::connectors_type::*;
 
 /// Create a connector (token or OAuth).

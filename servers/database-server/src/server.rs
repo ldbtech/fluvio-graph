@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
-use crate::db::pool::{create_pool, run_migrations};
+use fluvio_database::db::pool::{create_pool, run_migrations};
 use crate::graphql::{build_schema, graphql_router};
 
 #[derive(Clone)]

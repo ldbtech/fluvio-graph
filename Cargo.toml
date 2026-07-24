@@ -6,9 +6,12 @@ members = [
     "crates/fluvio-common",
     "crates/fluvio-auth",
     "crates/fluvio-embed",
+    "crates/fluvio-database",
 
-    # Services
-    "services/fluvio-database",
+    # Servers (thin transport shells)
+    "servers/database-server",
+
+    # Services (still to be split)
     "services/fluvio-graph",
     "services/fluvio-twin",
     "services/fluvio-collab",
@@ -26,6 +29,7 @@ fluvio-types  = { path = "crates/fluvio-types" }
 fluvio-common = { path = "crates/fluvio-common" }
 fluvio-auth   = { path = "crates/fluvio-auth" }
 fluvio-embed  = { path = "crates/fluvio-embed" }
+fluvio-database = { path = "crates/fluvio-database" }
 
 tokio        = { version = "1",   features = ["full"] }
 tokio-util   = { version = "0.7" }

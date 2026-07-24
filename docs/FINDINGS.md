@@ -44,6 +44,14 @@ their own commits, separate from move/refactor commits.
   `graphql` module so it does not violate the no-env rule, but reading config
   per-request rather than at startup is fragile — worth hoisting into the
   server's config struct later.
+- **The five per-service Rust `Dockerfile`s were dead.** `docker-compose.yml`
+  builds every Rust service from the shared `Dockerfile.rust` via `target:`, and
+  nothing else referenced `services/fluvio-*/Dockerfile`. They are deleted as
+  each crate is moved rather than carried along stale.
+- **`services/fluvio-ingestion/src/mod.rs` is an orphan** — a `mod.rs` sitting at
+  the crate's `src/` root declaring `pub mod graph_client`, which is not
+  reachable from `lib.rs` (the real one is `src/client/mod.rs`). Dead file;
+  delete when ingestion is moved.
 - The macOS dev machine's disk hit 100% full during this work; this repo's
   6.6GiB `target/` was cleaned to proceed. Docker Desktop's daemon was also
   non-functional (CLI panic), so the §13 Phase 0 compose smoke test could not

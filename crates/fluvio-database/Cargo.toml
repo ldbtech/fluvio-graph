@@ -1,0 +1,23 @@
+[package]
+name    = "fluvio-database"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Postgres persistence layer for Fluvio — pools, migrations, and typed queries"
+
+[dependencies]
+fluvio-common = { workspace = true }
+
+tokio      = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+
+sqlx       = { workspace = true }
+
+uuid       = { workspace = true }
+chrono     = { workspace = true }
+
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }

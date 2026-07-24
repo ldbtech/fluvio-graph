@@ -6,7 +6,7 @@ use chrono::Utc;
 use chrono::DateTime;
 
 use crate::server::AppState;
-use crate::db::{users, groups, members, invites, queue, companies, teams, queries::users::User};
+use fluvio_database::db::{users, groups, members, invites, queue, companies, teams, queries::users::User};
 use crate::graphql::types::*;
 
 use crate::graphql::connectors_type;
@@ -239,7 +239,7 @@ impl MutationRoot {
         let state    = ctx.data::<AppState>()?;
         let owner_id = parse_uuid(&input.owner_id)?;
         let team_id  = input.team_id.map(|tid| parse_uuid(&tid)).transpose()?;
-        Ok(crate::db::workspaces::create_workspace(
+        Ok(fluvio_database::db::workspaces::create_workspace(
             &state.pool,
             owner_id,
             &input.name,
@@ -257,7 +257,7 @@ impl MutationRoot {
         let state   = ctx.data::<AppState>()?;
         let id      = parse_uuid(&input.id)?;
         let team_id = input.team_id.map(|tid| parse_uuid(&tid)).transpose()?;
-        Ok(crate::db::workspaces::update_workspace(
+        Ok(fluvio_database::db::workspaces::update_workspace(
             &state.pool,
             id,
             input.name.as_deref(),
@@ -278,7 +278,7 @@ impl MutationRoot {
         let details: serde_json::Value = serde_json::from_str(&input.change_details)
             .map_err(|_| Error::new("Invalid JSON in change_details"))?;
 
-        Ok(crate::db::planner_approvals::create_planner_approval(
+        Ok(fluvio_database::db::planner_approvals::create_planner_approval(
             &state.pool,
             workspace_id,
             suggested_by,
@@ -296,7 +296,7 @@ impl MutationRoot {
         let state = ctx.data::<AppState>()?;
         let id    = parse_uuid(&input.id)?;
         
-        Ok(crate::db::planner_approvals::review_planner_approval(
+        Ok(fluvio_database::db::planner_approvals::review_planner_approval(
             &state.pool,
             id,
             &input.status,
@@ -313,7 +313,7 @@ impl MutationRoot {
     ) -> Result<bool> {
         let state = ctx.data::<AppState>()?;
         let id    = parse_uuid(&id)?;
-        crate::db::workspaces::delete_workspace(&state.pool, id).await
+        fluvio_database::db::workspaces::delete_workspace(&state.pool, id).await
             .map_err(|e| Error::new(e.to_string()))?;
         Ok(true)
     }
@@ -332,7 +332,7 @@ impl MutationRoot {
             .map_err(|e| Error::new(e.to_string()))?
             .ok_or_else(|| Error::new(format!("User with email {} not found", email)))?;
             
-        let share = crate::db::workspaces::share_workspace(&state.pool, workspace_id, user.id).await
+        let share = fluvio_database::db::workspaces::share_workspace(&state.pool, workspace_id, user.id).await
             .map_err(|e| Error::new(e.to_string()))?;
             
         Ok(GqlWorkspaceShare {
@@ -354,7 +354,7 @@ impl MutationRoot {
         let state        = ctx.data::<AppState>()?;
         let workspace_id = parse_uuid(&workspace_id)?;
         let user_id      = parse_uuid(&user_id)?;
-        crate::db::workspaces::unshare_workspace(&state.pool, workspace_id, user_id).await
+        fluvio_database::db::workspaces::unshare_workspace(&state.pool, workspace_id, user_id).await
             .map_err(|e| Error::new(e.to_string()))?;
         Ok(true)
     }
@@ -530,7 +530,7 @@ impl MutationRoot {
         let workspace_id = parse_uuid(&workspace_id)?;
         let user_id      = extract_user_id(ctx)?;
         
-        crate::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
+        fluvio_database::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
             .map_err(|e| Error::new(format!("Access Denied: {}", e)))?;
 
         let message = sqlx::query_as::<_, GqlPlannerChatMessage>(
@@ -557,7 +557,7 @@ impl MutationRoot {
         let workspace_id = parse_uuid(&workspace_id)?;
         let user_id      = extract_user_id(ctx)?;
         
-        crate::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
+        fluvio_database::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
             .map_err(|e| Error::new(format!("Access Denied: {}", e)))?;
 
         sqlx::query("DELETE FROM planner_chat_messages WHERE workspace_id = $1")
@@ -580,7 +580,7 @@ impl MutationRoot {
         let id                    = parse_uuid(&id)?;
         let authorized_by_user_id = extract_user_id(ctx).ok();
         
-        let action = crate::db::company_ops::resolve_action_authorization(
+        let action = fluvio_database::db::company_ops::resolve_action_authorization(
             &state.company_pool,
             id,
             &status,
@@ -590,7 +590,7 @@ impl MutationRoot {
         
         // Log this resolution in the execution logs for audit compliance
         let log_msg = format!("Action '{}' ({}) was resolved to '{}' by user.", action.action_type, action.description, status);
-        let _ = crate::db::company_ops::create_execution_log(
+        let _ = fluvio_database::db::company_ops::create_execution_log(
             &state.company_pool,
             action.company_id,
             action.initiated_by_user_id,
@@ -615,7 +615,7 @@ impl MutationRoot {
         let company_id = parse_uuid(&company_id)?;
         let user_id    = extract_user_id(ctx)?;
         
-        let el = crate::db::company_ops::create_execution_log(
+        let el = fluvio_database::db::company_ops::create_execution_log(
             &state.company_pool,
             company_id,
             user_id,
@@ -1254,7 +1254,7 @@ Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in mark
         }
 
         // Delete telemetry data from the company pool
-        crate::db::company_ops::delete_company_data(&state.company_pool, company_id_parsed).await
+        fluvio_database::db::company_ops::delete_company_data(&state.company_pool, company_id_parsed).await
             .map_err(|e| Error::new(e.to_string()))?;
 
         // Delete company from core pool

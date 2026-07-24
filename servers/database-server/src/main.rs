@@ -4,7 +4,6 @@
 //! Every other service that needs Postgres data calls this service.
 
 // Force rebuild to bundle migration 016
-use std::str::FromStr;
 use tracing_subscriber::{fmt, EnvFilter};
 
 #[tokio::main]
@@ -16,5 +15,5 @@ async fn main() -> anyhow::Result<()> {
     fmt().with_env_filter(filter).init();
 
     tracing::info!("fluvio-database starting...");
-    fluvio_database::server::serve().await
+    database_server::server::serve().await
 }

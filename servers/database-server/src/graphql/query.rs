@@ -3,7 +3,7 @@
 use async_graphql::*;
 use uuid::Uuid;
 use crate::server::AppState;
-use crate::db::{users, groups, members, invites, queue, companies, teams};
+use fluvio_database::db::{users, groups, members, invites, queue, companies, teams};
 use crate::graphql::types::*;
 
 use crate::graphql::connectors_type;
@@ -167,7 +167,7 @@ impl QueryRoot {
     ) -> Result<Vec<GqlWorkspace>> {
         let state   = ctx.data::<AppState>()?;
         let user_id = parse_uuid(&user_id)?;
-        Ok(crate::db::workspaces::get_user_workspaces(&state.pool, user_id).await
+        Ok(fluvio_database::db::workspaces::get_user_workspaces(&state.pool, user_id).await
             .map_err(|e| Error::new(e.to_string()))?
             .into_iter().map(GqlWorkspace::from).collect())
     }
@@ -179,7 +179,7 @@ impl QueryRoot {
     ) -> Result<Vec<GqlWorkspaceShare>> {
         let state        = ctx.data::<AppState>()?;
         let workspace_id = parse_uuid(&workspace_id)?;
-        Ok(crate::db::workspaces::get_workspace_shares(&state.pool, workspace_id).await
+        Ok(fluvio_database::db::workspaces::get_workspace_shares(&state.pool, workspace_id).await
             .map_err(|e| Error::new(e.to_string()))?
             .into_iter().map(GqlWorkspaceShare::from).collect())
     }
@@ -191,7 +191,7 @@ impl QueryRoot {
     ) -> Result<Vec<GqlPlannerApproval>> {
         let state        = ctx.data::<AppState>()?;
         let workspace_id = parse_uuid(&workspace_id)?;
-        Ok(crate::db::planner_approvals::get_workspace_approvals(&state.pool, workspace_id).await
+        Ok(fluvio_database::db::planner_approvals::get_workspace_approvals(&state.pool, workspace_id).await
             .map_err(|e| Error::new(e.to_string()))?
             .into_iter().map(GqlPlannerApproval::from).collect())
     }
@@ -290,7 +290,7 @@ impl QueryRoot {
         let workspace_id = parse_uuid(&workspace_id)?;
         let user_id      = extract_user_id(ctx)?;
         
-        crate::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
+        fluvio_database::db::workspaces::verify_workspace_access(&state.pool, workspace_id, user_id).await
             .map_err(|e| Error::new(format!("Access Denied: {}", e)))?;
 
         let messages = sqlx::query_as::<_, GqlPlannerChatMessage>(
@@ -317,7 +317,7 @@ impl QueryRoot {
         let company_id = parse_uuid(&company_id)?;
         let limit_val  = limit.unwrap_or(50) as i64;
         
-        let logs = crate::db::company_ops::get_execution_logs(&state.company_pool, company_id, limit_val).await
+        let logs = fluvio_database::db::company_ops::get_execution_logs(&state.company_pool, company_id, limit_val).await
             .map_err(|e| Error::new(e.to_string()))?;
             
         Ok(logs.into_iter().map(GqlExecutionLog::from).collect())
@@ -332,7 +332,7 @@ impl QueryRoot {
         let state      = ctx.data::<AppState>()?;
         let company_id = parse_uuid(&company_id)?;
         
-        let actions = crate::db::company_ops::get_action_authorizations(&state.company_pool, company_id, status.as_deref()).await
+        let actions = fluvio_database::db::company_ops::get_action_authorizations(&state.company_pool, company_id, status.as_deref()).await
             .map_err(|e| Error::new(e.to_string()))?;
             
         Ok(actions.into_iter().map(GqlActionAuthorization::from).collect())
@@ -346,7 +346,7 @@ impl QueryRoot {
         let state      = ctx.data::<AppState>()?;
         let company_id = parse_uuid(&company_id)?;
         
-        let reconciliations = crate::db::company_ops::get_document_reconciliations(&state.company_pool, company_id).await
+        let reconciliations = fluvio_database::db::company_ops::get_document_reconciliations(&state.company_pool, company_id).await
             .map_err(|e| Error::new(e.to_string()))?;
             
         Ok(reconciliations.into_iter().map(GqlDocumentReconciliation::from).collect())
@@ -360,7 +360,7 @@ impl QueryRoot {
         let state      = ctx.data::<AppState>()?;
         let company_id = parse_uuid(&company_id)?;
         
-        let runs = crate::db::company_ops::get_pipeline_runs(&state.company_pool, company_id).await
+        let runs = fluvio_database::db::company_ops::get_pipeline_runs(&state.company_pool, company_id).await
             .map_err(|e| Error::new(e.to_string()))?;
             
         Ok(runs.into_iter().map(GqlPipelineRun::from).collect())

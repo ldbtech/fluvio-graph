@@ -4,11 +4,11 @@ use async_graphql::*;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::db::queries::{users::User, groups::Group, members::Member,
+use fluvio_database::db::queries::{users::User, groups::Group, members::Member,
                 invites::Invite, queue::QueueItem,
                 workspaces::{Workspace, WorkspaceShare, WorkspaceShareWithUser}};
-use crate::db::companies::{Company, CompanyInvite};
-use crate::db::teams::{Team, TeamMember as DbTeamMember, TeamWorkflow};
+use fluvio_database::db::companies::{Company, CompanyInvite};
+use fluvio_database::db::teams::{Team, TeamMember as DbTeamMember, TeamWorkflow};
 
 // ── User ─────────────────────────────────────────────────────────────────────
 
@@ -300,8 +300,8 @@ pub struct GqlPlannerApproval {
     pub review_note:    Option<String>,
 }
 
-impl From<crate::db::queries::planner_approvals::PlannerApproval> for GqlPlannerApproval {
-    fn from(a: crate::db::queries::planner_approvals::PlannerApproval) -> Self {
+impl From<fluvio_database::db::queries::planner_approvals::PlannerApproval> for GqlPlannerApproval {
+    fn from(a: fluvio_database::db::queries::planner_approvals::PlannerApproval) -> Self {
         Self {
             id:             a.id.to_string(),
             workspace_id:   a.workspace_id.to_string(),
@@ -531,8 +531,8 @@ pub struct GqlExecutionLog {
     pub timestamp:              String,
 }
 
-impl From<crate::db::company_ops::ExecutionLog> for GqlExecutionLog {
-    fn from(el: crate::db::company_ops::ExecutionLog) -> Self {
+impl From<fluvio_database::db::company_ops::ExecutionLog> for GqlExecutionLog {
+    fn from(el: fluvio_database::db::company_ops::ExecutionLog) -> Self {
         Self {
             id:                   el.id.to_string(),
             company_id:           el.company_id.to_string(),
@@ -561,8 +561,8 @@ pub struct GqlActionAuthorization {
     pub resolved_at:           Option<String>,
 }
 
-impl From<crate::db::company_ops::ActionAuthorization> for GqlActionAuthorization {
-    fn from(aa: crate::db::company_ops::ActionAuthorization) -> Self {
+impl From<fluvio_database::db::company_ops::ActionAuthorization> for GqlActionAuthorization {
+    fn from(aa: fluvio_database::db::company_ops::ActionAuthorization) -> Self {
         Self {
             id:                    aa.id.to_string(),
             company_id:            aa.company_id.to_string(),
@@ -592,8 +592,8 @@ pub struct GqlDocumentReconciliation {
     pub created_at:  String,
 }
 
-impl From<crate::db::company_ops::DocumentReconciliation> for GqlDocumentReconciliation {
-    fn from(dr: crate::db::company_ops::DocumentReconciliation) -> Self {
+impl From<fluvio_database::db::company_ops::DocumentReconciliation> for GqlDocumentReconciliation {
+    fn from(dr: fluvio_database::db::company_ops::DocumentReconciliation) -> Self {
         Self {
             id:          dr.id.to_string(),
             company_id:  dr.company_id.to_string(),
@@ -621,8 +621,8 @@ pub struct GqlPipelineRun {
     pub updated_at: String,
 }
 
-impl From<crate::db::company_ops::PipelineRun> for GqlPipelineRun {
-    fn from(pr: crate::db::company_ops::PipelineRun) -> Self {
+impl From<fluvio_database::db::company_ops::PipelineRun> for GqlPipelineRun {
+    fn from(pr: fluvio_database::db::company_ops::PipelineRun) -> Self {
         Self {
             id:         pr.id.to_string(),
             company_id: pr.company_id.to_string(),

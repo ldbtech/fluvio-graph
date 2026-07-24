@@ -21,34 +21,44 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-# Dependency cache layer: manifests + crates + stubbed service mains → build deps.
+# Dependency cache layer: manifests + crates + stubbed binary mains → build deps.
 # (rust-toolchain.toml is intentionally NOT copied, so the base image's toolchain
 #  is used directly — no rustup network sync.)
+#
+# Layout note: libraries live in `crates/`, transport shells in `servers/`.
+# Binary names are unchanged (fluvio-graph, fluvio-database, …) so the runtime
+# targets below stay stable across the restructure.
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
+COPY servers/database-server/Cargo.toml   ./servers/database-server/Cargo.toml
 COPY services/fluvio-graph/Cargo.toml     ./services/fluvio-graph/Cargo.toml
 COPY services/fluvio-twin/Cargo.toml      ./services/fluvio-twin/Cargo.toml
-COPY services/fluvio-database/Cargo.toml  ./services/fluvio-database/Cargo.toml
 COPY services/fluvio-ingestion/Cargo.toml ./services/fluvio-ingestion/Cargo.toml
 COPY services/fluvio-collab/Cargo.toml    ./services/fluvio-collab/Cargo.toml
-RUN for svc in fluvio-graph fluvio-twin fluvio-database fluvio-ingestion fluvio-collab; do \
+RUN for svc in fluvio-graph fluvio-twin fluvio-ingestion fluvio-collab; do \
       mkdir -p services/$svc/src && echo 'fn main(){}' > services/$svc/src/main.rs; \
+    done && \
+    for srv in database-server; do \
+      mkdir -p servers/$srv/src && echo 'fn main(){}' > servers/$srv/src/main.rs && \
+      : > servers/$srv/src/lib.rs; \
     done
 RUN cargo build --release \
-      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab \
-      --features fluvio-graph/server,fluvio-twin/server,fluvio-database/server,fluvio-ingestion/server,fluvio-collab/server \
+      -p database-server \
+      -p fluvio-graph -p fluvio-twin -p fluvio-ingestion -p fluvio-collab \
+      --features fluvio-graph/server,fluvio-twin/server,fluvio-ingestion/server,fluvio-collab/server \
       2>&1 | tail -5
 
 # Real sources → final compile of all binaries (deps already cached above).
+COPY servers/ ./servers/
 COPY services/fluvio-graph/src/     ./services/fluvio-graph/src/
 COPY services/fluvio-twin/src/      ./services/fluvio-twin/src/
-COPY services/fluvio-database/src/  ./services/fluvio-database/src/
 COPY services/fluvio-ingestion/src/ ./services/fluvio-ingestion/src/
 COPY services/fluvio-collab/src/    ./services/fluvio-collab/src/
-RUN find services -name main.rs -exec touch {} + && \
+RUN find servers services -name main.rs -exec touch {} + && \
     cargo build --release \
-      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab \
-      --features fluvio-graph/server,fluvio-twin/server,fluvio-database/server,fluvio-ingestion/server,fluvio-collab/server
+      -p database-server \
+      -p fluvio-graph -p fluvio-twin -p fluvio-ingestion -p fluvio-collab \
+      --features fluvio-graph/server,fluvio-twin/server,fluvio-ingestion/server,fluvio-collab/server
 
 # ── Shared runtime base ───────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime-base
