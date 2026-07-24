@@ -52,6 +52,16 @@ their own commits, separate from move/refactor commits.
   the crate's `src/` root declaring `pub mod graph_client`, which is not
   reachable from `lib.rs` (the real one is `src/client/mod.rs`). Dead file;
   delete when ingestion is moved.
+- **The repo root has a dead `src/` tree — 73 tracked Rust files.** The root
+  `Cargo.toml` is a pure `[workspace]` manifest with no `[package]` section, so
+  nothing under `src/` is ever compiled. It looks like the pre-microservices
+  monolith (`app_state.rs`, `authentication/`, `database/`, `graph/`,
+  `routes/`, …). **Not deleted here** — it is outside the restructure plan's
+  move map, and 73 files is the owner's call, not a packaging refactor's. Decide
+  explicitly: delete it, or move it to an `archive/` branch.
+- **Two divergent `supergraph.graphql` files** exist: one at the repo root and
+  one in `gateway/`. They differ. Only the gateway copy is wired into the Apollo
+  Router; the root one appears stale. Confirm and delete the root copy.
 - The macOS dev machine's disk hit 100% full during this work; this repo's
   6.6GiB `target/` was cleaned to proceed. Docker Desktop's daemon was also
   non-functional (CLI panic), so the §13 Phase 0 compose smoke test could not

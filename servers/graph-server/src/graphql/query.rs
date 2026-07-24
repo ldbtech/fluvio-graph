@@ -7,7 +7,7 @@ use async_graphql::*;
 use uuid::Uuid;
 
 use crate::server::AppState;
-use crate::query_context::{QueryContext, QueryConfig};
+use fluvio_graph_core::query_context::{QueryContext, QueryConfig};
 use crate::graphql::types::*;
 use fluvio_types::{NodeId, GraphQuery};
 

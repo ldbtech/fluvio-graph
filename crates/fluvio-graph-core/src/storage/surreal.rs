@@ -92,8 +92,8 @@ impl SurrealNodeRow {
 
 /// Connection settings for [`SurrealStorage`], injected by the caller.
 ///
-/// The library never reads the environment; binaries build this from env vars
-/// (see [`SurrealConfig::from_env`], available with the `server` feature).
+/// The library never reads the environment; binaries build this themselves
+/// (see `surreal_config_from_env` in `servers/graph-server`).
 #[derive(Debug, Clone)]
 pub struct SurrealConfig {
     /// Backend selector (`Surreal<Any>`):
@@ -117,23 +117,6 @@ impl Default for SurrealConfig {
             pass:      "root".to_string(),
             namespace: "fluvio".to_string(),
             database:  "graph".to_string(),
-        }
-    }
-}
-
-#[cfg(feature = "server")]
-impl SurrealConfig {
-    /// Build from `SURREAL_URL` / `SURREAL_USER` / `SURREAL_PASS` /
-    /// `SURREAL_NS` / `SURREAL_DB`, falling back to [`Default`] values.
-    /// Binary-side only — library code takes an explicit config.
-    pub fn from_env() -> Self {
-        let d = Self::default();
-        Self {
-            url:       std::env::var("SURREAL_URL").unwrap_or(d.url),
-            user:      std::env::var("SURREAL_USER").unwrap_or(d.user),
-            pass:      std::env::var("SURREAL_PASS").unwrap_or(d.pass),
-            namespace: std::env::var("SURREAL_NS").unwrap_or(d.namespace),
-            database:  std::env::var("SURREAL_DB").unwrap_or(d.database),
         }
     }
 }

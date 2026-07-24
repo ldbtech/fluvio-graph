@@ -240,9 +240,9 @@ pub struct GqlQueryConfig {
     pub max_zone:           Option<i32>,
 }
 
-impl From<GqlQueryConfig> for crate::query_context::QueryConfig {
+impl From<GqlQueryConfig> for fluvio_graph_core::query_context::QueryConfig {
     fn from(g: GqlQueryConfig) -> Self {
-        let def = crate::query_context::QueryConfig::default();
+        let def = fluvio_graph_core::query_context::QueryConfig::default();
         Self {
             similarity_top_k:   g.similarity_top_k.map(|v| v as usize).unwrap_or(def.similarity_top_k),
             expansion_depth:    g.expansion_depth.map(|v| v as usize).unwrap_or(def.expansion_depth),

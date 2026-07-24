@@ -34,28 +34,20 @@ COPY servers/database-server/Cargo.toml   ./servers/database-server/Cargo.toml
 COPY servers/ingestion-server/Cargo.toml  ./servers/ingestion-server/Cargo.toml
 COPY servers/twin-server/Cargo.toml       ./servers/twin-server/Cargo.toml
 COPY servers/collab-server/Cargo.toml     ./servers/collab-server/Cargo.toml
-COPY services/fluvio-graph/Cargo.toml     ./services/fluvio-graph/Cargo.toml
-RUN for svc in fluvio-graph; do \
-      mkdir -p services/$svc/src && echo 'fn main(){}' > services/$svc/src/main.rs; \
-    done && \
-    for srv in database-server ingestion-server twin-server collab-server; do \
+COPY servers/graph-server/Cargo.toml      ./servers/graph-server/Cargo.toml
+RUN for srv in database-server ingestion-server twin-server collab-server graph-server; do \
       mkdir -p servers/$srv/src && echo 'fn main(){}' > servers/$srv/src/main.rs && \
       : > servers/$srv/src/lib.rs; \
     done
 RUN cargo build --release \
-      -p database-server -p ingestion-server -p twin-server -p collab-server \
-      -p fluvio-graph \
-      --features fluvio-graph/server \
+      -p database-server -p ingestion-server -p twin-server -p collab-server -p graph-server \
       2>&1 | tail -5
 
 # Real sources → final compile of all binaries (deps already cached above).
 COPY servers/ ./servers/
-COPY services/fluvio-graph/src/     ./services/fluvio-graph/src/
-RUN find servers services -name main.rs -exec touch {} + && \
+RUN find servers -name main.rs -exec touch {} + && \
     cargo build --release \
-      -p database-server -p ingestion-server -p twin-server -p collab-server \
-      -p fluvio-graph \
-      --features fluvio-graph/server
+      -p database-server -p ingestion-server -p twin-server -p collab-server -p graph-server
 
 # ── Shared runtime base ───────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime-base

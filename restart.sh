@@ -5,7 +5,7 @@ echo "Stopping services..."
 pkill -f "target/debug/fluvio-twin" || true
 pkill -f "target/debug/fluvio-ingestion" || true
 pkill -f "target/debug/fluvio-graph" || true
-pkill -f "services/fluvio-gateway/router" || true
+pkill -f "gateway/router" || true
 sleep 1
 
 echo "Starting fluvio-graph..."
@@ -23,7 +23,7 @@ echo $! > .pids/fluvio-twin.pid
 sleep 2
 
 echo "Composing supergraph..."
-cd services/fluvio-gateway
+cd gateway
 rover supergraph compose --config supergraph.yaml --elv2-license accept --output supergraph.graphql --skip-update-check
 
 echo "Starting router..."

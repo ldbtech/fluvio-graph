@@ -1,0 +1,22 @@
+[package]
+name    = "fluvio-graph"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Embeddable knowledge graph engine — ingest documents, retrieve grounded context, traverse the graph"
+
+[lib]
+name = "fluvio_graph"
+
+[features]
+default   = ["ingestion"]
+# Ingestion pipeline (file extraction, chunking, embedding). Adds pdf-extract
+# and tokenizers; turn it off if you only read from an already-built graph.
+ingestion = ["dep:fluvio-ingestion-core"]
+
+[dependencies]
+fluvio-graph-core     = { workspace = true }
+fluvio-types          = { workspace = true }
+fluvio-embed          = { workspace = true }
+fluvio-ingestion-core = { workspace = true, optional = true }

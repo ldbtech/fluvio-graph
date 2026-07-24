@@ -27,5 +27,5 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("fluvio-graph starting...");
 
-    fluvio_graph::server::serve().await
+    graph_server::server::serve().await
 }

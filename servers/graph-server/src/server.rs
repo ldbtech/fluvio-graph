@@ -13,9 +13,9 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tokio::sync::RwLock;
 
-use crate::storage::surreal::{SurrealConfig, SurrealStorage};
-use crate::registry::GraphRegistry;
-use crate::embeddings::EmbeddingContext;
+use fluvio_graph_core::storage::surreal::{SurrealConfig, SurrealStorage};
+use fluvio_graph_core::registry::GraphRegistry;
+use fluvio_graph_core::embeddings::EmbeddingContext;
 use crate::graphql::{build_schema, graphql_router, extract_user_id_from_headers};
 
 // ── AppState ──────────────────────────────────────────────────────────────────
@@ -27,13 +27,30 @@ pub struct AppState {
     pub registry: Arc<RwLock<GraphRegistry>>,
 }
 
+// ── Config ────────────────────────────────────────────────────────────────────
+
+/// Build the store's connection settings from `SURREAL_URL` / `SURREAL_USER` /
+/// `SURREAL_PASS` / `SURREAL_NS` / `SURREAL_DB`, falling back to the library's
+/// defaults. Reading the environment is the binary's job — `fluvio-graph-core`
+/// only ever accepts an explicit [`SurrealConfig`].
+fn surreal_config_from_env() -> SurrealConfig {
+    let d = SurrealConfig::default();
+    SurrealConfig {
+        url:       std::env::var("SURREAL_URL").unwrap_or(d.url),
+        user:      std::env::var("SURREAL_USER").unwrap_or(d.user),
+        pass:      std::env::var("SURREAL_PASS").unwrap_or(d.pass),
+        namespace: std::env::var("SURREAL_NS").unwrap_or(d.namespace),
+        database:  std::env::var("SURREAL_DB").unwrap_or(d.database),
+    }
+}
+
 // ── serve() ───────────────────────────────────────────────────────────────────
 
 pub async fn serve() -> anyhow::Result<()> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3001".to_string());
 
     tracing::info!("Connecting to SurrealDB...");
-    let surreal = SurrealStorage::connect(&SurrealConfig::from_env()).await
+    let surreal = SurrealStorage::connect(&surreal_config_from_env()).await
         .map_err(|e| anyhow::anyhow!("SurrealDB connect failed: {e}"))?;
     surreal.init_schema().await
         .map_err(|e| anyhow::anyhow!("SurrealDB schema init failed: {e}"))?;

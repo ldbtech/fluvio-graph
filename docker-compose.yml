@@ -227,7 +227,7 @@ services:
 
   gateway:
     build:
-      context: services/fluvio-gateway
+      context: gateway
       dockerfile: Dockerfile
     <<: *restart
     environment:
