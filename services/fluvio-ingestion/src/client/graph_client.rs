@@ -195,6 +195,7 @@ fn kind_to_gql(k: &NodeKind) -> &'static str {
         NodeKind::Artifcat     => "ARTIFCAT",
         NodeKind::Event        => "EVENT",
         NodeKind::Conversation => "CONVERSATION",
+        NodeKind::Capability   => "CAPABILITY",
         NodeKind::ExternalRef(_) => "EXTERNAL_REF",
     }
 }
