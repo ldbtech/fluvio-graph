@@ -1,0 +1,18 @@
+# A stand-in for an external consumer (this is what FounderTwin's dependency
+# looks like). It is deliberately NOT a workspace member — it resolves
+# fluvio-graph the way a real downstream crate would.
+#
+# Downstream you would pin by tag instead of by path:
+#   fluvio-graph = { git = "https://github.com/ldbtech/fluvio-graph", tag = "v0.1.0" }
+[package]
+name    = "embedded-consumer"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+fluvio-graph = { path = "../../crates/fluvio-graph" }
+tokio        = { version = "1", features = ["full"] }
+anyhow       = "1"
+
+[workspace]

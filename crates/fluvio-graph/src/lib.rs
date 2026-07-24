@@ -75,6 +75,11 @@ pub mod types {
         Domain, Edge, EdgeId, ExternalRef, GraphError, GraphEvent, GraphId, GraphQuery,
         GraphResult, Node, NodeId, NodeKind, NodeKindFilter, NodePredicate,
     };
+
+    /// Re-exported because it appears in this crate's public signatures
+    /// (owner and workspace identifiers), so consumers need not guess which
+    /// `uuid` version to depend on.
+    pub use uuid::Uuid;
 }
 
 // ── Ingestion ─────────────────────────────────────────────────────────────────
@@ -100,7 +105,7 @@ pub mod prelude {
     pub use crate::graph::{DomainGraph, FluvioGraph, GraphRegistry};
     pub use crate::query::{QueryConfig, QueryContext};
     pub use crate::storage::{SurrealConfig, SurrealStorage};
-    pub use crate::types::{Domain, Edge, Node, NodeId, NodeKind};
+    pub use crate::types::{Domain, Edge, Node, NodeId, NodeKind, Uuid};
 
     #[cfg(feature = "ingestion")]
     pub use crate::ingestion::IngestionPipeline;

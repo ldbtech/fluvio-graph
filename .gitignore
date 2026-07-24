@@ -14,3 +14,7 @@ web/fluvio-ui/fluvio_graphs/
 # SurrealDB embedded data dirs.
 fluvio_surreal.db/
 fluvio_surreal_data/
+
+# Nested example crates build their own target/
+examples/*/target/
+examples/*/Cargo.lock

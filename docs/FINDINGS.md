@@ -33,12 +33,24 @@ their own commits, separate from move/refactor commits.
   (a) zero `async-graphql` anywhere and (b) no `fluvio-*` crate on any inverse
   path to `axum` (`cargo tree -i axum` shows only the surrealdb/tonic chain),
   rather than a naive "axum absent from the tree".
-- **`fluvio-common::config` and `::tracing` are dead code.** Nothing outside
-  the crate calls `load_env`, `require_var`, `var_or`, `require_port`, or
-  `init_tracing` — every binary reads `dotenvy`/`tracing_subscriber` directly in
-  its own `main.rs`. They are now behind the `env` feature, which no crate
-  currently enables. Either adopt them in the `servers/*` binaries or delete
-  them; doing so is a behaviour change, so it is deliberately not done here.
+- **`fluvio-common::config` and `::tracing` are provably dead — and they are the
+  only reason the §14 "no `env::var` under `crates/`" box is not literally
+  ticked.** Nothing outside the crate calls `load_env`, `require_var`, `var_or`,
+  `require_port`, or `init_tracing`; every binary reads `dotenvy` /
+  `tracing_subscriber` directly in its own `main.rs`. Both modules now sit
+  behind an `env` feature that **no crate in the workspace enables** (the five
+  server crates enable only `server`), so they never compile in any build here.
+  The rule's intent is met — no library path reads the environment — but the
+  literal grep still finds them.
+
+  **Owner's call, deliberately not made here:** delete both modules (they are
+  dead, and plan §15 says libraries must not read env or install tracing
+  subscribers), or adopt them in the `servers/*` binaries and delete the
+  duplicated setup in each `main.rs`. Until then, the CI guardrail in §11.3
+  must be written as "no `env::var` in library code that is not behind the
+  `env` feature", not a bare `grep -rn "env::var" crates/`.
+  The same applies to §11.2 and `fluvio-common`'s optional, `server`-gated
+  `axum` dependency.
 - **`fluvio-database`'s GraphQL mutation resolver reads `ANTHROPIC_API_KEY` at
   request time** (`src/graphql/mutation.rs:977`). It is inside the server-gated
   `graphql` module so it does not violate the no-env rule, but reading config

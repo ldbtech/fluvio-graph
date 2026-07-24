@@ -20,3 +20,4 @@ fluvio-graph-core     = { workspace = true }
 fluvio-types          = { workspace = true }
 fluvio-embed          = { workspace = true }
 fluvio-ingestion-core = { workspace = true, optional = true }
+uuid                  = { workspace = true }
