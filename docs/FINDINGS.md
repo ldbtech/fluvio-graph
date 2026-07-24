@@ -26,6 +26,13 @@ their own commits, separate from move/refactor commits.
 - **Local data/log/scratch files live in the repo root** (`fluvio_surreal.db`,
   `fluvio_surreal_data/`, `fluvio_surreal_collab_data/`, `history.txt`,
   `.logs/`, `scratch/`, `.DS_Store` files) — candidates for gitignore cleanup.
+- **§11.2 no-transport check nuance:** with `--no-default-features`, none of our
+  crates depend on `axum`/`async-graphql` — but `axum` still appears in
+  `cargo tree -p fluvio-graph` transitively via `surrealdb → tonic → axum`
+  (the SurrealDB client's own gRPC internals). The CI guardrail should assert
+  (a) zero `async-graphql` anywhere and (b) no `fluvio-*` crate on any inverse
+  path to `axum` (`cargo tree -i axum` shows only the surrealdb/tonic chain),
+  rather than a naive "axum absent from the tree".
 - The macOS dev machine's disk hit 100% full during this work; this repo's
   6.6GiB `target/` was cleaned to proceed. Docker Desktop's daemon was also
   non-functional (CLI panic), so the §13 Phase 0 compose smoke test could not

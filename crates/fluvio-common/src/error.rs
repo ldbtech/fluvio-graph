@@ -1,10 +1,12 @@
 //! Unified application error type for Fluvio microservices.
 
+#[cfg(feature = "server")]
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+#[cfg(feature = "server")]
 use serde_json::json;
 use thiserror::Error;
 
@@ -42,6 +44,13 @@ pub enum AppError {
 }
 
 impl AppError {
+    pub fn internal(e: impl std::fmt::Display) -> Self {
+        Self::Internal(e.to_string())
+    }
+}
+
+#[cfg(feature = "server")]
+impl AppError {
     fn status_code(&self) -> StatusCode {
         match self {
             AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
@@ -52,12 +61,9 @@ impl AppError {
             _                         => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
-
-    pub fn internal(e: impl std::fmt::Display) -> Self {
-        Self::Internal(e.to_string())
-    }
 }
 
+#[cfg(feature = "server")]
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let status = self.status_code();

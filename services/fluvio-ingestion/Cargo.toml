@@ -11,11 +11,11 @@ fluvio-common = { workspace = true }
 fluvio-embed  = { workspace = true }
 
 tokio         = { workspace = true }
-axum          = { workspace = true }
-tower-http    = { workspace = true }
+axum          = { workspace = true, optional = true }
+tower-http    = { workspace = true, optional = true }
 
-async-graphql      = { workspace = true }
-async-graphql-axum = { workspace = true }
+async-graphql      = { workspace = true, optional = true }
+async-graphql-axum = { workspace = true, optional = true }
 
 serde         = { workspace = true }
 serde_json    = { workspace = true }
@@ -41,3 +41,11 @@ tokenizers    = { workspace = true }
 
 # Embeddings
 fastembed     = { workspace = true }
+[features]
+default = []
+server  = ["dep:axum", "dep:tower-http", "dep:async-graphql", "dep:async-graphql-axum", "fluvio-common/server"]
+
+[[bin]]
+name = "fluvio-ingestion"
+path = "src/main.rs"
+required-features = ["server"]

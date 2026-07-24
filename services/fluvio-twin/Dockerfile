@@ -21,11 +21,11 @@ RUN for svc in fluvio-graph fluvio-twin fluvio-database fluvio-ingestion fluvio-
       echo 'fn main(){}' > services/$svc/src/main.rs; \
     done
 
-RUN cargo build --release -p fluvio-twin 2>&1 | tail -5
+RUN cargo build --release -p fluvio-twin --features fluvio-twin/server 2>&1 | tail -5
 
 COPY services/fluvio-twin/src/ ./services/fluvio-twin/src/
 RUN touch services/fluvio-twin/src/main.rs && \
-    cargo build --release -p fluvio-twin
+    cargo build --release -p fluvio-twin --features fluvio-twin/server
 
 # ── Runtime ──────────────────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime

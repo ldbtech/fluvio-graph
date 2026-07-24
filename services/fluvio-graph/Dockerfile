@@ -23,12 +23,12 @@ RUN for svc in fluvio-graph fluvio-twin fluvio-database fluvio-ingestion fluvio-
       echo 'fn main(){}' > services/$svc/src/main.rs; \
     done
 
-RUN cargo build --release -p fluvio-graph 2>&1 | tail -5
+RUN cargo build --release -p fluvio-graph --features fluvio-graph/server 2>&1 | tail -5
 
 # Now replace stubs with real source and rebuild only fluvio-graph
 COPY services/fluvio-graph/src/ ./services/fluvio-graph/src/
 RUN touch services/fluvio-graph/src/main.rs && \
-    cargo build --release -p fluvio-graph
+    cargo build --release -p fluvio-graph --features fluvio-graph/server
 
 # ── Runtime ──────────────────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime

@@ -1,7 +1,9 @@
 pub mod embeddings;
 pub mod graph;
+#[cfg(feature = "server")]
 pub mod graphql;
 pub mod query_context;
 pub mod registry;
+#[cfg(feature = "server")]
 pub mod server;
 pub mod storage;

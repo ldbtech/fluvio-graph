@@ -36,6 +36,7 @@ RUN for svc in fluvio-graph fluvio-twin fluvio-database fluvio-ingestion fluvio-
     done
 RUN cargo build --release \
       -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab \
+      --features fluvio-graph/server,fluvio-twin/server,fluvio-database/server,fluvio-ingestion/server,fluvio-collab/server \
       2>&1 | tail -5
 
 # Real sources → final compile of all binaries (deps already cached above).
@@ -46,7 +47,8 @@ COPY services/fluvio-ingestion/src/ ./services/fluvio-ingestion/src/
 COPY services/fluvio-collab/src/    ./services/fluvio-collab/src/
 RUN find services -name main.rs -exec touch {} + && \
     cargo build --release \
-      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab
+      -p fluvio-graph -p fluvio-twin -p fluvio-database -p fluvio-ingestion -p fluvio-collab \
+      --features fluvio-graph/server,fluvio-twin/server,fluvio-database/server,fluvio-ingestion/server,fluvio-collab/server
 
 # ── Shared runtime base ───────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime-base

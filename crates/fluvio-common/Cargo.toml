@@ -16,6 +16,10 @@ anyhow             = { workspace = true }
 tracing            = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 dotenvy            = { workspace = true }
-axum               = { workspace = true }
+axum               = { workspace = true, optional = true }
 serde              = { workspace = true }
 serde_json         = { workspace = true }
+
+[features]
+default = []
+server  = ["dep:axum"]
