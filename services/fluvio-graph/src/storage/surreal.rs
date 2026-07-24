@@ -88,6 +88,56 @@ impl SurrealNodeRow {
     }
 }
 
+// ── SurrealConfig ─────────────────────────────────────────────────────────────
+
+/// Connection settings for [`SurrealStorage`], injected by the caller.
+///
+/// The library never reads the environment; binaries build this from env vars
+/// (see [`SurrealConfig::from_env`], available with the `server` feature).
+#[derive(Debug, Clone)]
+pub struct SurrealConfig {
+    /// Backend selector (`Surreal<Any>`):
+    /// - `""` → standalone SurrealDB at `ws://127.0.0.1:8000`
+    /// - `"embedded"` → embedded file store `surrealkv://./fluvio_surreal_data`
+    /// - Any other URL → `ws://…` / `wss://` / `http://…` / `surrealkv://…` / `mem://`.
+    ///   On some hosts the remote WebSocket stack surfaces broken `localhost`
+    ///   resolution; prefer `127.0.0.1`.
+    pub url: String,
+    pub user: String,
+    pub pass: String,
+    pub namespace: String,
+    pub database: String,
+}
+
+impl Default for SurrealConfig {
+    fn default() -> Self {
+        Self {
+            url:       String::new(),
+            user:      "root".to_string(),
+            pass:      "root".to_string(),
+            namespace: "fluvio".to_string(),
+            database:  "graph".to_string(),
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl SurrealConfig {
+    /// Build from `SURREAL_URL` / `SURREAL_USER` / `SURREAL_PASS` /
+    /// `SURREAL_NS` / `SURREAL_DB`, falling back to [`Default`] values.
+    /// Binary-side only — library code takes an explicit config.
+    pub fn from_env() -> Self {
+        let d = Self::default();
+        Self {
+            url:       std::env::var("SURREAL_URL").unwrap_or(d.url),
+            user:      std::env::var("SURREAL_USER").unwrap_or(d.user),
+            pass:      std::env::var("SURREAL_PASS").unwrap_or(d.pass),
+            namespace: std::env::var("SURREAL_NS").unwrap_or(d.namespace),
+            database:  std::env::var("SURREAL_DB").unwrap_or(d.database),
+        }
+    }
+}
+
 // ── SurrealStorage ────────────────────────────────────────────────────────────
 
 pub struct SurrealStorage {
@@ -96,28 +146,17 @@ pub struct SurrealStorage {
 
 impl SurrealStorage {
     /// Connect to SurrealDB and select namespace + database.
-    ///
-    /// **`SURREAL_URL`** selects the backend at runtime (`Surreal<Any>`):
-    /// - **Unset** → standalone SurrealDB at `ws://127.0.0.1:8000` (matches `surreal sql` against a local server).
-    /// - `embedded` → embedded file store `surrealkv://./fluvio_surreal_data` (no separate Surreal process).
-    /// - Any other URL → `ws://…` / `wss://` / `http://…` / `surrealkv://…` / `mem://` as supported by Surreal.
-    ///   On some hosts the remote WebSocket stack surfaces broken `localhost` resolution; prefer `127.0.0.1`.
-    pub async fn connect() -> anyhow::Result<Self> {
-        let raw = std::env::var("SURREAL_URL").unwrap_or_default();
-        let endpoint = match raw.trim() {
+    pub async fn connect(cfg: &SurrealConfig) -> anyhow::Result<Self> {
+        let endpoint = match cfg.url.trim() {
             "" => normalize_remote_endpoint("ws://127.0.0.1:8000"),
             "embedded" => "surrealkv://./fluvio_surreal_data".to_string(),
             url => normalize_remote_endpoint(url),
         };
 
-        let user = std::env::var("SURREAL_USER")
-            .unwrap_or_else(|_| "root".to_string());
-        let pass = std::env::var("SURREAL_PASS")
-            .unwrap_or_else(|_| "root".to_string());
-        let ns   = std::env::var("SURREAL_NS")
-            .unwrap_or_else(|_| "fluvio".to_string());
-        let db_name = std::env::var("SURREAL_DB")
-            .unwrap_or_else(|_| "graph".to_string());
+        let user    = cfg.user.clone();
+        let pass    = cfg.pass.clone();
+        let ns      = cfg.namespace.clone();
+        let db_name = cfg.database.clone();
 
         let surreal = any::connect(endpoint.as_str())
             .await

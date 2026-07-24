@@ -14,8 +14,8 @@ path = "src/lib.rs"
 thiserror          = { workspace = true }
 anyhow             = { workspace = true }
 tracing            = { workspace = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-dotenvy            = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"], optional = true }
+dotenvy            = { workspace = true, optional = true }
 axum               = { workspace = true, optional = true }
 serde              = { workspace = true }
 serde_json         = { workspace = true }
@@ -23,3 +23,4 @@ serde_json         = { workspace = true }
 [features]
 default = []
 server  = ["dep:axum"]
+env     = ["dep:tracing-subscriber", "dep:dotenvy"]

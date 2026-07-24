@@ -13,7 +13,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tokio::sync::RwLock;
 
-use crate::storage::surreal::SurrealStorage;
+use crate::storage::surreal::{SurrealConfig, SurrealStorage};
 use crate::registry::GraphRegistry;
 use crate::embeddings::EmbeddingContext;
 use crate::graphql::{build_schema, graphql_router, extract_user_id_from_headers};
@@ -33,7 +33,7 @@ pub async fn serve() -> anyhow::Result<()> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3001".to_string());
 
     tracing::info!("Connecting to SurrealDB...");
-    let surreal = SurrealStorage::connect().await
+    let surreal = SurrealStorage::connect(&SurrealConfig::from_env()).await
         .map_err(|e| anyhow::anyhow!("SurrealDB connect failed: {e}"))?;
     surreal.init_schema().await
         .map_err(|e| anyhow::anyhow!("SurrealDB schema init failed: {e}"))?;
