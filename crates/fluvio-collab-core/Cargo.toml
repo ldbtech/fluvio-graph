@@ -1,0 +1,25 @@
+[package]
+name    = "fluvio-collab-core"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Fluvio collaboration — service clients, policy, and workflow orchestration"
+
+[lib]
+name = "fluvio_collab_core"
+
+[dependencies]
+fluvio-common = { workspace = true }
+
+tokio      = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+
+reqwest    = { workspace = true }
+uuid       = { workspace = true }
+chrono     = { workspace = true }
+
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }

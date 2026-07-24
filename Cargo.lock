@@ -896,6 +896,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "collab-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-axum",
+ "axum",
+ "bytes",
+ "chrono",
+ "dotenvy",
+ "fluvio-collab-core",
+ "fluvio-common",
+ "reqwest 0.13.3",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1843,26 +1866,18 @@ name = "fluvio-auth"
 version = "0.1.0"
 
 [[package]]
-name = "fluvio-collab"
+name = "fluvio-collab-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-graphql",
- "async-graphql-axum",
- "axum",
- "bytes",
  "chrono",
- "dotenvy",
- "fastembed",
  "fluvio-common",
  "reqwest 0.13.3",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tower-http",
  "tracing",
- "tracing-subscriber",
  "uuid",
 ]
 

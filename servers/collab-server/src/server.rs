@@ -4,7 +4,7 @@ use axum::{Router, routing::get, http::Method};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
-use crate::clients::{DatabaseClient, GraphClient, IngestionClient};
+use fluvio_collab_core::clients::{DatabaseClient, GraphClient, IngestionClient};
 use crate::graphql::{build_schema, graphql_router};
 
 #[derive(Clone)]

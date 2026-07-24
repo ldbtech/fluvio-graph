@@ -6,8 +6,8 @@ use uuid::Uuid;
 use crate::server::AppState;
 use crate::graphql::types::*;
 use crate::graphql::query::extract_user_id;
-use crate::workflows::{group, invite, contribution, approval, company, team_workflow};
-use crate::workflows::contribution::{ContributionInput};
+use fluvio_collab_core::workflows::{group, invite, contribution, approval, company, team_workflow};
+use fluvio_collab_core::workflows::contribution::{ContributionInput};
 
 pub struct MutationRoot;
 

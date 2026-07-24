@@ -14,5 +14,5 @@ async fn main() -> anyhow::Result<()> {
     fmt().with_env_filter(filter).init();
  
     tracing::info!("fluvio-collab starting...");
-    fluvio_collab::server::serve().await
+    collab_server::server::serve().await
 }

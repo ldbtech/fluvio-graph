@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::server::AppState;
 use crate::graphql::types::*;
-use crate::workflows::{group, approval, search, company, team_workflow};
+use fluvio_collab_core::workflows::{group, approval, search, company, team_workflow};
 
 pub struct QueryRoot;
 

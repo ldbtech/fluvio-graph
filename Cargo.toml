@@ -9,15 +9,16 @@ members = [
     "crates/fluvio-database",
     "crates/fluvio-ingestion-core",
     "crates/fluvio-twin-core",
+    "crates/fluvio-collab-core",
 
     # Servers (thin transport shells)
     "servers/database-server",
     "servers/ingestion-server",
     "servers/twin-server",
+    "servers/collab-server",
 
     # Services (still to be split)
     "services/fluvio-graph",
-    "services/fluvio-collab",
 ]
 
 [workspace.package]
@@ -34,6 +35,7 @@ fluvio-embed  = { path = "crates/fluvio-embed" }
 fluvio-database = { path = "crates/fluvio-database" }
 fluvio-ingestion-core = { path = "crates/fluvio-ingestion-core" }
 fluvio-twin-core = { path = "crates/fluvio-twin-core" }
+fluvio-collab-core = { path = "crates/fluvio-collab-core" }
 
 tokio        = { version = "1",   features = ["full"] }
 tokio-util   = { version = "0.7" }

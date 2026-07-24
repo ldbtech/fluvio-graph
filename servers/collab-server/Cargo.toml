@@ -1,24 +1,25 @@
 [package]
-name    = "fluvio-collab"
+name    = "collab-server"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+description = "GraphQL subgraph server exposing the fluvio-collab-core crate"
 
 [[bin]]
 name = "fluvio-collab"
 path = "src/main.rs"
-required-features = ["server"]
 
 [dependencies]
-fluvio-common = { workspace = true }
+fluvio-collab-core = { workspace = true }
+fluvio-common      = { workspace = true, features = ["server"] }
 
 tokio              = { workspace = true }
-axum               = { workspace = true, optional = true }
-tower-http         = { workspace = true, optional = true }
+axum               = { workspace = true }
+tower-http         = { workspace = true }
 
-async-graphql      = { workspace = true, optional = true }
-async-graphql-axum = { workspace = true, optional = true }
+async-graphql      = { workspace = true }
+async-graphql-axum = { workspace = true }
 
 serde              = { workspace = true }
 serde_json         = { workspace = true }
@@ -26,15 +27,9 @@ serde_json         = { workspace = true }
 reqwest            = { workspace = true }
 uuid               = { workspace = true }
 chrono             = { workspace = true }
+bytes              = { workspace = true }
 
 anyhow             = { workspace = true }
-thiserror          = { workspace = true }
 tracing            = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy            = { workspace = true }
-bytes              = { workspace = true }
-
-fastembed          = { workspace = true }
-[features]
-default = []
-server  = ["dep:axum", "dep:tower-http", "dep:async-graphql", "dep:async-graphql-axum", "fluvio-common/server"]
