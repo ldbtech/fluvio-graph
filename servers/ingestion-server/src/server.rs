@@ -5,9 +5,9 @@ use axum::{Router, routing::get, http::Method};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
-use crate::client::GraphClient;
+use fluvio_ingestion_core::client::GraphClient;
 use crate::graphql::{build_schema, graphql_router};
-use crate::pipeline::{embedder::Embedder, IngestionPipeline};
+use fluvio_ingestion_core::pipeline::{embedder::Embedder, IngestionPipeline};
 
 // ── AppState ──────────────────────────────────────────────────────────────────
 

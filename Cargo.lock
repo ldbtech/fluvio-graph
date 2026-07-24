@@ -1932,16 +1932,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "fluvio-ingestion"
+name = "fluvio-ingestion-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-graphql",
- "async-graphql-axum",
- "axum",
  "chrono",
  "dashmap",
- "dotenvy",
  "fastembed",
  "fluvio-common",
  "fluvio-embed",
@@ -1954,9 +1950,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokenizers 0.19.1",
  "tokio",
- "tower-http",
  "tracing",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -3036,6 +3030,28 @@ dependencies = [
  "unicode-width",
  "unit-prefix",
  "web-time",
+]
+
+[[package]]
+name = "ingestion-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-axum",
+ "axum",
+ "chrono",
+ "dotenvy",
+ "fluvio-common",
+ "fluvio-ingestion-core",
+ "fluvio-types",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

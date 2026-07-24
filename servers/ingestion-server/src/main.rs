@@ -22,5 +22,5 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("fluvio-ingestion starting...");
 
-    fluvio_ingestion::server::serve().await
+    ingestion_server::server::serve().await
 }

@@ -1,7 +1,7 @@
 //! GraphQL types for fluvio-ingestion subgraph.
 
 use async_graphql::*;
-use crate::pipeline::job_store::IngestJob;
+use fluvio_ingestion_core::pipeline::job_store::IngestJob;
 
 #[derive(SimpleObject, Clone, Debug)]
 pub struct GqlIngestResult {

@@ -7,15 +7,16 @@ members = [
     "crates/fluvio-auth",
     "crates/fluvio-embed",
     "crates/fluvio-database",
+    "crates/fluvio-ingestion-core",
 
     # Servers (thin transport shells)
     "servers/database-server",
+    "servers/ingestion-server",
 
     # Services (still to be split)
     "services/fluvio-graph",
     "services/fluvio-twin",
     "services/fluvio-collab",
-    "services/fluvio-ingestion",
 ]
 
 [workspace.package]
@@ -30,6 +31,7 @@ fluvio-common = { path = "crates/fluvio-common" }
 fluvio-auth   = { path = "crates/fluvio-auth" }
 fluvio-embed  = { path = "crates/fluvio-embed" }
 fluvio-database = { path = "crates/fluvio-database" }
+fluvio-ingestion-core = { path = "crates/fluvio-ingestion-core" }
 
 tokio        = { version = "1",   features = ["full"] }
 tokio-util   = { version = "0.7" }
