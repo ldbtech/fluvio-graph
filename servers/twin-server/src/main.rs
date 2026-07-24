@@ -21,5 +21,5 @@ async fn main() -> anyhow::Result<()> {
     fmt().with_env_filter(filter).init();
 
     tracing::info!("fluvio-twin starting...");
-    fluvio_twin::server::serve().await
+    twin_server::server::serve().await
 }

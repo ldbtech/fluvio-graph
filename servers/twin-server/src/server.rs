@@ -4,7 +4,7 @@ use axum::{Router, routing::get, http::Method};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
-use crate::graph::GraphClient;
+use fluvio_twin_core::graph::GraphClient;
 use crate::graphql::{build_schema, graphql_router};
 
 // ── AppState ──────────────────────────────────────────────────────────────────

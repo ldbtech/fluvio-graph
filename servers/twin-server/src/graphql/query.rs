@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::server::AppState;
 use crate::graphql::types::*;
-use crate::llm::{
+use fluvio_twin_core::llm::{
     self, Message,
     build_context_from_seeds, build_system_prompt,
     SEED_K, SIM_TOP_K, BFS_DEPTH,

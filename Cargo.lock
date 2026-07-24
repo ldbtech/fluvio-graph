@@ -1955,16 +1955,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "fluvio-twin"
+name = "fluvio-twin-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-graphql",
- "async-graphql-axum",
- "axum",
  "bytes",
  "chrono",
- "dotenvy",
  "fastembed",
  "fluvio-common",
  "fluvio-embed",
@@ -1976,9 +1972,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tokio-stream",
- "tower-http",
  "tracing",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -6945,6 +6939,32 @@ dependencies = [
  "thiserror 2.0.18",
  "url",
  "utf-8",
+]
+
+[[package]]
+name = "twin-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-axum",
+ "axum",
+ "bytes",
+ "chrono",
+ "dotenvy",
+ "fluvio-common",
+ "fluvio-twin-core",
+ "fluvio-types",
+ "futures-util",
+ "reqwest 0.13.3",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

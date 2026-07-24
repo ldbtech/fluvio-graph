@@ -1,0 +1,33 @@
+[package]
+name    = "fluvio-twin-core"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Fluvio twin — graph-grounded retrieval and LLM orchestration"
+
+[lib]
+name = "fluvio_twin_core"
+
+[dependencies]
+fluvio-types  = { workspace = true }
+fluvio-common = { workspace = true }
+fluvio-embed  = { workspace = true }
+
+tokio        = { workspace = true }
+tokio-stream = { workspace = true }
+futures-util = { workspace = true }
+
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+
+reqwest      = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+bytes        = { workspace = true }
+
+anyhow       = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+
+fastembed    = { workspace = true }
