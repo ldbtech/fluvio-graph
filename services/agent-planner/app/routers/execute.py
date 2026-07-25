@@ -19,13 +19,13 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.audit.store import audit_store
+from fluvio_planner.audit.store import audit_store
 from app.auth import verify_workspace_access
 from app.config import settings
-from app.gateway_client.client import FederationClient
-from app.jobs.models import JobRecord, JobStatus
-from app.jobs import store as job_store
-from app.reliability.circuit_breaker import breaker_status
+from fluvio_planner.gateway_client.client import FederationClient
+from fluvio_planner.jobs.models import JobRecord, JobStatus
+from fluvio_planner.jobs import store as job_store
+from fluvio_planner.reliability.circuit_breaker import breaker_status
 
 logger = logging.getLogger("agent-planner")
 router = APIRouter()

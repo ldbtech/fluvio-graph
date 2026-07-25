@@ -13,8 +13,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.observability.logging import configure_logging, get_logger
-from app.observability.middleware import TracingMiddleware
+from fluvio_planner.observability.logging import configure_logging, get_logger
+from app.middleware import TracingMiddleware
 from app.routers import chat, compile, execute, capabilities
 
 configure_logging()
@@ -24,14 +24,14 @@ logger = get_logger("agent-planner")
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Load tool manifests from disk before accepting traffic
-    from app.toolbox import toolbox
+    from fluvio_planner.toolbox import toolbox
     toolbox.load()
 
     logger.info(
         "agent-planner starting",
         extra={"port": settings.port, "gateway": settings.graphql_gateway_url},
     )
-    from app.jobs.worker import worker_loop
+    from fluvio_planner.jobs.worker import worker_loop
     worker_task = asyncio.create_task(worker_loop(settings.as_planner_config()))
     yield
     worker_task.cancel()
@@ -55,7 +55,7 @@ app.add_middleware(
 
 @app.get("/health")
 async def health() -> dict:
-    from app.reliability.circuit_breaker import breaker_status
+    from fluvio_planner.reliability.circuit_breaker import breaker_status
     return {"status": "ok", "circuit_breakers": breaker_status()}
 
 

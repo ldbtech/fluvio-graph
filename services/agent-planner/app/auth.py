@@ -2,7 +2,7 @@
 
 from fastapi import HTTPException
 
-from app.gateway_client.client import FederationClient
+from fluvio_planner.gateway_client.client import FederationClient
 
 _ACCESS_DENIED_PHRASES = ("access denied", "forbidden", "not found", "unauthorized")
 

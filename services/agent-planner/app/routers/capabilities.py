@@ -18,9 +18,9 @@ from pydantic import BaseModel
 
 from app.auth import verify_workspace_access
 from app.config import settings
-from app.gateway_client.client import FederationClient
-from app.capabilities.resolver import find_reusable_capability, DEFAULT_REUSE_THRESHOLD
-from app.capabilities.orchestrator import build_capability_orchestrator
+from fluvio_planner.gateway_client.client import FederationClient
+from fluvio_planner.capabilities.resolver import find_reusable_capability, DEFAULT_REUSE_THRESHOLD
+from fluvio_planner.capabilities.orchestrator import build_capability_orchestrator
 
 logger = logging.getLogger("agent-planner")
 router = APIRouter()

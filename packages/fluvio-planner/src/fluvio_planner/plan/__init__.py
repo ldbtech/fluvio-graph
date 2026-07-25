@@ -1,5 +1,3 @@
-"""Agent planner: builds Fluvio context plans from the GraphQL gateway."""
-
 from fluvio_planner.plan.orchestrator import generate_plan_context
 
 __all__ = ["generate_plan_context"]

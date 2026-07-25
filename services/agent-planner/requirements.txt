@@ -1,7 +1,11 @@
+# The reusable planner domain layer, installed editable from the monorepo. The
+# relative path resolves the same locally (run pip from this directory) and in
+# Docker (the image mirrors the repo layout under /srv). [synthesis] pulls the
+# csp-sdk git dependency; [mcp] pulls the MCP tool client.
+-e ../../packages/fluvio-planner[synthesis,mcp]
+
+# Service-shell (transport) dependencies — the package itself needs none of these.
 fastapi>=0.115.0
-httpx>=0.27.0
 pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
 uvicorn[standard]>=0.32.0
-# Capability Synthesis Protocol — runtime capability synthesis + reuse (Phase C3)
-csp-sdk @ git+https://github.com/ldbtech/capability-synthesis-protocol

@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.planner_config import PlannerConfig
+from fluvio_planner.planner_config import PlannerConfig
 
 # The planner usually runs with CWD = services/agent-planner (no .env there); the
 # real secrets live in the repo-root .env. Point at both so the key resolves no

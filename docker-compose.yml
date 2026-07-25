@@ -204,8 +204,9 @@ services:
 
   agent-planner:
     build:
-      context: services/agent-planner
-      dockerfile: Dockerfile
+      # Repo root: the image needs the sibling packages/fluvio-planner package.
+      context: .
+      dockerfile: services/agent-planner/Dockerfile
     <<: *restart
     environment:
       <<: *common-env

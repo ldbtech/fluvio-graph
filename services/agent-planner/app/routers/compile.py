@@ -24,25 +24,24 @@ from pydantic import BaseModel
 
 from app.auth import verify_workspace_access
 from app.config import settings
-from app.credential_vault import scrub_credentials, CredentialRef, resolve_credentials
-from app.fetch import fetch_chat_history
-from app.fetch.connectors import fetch_connectors_with_resources
-from app.fetch.tools import fetch_available_tools
-from app.gateway_client.client import FederationClient
-from app.memory.rag import fetch_similar_deployments, format_rag_examples
-from app.plan.orchestrator import generate_plan_context
+from fluvio_planner.credential_vault import scrub_credentials, CredentialRef, resolve_credentials
+from fluvio_planner.fetch import fetch_chat_history
+from fluvio_planner.fetch.connectors import fetch_connectors_with_resources
+from fluvio_planner.fetch.tools import fetch_available_tools
+from fluvio_planner.gateway_client.client import FederationClient
+from fluvio_planner.memory.rag import fetch_similar_deployments, format_rag_examples
+from fluvio_planner.plan.orchestrator import generate_plan_context
 from app.schemas import PlanContextRequest, PlanContextResponse
-from app.schema_inspector import extract_schema_from_resources, format_schema_for_prompt, explain_sql
-from app.tool_graph import ToolCapabilityGraph
-from app.toolbox import toolbox
-from app.workspace_config import build_environment_context, resolve_workspace_config
+from fluvio_planner.resources import read_prompt
+from fluvio_planner.schema_inspector import extract_schema_from_resources, format_schema_for_prompt, explain_sql
+from fluvio_planner.tool_graph import ToolCapabilityGraph
+from fluvio_planner.toolbox import toolbox
+from fluvio_planner.workspace_config import build_environment_context, resolve_workspace_config
 
 logger = logging.getLogger("agent-planner")
 router = APIRouter()
 
-_STEP_PROMPT = (
-    Path(__file__).parent.parent / "prompts" / "step_formulation.txt"
-).read_text()
+_STEP_PROMPT = read_prompt("step_formulation.txt")
 
 
 class CompileRequest(BaseModel):
@@ -130,7 +129,7 @@ async def compile_plan(
     # MCP server is reachable, its real inputSchemas augment the static toolbox
     # manifest; if not, the existing toolbox section still drives planning.
     try:
-        from app.capabilities.mcp_client import list_tools, format_tools_for_prompt
+        from fluvio_planner.capabilities.mcp_client import list_tools, format_tools_for_prompt
         mcp_section = format_tools_for_prompt(await list_tools(settings.mcp_server_url))
         if mcp_section:
             system_prompt += f"\n\n{mcp_section}"
@@ -168,7 +167,7 @@ async def compile_plan(
     goal_text = body.message or body.approved_markdown or ""
     if goal_text:
         try:
-            from app.capabilities.resolver import find_reusable_capability
+            from fluvio_planner.capabilities.resolver import find_reusable_capability
             cap = await find_reusable_capability(client, goal_text)
             if cap:
                 user_prompt += (
@@ -300,7 +299,7 @@ async def compile_plan(
         for i, step in enumerate(steps):
             sql = (step.get("arguments") or {}).get("query")
             if sql and step.get("tool_id") in ("spark", "dbt"):
-                from app.schema_inspector import validate_sql_columns
+                from fluvio_planner.schema_inspector import validate_sql_columns
                 source_tables = list(db_schema.keys())
                 warnings = validate_sql_columns(sql, db_schema, source_tables)
                 if warnings:

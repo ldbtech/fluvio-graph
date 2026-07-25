@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fluvio-planner"
+version = "0.1.0"
+description = "Reusable, transport-free domain layer of the fluvioMe agent-planner."
+readme = "README.md"
+requires-python = ">=3.13"
+# The domain layer's only hard runtime dependency. Config is injected
+# (PlannerConfig), so there is deliberately no pydantic-settings / dotenv here.
+dependencies = [
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+# Runtime capability synthesis (CSP) and the MCP tool client are imported lazily
+# and the planner degrades gracefully when they are absent — so they are extras,
+# not hard requirements.
+synthesis = ["csp-sdk @ git+https://github.com/ldbtech/capability-synthesis-protocol"]
+mcp = ["mcp"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# Prompt templates and eval goldens are loaded via Path(__file__); ship them in
+# built wheels too (editable installs read straight from src/).
+fluvio_planner = ["prompts/*.txt", "evals/golden/*.json"]

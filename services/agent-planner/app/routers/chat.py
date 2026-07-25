@@ -14,27 +14,26 @@ from pathlib import Path
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from app.agent import designate
-from app.agent.plan_writer import write_plan
+from fluvio_planner.agent import designate
+from fluvio_planner.agent.plan_writer import write_plan
 from app.auth import verify_workspace_access
 from app.config import settings
-from app.fetch import fetch_chat_history, add_chat_message
-from app.fetch.connectors import fetch_connectors_with_resources
-from app.fetch.documents import fetch_knowledge_documents
-from app.fetch.iam import fetch_user_profile
-from app.fetch.nodes import fetch_semantic_nodes
-from app.gateway_client.client import FederationClient
-from app.intent import needs_clarification
-from app.plan.orchestrator import generate_plan_context
-from app.reflection import reflect_on_plan
-from app.schema_inspector import extract_schema_from_resources
+from fluvio_planner.fetch import fetch_chat_history, add_chat_message
+from fluvio_planner.fetch.connectors import fetch_connectors_with_resources
+from fluvio_planner.fetch.documents import fetch_knowledge_documents
+from fluvio_planner.fetch.iam import fetch_user_profile
+from fluvio_planner.fetch.nodes import fetch_semantic_nodes
+from fluvio_planner.gateway_client.client import FederationClient
+from fluvio_planner.intent import needs_clarification
+from fluvio_planner.plan.orchestrator import generate_plan_context
+from fluvio_planner.reflection import reflect_on_plan
+from fluvio_planner.schema_inspector import extract_schema_from_resources
+from fluvio_planner.resources import read_prompt
 
 logger = logging.getLogger("agent-planner")
 router = APIRouter()
 
-_CHAT_SYSTEM_PROMPT = (
-    Path(__file__).parent.parent / "prompts" / "chat_system.txt"
-).read_text()
+_CHAT_SYSTEM_PROMPT = read_prompt("chat_system.txt")
 
 import re as _re
 
