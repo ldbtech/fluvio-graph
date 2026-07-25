@@ -90,3 +90,76 @@ impl std::fmt::Display for GraphId {
         self.0.fmt(f)
     }
 }
+
+// ── WorkspaceId ─────────────────────────────────────────────────────────────
+
+/// Tenant / workspace boundary for every piece of stored knowledge.
+///
+/// This is the isolation key: two workspaces under the same owner must never
+/// see each other's nodes, vectors, or documents. It is a required argument on
+/// data-access APIs — not an `Option` — so a caller cannot forget to scope a
+/// query and accidentally read across tenants.
+///
+/// The value is opaque to the engine (a hobbyist may use `"default"`; a
+/// multi-tenant host supplies a per-tenant id). Empty strings are rejected so
+/// "no workspace" can never masquerade as a real one.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct WorkspaceId(String);
+
+impl WorkspaceId {
+    /// Construct a workspace id, rejecting empty/whitespace-only values.
+    pub fn new(id: impl Into<String>) -> Result<Self, InvalidWorkspaceId> {
+        let id = id.into();
+        if id.trim().is_empty() {
+            return Err(InvalidWorkspaceId);
+        }
+        Ok(Self(id))
+    }
+
+    /// The default single-tenant workspace, for hobbyist / self-host use where
+    /// multi-tenancy is not needed. Named explicitly rather than implied by an
+    /// absent argument, so scoping is always visible at the call site.
+    pub fn default_workspace() -> Self {
+        Self("default".to_string())
+    }
+
+    /// Borrow the underlying string (e.g. to bind into a query).
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for WorkspaceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Returned by [`WorkspaceId::new`] when given an empty or whitespace-only id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvalidWorkspaceId;
+
+impl std::fmt::Display for InvalidWorkspaceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("workspace id must not be empty")
+    }
+}
+
+impl std::error::Error for InvalidWorkspaceId {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_empty_workspace_ids() {
+        assert!(WorkspaceId::new("").is_err());
+        assert!(WorkspaceId::new("   ").is_err());
+        assert!(WorkspaceId::new("acme").is_ok());
+    }
+
+    #[test]
+    fn default_workspace_is_named() {
+        assert_eq!(WorkspaceId::default_workspace().as_str(), "default");
+    }
+}

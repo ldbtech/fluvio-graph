@@ -73,7 +73,8 @@ pub mod graph {
 pub mod types {
     pub use fluvio_types::{
         Domain, Edge, EdgeId, ExternalRef, GraphError, GraphEvent, GraphId, GraphQuery,
-        GraphResult, Node, NodeId, NodeKind, NodeKindFilter, NodePredicate,
+        GraphResult, InvalidWorkspaceId, Node, NodeId, NodeKind, NodeKindFilter, NodePredicate,
+        WorkspaceId,
     };
 
     /// Re-exported because it appears in this crate's public signatures
@@ -105,7 +106,7 @@ pub mod prelude {
     pub use crate::graph::{DomainGraph, FluvioGraph, GraphRegistry};
     pub use crate::query::{QueryConfig, QueryContext};
     pub use crate::storage::{SurrealConfig, SurrealStorage};
-    pub use crate::types::{Domain, Edge, Node, NodeId, NodeKind, Uuid};
+    pub use crate::types::{Domain, Edge, Node, NodeId, NodeKind, Uuid, WorkspaceId};
 
     #[cfg(feature = "ingestion")]
     pub use crate::ingestion::IngestionPipeline;

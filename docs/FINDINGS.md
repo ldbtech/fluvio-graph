@@ -74,6 +74,14 @@ their own commits, separate from move/refactor commits.
 - **Two divergent `supergraph.graphql` files** exist: one at the repo root and
   one in `gateway/`. They differ. Only the gateway copy is wired into the Apollo
   Router; the root one appears stale. Confirm and delete the root copy.
+- **The storage query layer string-interpolates every value into SurrealQL**
+  (`owner_id`, `domain`, `zone`, `workspace_id`) instead of binding it — see
+  `crates/fluvio-graph-core/src/storage/surreal.rs`. A code comment says
+  `.bind()` was avoided for complex types in SurrealDB 3.x. `owner_id`/`zone`
+  are typed and low-risk; `domain` and `workspace_id` come from GraphQL input as
+  strings, so a crafted `workspace_id` could subvert the tenant filter. Bind or
+  validate these at the type boundary when the tenancy mechanism is finalised
+  (see `docs/adr/0002-open-decisions.md` §2.2 / §2.6).
 - The macOS dev machine's disk hit 100% full during this work; this repo's
   6.6GiB `target/` was cleaned to proceed. Docker Desktop's daemon was also
   non-functional (CLI panic), so the §13 Phase 0 compose smoke test could not

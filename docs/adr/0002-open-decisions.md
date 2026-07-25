@@ -34,16 +34,59 @@ relative to the file's location.)
 **Recommendation: A**, as its own commit *before* the file moves, so the move
 stays mechanical and reviewable.
 
-## 2.2 `WorkspaceId` is currently optional (Phase 6)
+## 2.2 `WorkspaceId` — foundation landed; two forks remain (Phase 6)
 
-`QueryContext::from_text` and `from_embedding` already take
-`workspace_id: Option<&str>`. Plan §9 requires it to be **required** —
-"No public API may access data without a `WorkspaceId`" — and mapped to a
-SurrealDB namespace/database per workspace rather than a filtered column.
+**Done (uncommitted, awaiting review):**
+- `WorkspaceId` newtype added to `fluvio-types` (rejects empty ids; has a named
+  `default_workspace()` for single-tenant use) and re-exported from the facade.
+- `crates/fluvio-graph-core/tests/workspace_isolation.rs` — §9's acceptance
+  oracle, running against an **embedded** `surrealkv://` store so `cargo test`
+  proves cross-workspace read isolation with no Docker. Green. Any future change
+  to the isolation mechanism must keep it green.
 
-Making it required is a breaking change to the facade, so it wants a minor bump
-and a `CHANGELOG` entry. Doing it *before* external consumers pin `v0.1.0` is
-much cheaper than after.
+**Fork A — making the argument required is a data migration, not a signature
+change.** Today `workspace_id: Option<&str>` with `None` compiles to the filter
+`metadata.workspace_id = NONE`, i.e. "only nodes that have no workspace tag."
+Every node ingested so far has no `workspace_id` in its metadata, so it lives in
+that no-workspace bucket. The moment the argument becomes a required
+`WorkspaceId`, those rows match *no* workspace and effectively disappear from
+reads until backfilled. So Phase 6 needs a migration (stamp existing nodes with
+`default_workspace()`), decided and run against real data — which cannot be
+verified here. This is the breaking, behaviour-changing half; it is why the
+newtype was *added* but not yet *threaded through* the read APIs.
+
+**Fork B — the isolation mechanism: filter vs namespace, over a shared
+connection.** Plan §9 prefers a SurrealDB namespace/database **per workspace**
+("namespaces fail safe") over the current metadata filter. But `AppState` holds
+a single `Arc<SurrealStorage>` — one `Surreal<Any>` connection shared across all
+requests. Namespace-per-workspace therefore forces a design choice with
+correctness stakes:
+  - **Per-op `use_db(workspace)`** on the shared connection — racy: a concurrent
+    request can switch the active database mid-query.
+  - **Connection-per-workspace**, cached (e.g. `DashMap<WorkspaceId, Surreal>`)
+    — concurrency-safe for remote `ws://`, but multiple embedded `surrealkv://`
+    handles to one path may conflict, which would also break the isolation test
+    above.
+This is a security boundary whose runtime behaviour I cannot exercise here
+(Docker is down; the embedded store has its own single-writer constraints), so
+the mechanism swap is deliberately left for a decision + a run against real
+SurrealDB. The metadata-filter mechanism stays in place until then, now with the
+isolation test guarding it.
+
+Either way, threading `WorkspaceId` through the facade's read methods is a
+breaking change — minor bump + `CHANGELOG` entry — and far cheaper before
+external consumers pin `v0.1.0` than after.
+
+## 2.6 Query layer interpolates all values into SurrealQL strings
+
+Not specific to tenancy, but adjacent: every storage query builds SurrealQL by
+`format!`-interpolating `owner_id`, `domain`, `zone`, and `workspace_id`
+directly into the string rather than binding them (there is a code comment that
+`.bind()` was avoided for complex types in SurrealDB 3.x). `owner_id`/`zone` are
+typed (`Uuid`/`i16`) so low-risk, but `domain` and `workspace_id` originate as
+strings from GraphQL input — a `workspace_id` like `x' OR '1'='1` would break
+scoping. When Fork B is settled, bind these values (or validate/escape them at
+the `WorkspaceId`/`Domain` boundary). Tracked in `docs/FINDINGS.md`.
 
 ## 2.3 `fluvio-auth` retirement (plan §8.3)
 

@@ -35,3 +35,10 @@ tracing      = { workspace = true }
 fastembed    = { workspace = true }
 ort          = { workspace = true }
 ndarray      = { workspace = true }
+
+[dev-dependencies]
+# Integration tests (tests/) are separate crates and don't inherit the normal
+# dependencies above, so the ones they touch are repeated here.
+tokio        = { workspace = true }
+uuid         = { workspace = true }
+fluvio-types = { workspace = true }

@@ -38,7 +38,7 @@ pub mod connector;
 
 // ── Flat re-exports for convenience ──────────────────────────────────────────
 // Services can `use fluvio_types::*` or pick specific paths.
-pub use graph::ids::{EdgeId, GraphId, NodeId};
+pub use graph::ids::{EdgeId, GraphId, InvalidWorkspaceId, NodeId, WorkspaceId};
 pub use graph::node::{ExternalRef, Node};
 pub use graph::edge::Edge;
 pub use graph::domain::DomainGraph;
