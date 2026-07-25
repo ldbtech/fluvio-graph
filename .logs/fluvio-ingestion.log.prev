@@ -1,6 +1,0 @@
-[2m2026-06-04T14:56:02.947081Z[0m [32m INFO[0m [2mfluvio_ingestion[0m[2m:[0m fluvio-ingestion starting...
-[2m2026-06-04T14:56:02.947326Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Loading BGE-small embedding model...
-[2m2026-06-04T14:56:03.326132Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Embedding model ready.
-[2m2026-06-04T14:56:03.336868Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m Graph client configured → http://127.0.0.1:3001/graphql
-[2m2026-06-04T14:56:03.339664Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m fluvio-ingestion listening on http://0.0.0.0:3004
-[2m2026-06-04T14:56:03.339690Z[0m [32m INFO[0m [2mfluvio_ingestion::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3004/graphql

@@ -1,4 +1,0 @@
-[2m2026-06-04T14:56:04.927327Z[0m [32m INFO[0m [2mfluvio_twin[0m[2m:[0m fluvio-twin starting...
-[2m2026-06-04T14:56:04.932119Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m Graph client → http://127.0.0.1:3001/graphql
-[2m2026-06-04T14:56:04.935315Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m fluvio-twin listening on http://0.0.0.0:3002
-[2m2026-06-04T14:56:04.935362Z[0m [32m INFO[0m [2mfluvio_twin::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3002/graphql

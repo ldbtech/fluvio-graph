@@ -14,6 +14,16 @@ web/fluvio-ui/fluvio_graphs/
 # SurrealDB embedded data dirs.
 fluvio_surreal.db/
 fluvio_surreal_data/
+fluvio_surreal_collab_data/
+
+# macOS finder metadata.
+.DS_Store
+
+# Runtime logs / pids and throwaway scratch scripts (never commit).
+.logs/
+.logs-stack/
+.pids/
+scratch/
 
 # Nested example crates build their own target/
 examples/*/target/

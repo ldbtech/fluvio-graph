@@ -146,6 +146,18 @@ self-host experience, which is the thing the plan says to protect.
 
 ## 2.4 The dead root `src/` tree
 
+**Done.** The 73-file pre-microservices monolith at root `src/` (plus its orphan
+`tests/cleaner_tests.rs`) was deleted — nothing compiled it (root `Cargo.toml`
+has no `[package]`, and it is not a workspace member). Removed in the same
+cleanup: the stale root `supergraph.graphql` (the live copy is `gateway/`, used
+by `scripts/dev.sh` which `cd`s into `gateway/` first), `history.txt` (stray DB
+connection notes), `test_spark_mutation.py`, the broken `restart.sh` (referenced
+pre-Phase-4 binary names), the `scratch/` throwaway scripts, and committed
+runtime junk (`.logs/`, `.logs-stack/`, `.pids/`, `fluvio_surreal_collab_data/`,
+`.DS_Store`) — now gitignored. `Dockerfile.rust` and `migrations/` were kept:
+both are live (compose builds every Rust service from `Dockerfile.rust`;
+`migrations/` is used by `fluvio-database`). Original note below.
+
 73 tracked Rust files at the repo root that **nothing compiles** — the root
 `Cargo.toml` has no `[package]` section. It appears to be the pre-microservices
 monolith. Delete it, or move it to an archive branch. See `docs/FINDINGS.md`.

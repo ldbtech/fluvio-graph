@@ -1,5 +1,0 @@
-[2m2026-05-18T03:52:06.344425Z[0m [32m INFO[0m [2mfluvio_database[0m[2m:[0m fluvio-database starting...
-[2m2026-05-18T03:52:06.399357Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-[2m2026-05-18T03:52:06.409185Z[0m [32m INFO[0m [2mfluvio_database::db::pool[0m[2m:[0m Migrations applied successfully
-[2m2026-05-18T03:52:06.414583Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m fluvio-database listening on http://0.0.0.0:3005
-[2m2026-05-18T03:52:06.414662Z[0m [32m INFO[0m [2mfluvio_database::server[0m[2m:[0m GraphQL endpoint: http://0.0.0.0:3005/graphql
