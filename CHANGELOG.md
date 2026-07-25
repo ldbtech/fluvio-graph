@@ -10,6 +10,23 @@ Pre-1.0, a breaking change to the facade takes a **minor** bump.
 
 ## [Unreleased]
 
+### Changed (breaking — warrants a `0.2.0` minor bump)
+- **Workspace scope is now required on reads.** `SurrealStorage::get_user_nodes`,
+  `similarity_search`, `similarity_search_nodes`, `delete_workspace_nodes`, and
+  `QueryContext::from_text` / `from_embedding` take a required
+  `&WorkspaceId` instead of `Option<&str>`. A read can no longer silently fall
+  back to "no workspace" and cross tenants. Single-tenant callers pass
+  `WorkspaceId::default_workspace()`.
+
+### Added
+- `SurrealStorage::backfill_default_workspace` — idempotent migration that stamps
+  pre-tenancy (untagged) nodes with the default workspace, so requiring a scope
+  does not orphan existing data.
+
+### Fixed
+- **Tenant-filter SurrealQL injection.** `workspace_id` / `domain` are now bound,
+  not string-interpolated, so a crafted workspace id cannot widen the scope.
+
 ## [0.1.0] — 2026-07-24
 
 First tagged release. This is the library-first restructure: the same engine,

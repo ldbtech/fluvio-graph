@@ -44,13 +44,16 @@ async fn main() -> anyhow::Result<()> {
         .nth(1)
         .unwrap_or_else(|| "what do we know?".to_string());
 
+    // Tenant scope is now required. A single-tenant embedder uses the default
+    // workspace; a multi-tenant host passes a per-tenant WorkspaceId here.
+    let workspace = WorkspaceId::default_workspace();
     let ctx = QueryContext::from_text(
         owner,
         &question,
         &QueryConfig::default(),
         &store,
         &mut embedder,
-        None, // workspace filter
+        &workspace,
     )
     .await?;
 

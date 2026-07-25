@@ -17,7 +17,7 @@ use surrealdb::types::{RecordId, RecordIdKey, ToSql};
 use uuid::Uuid;
 
 use fluvio_types::{Node, NodeId, Edge};
-use fluvio_types::{Domain, NodeKind};
+use fluvio_types::{Domain, NodeKind, WorkspaceId};
 
 /// For ws/http URLs only: map `localhost` → `127.0.0.1` when resolution is flaky.
 fn normalize_remote_endpoint(url: &str) -> String {
@@ -263,36 +263,37 @@ impl SurrealStorage {
         Ok(rows.into_iter().next())
     }
 
-    /// Get all nodes for a user, optionally filtered by domain.
+    /// Get all nodes for a user in a workspace, optionally filtered by domain.
+    ///
+    /// `workspace_id` is a **required** scope (ADR 0002 §2.2 Fork A): every read
+    /// is tenant-scoped, so a caller cannot forget to pass it and read across
+    /// tenants. `owner_id` (Uuid) and `zone` (i16) are typed and safe to
+    /// interpolate; `domain` and `workspace_id` come from GraphQL input as
+    /// strings, so they are **bound**, never interpolated (§2.6 injection fix).
     pub async fn get_user_nodes(
         &self,
         owner_id: Uuid,
         domain:   Option<&str>,
         zone:     i16,
-        workspace_id: Option<&str>,
+        workspace_id: &WorkspaceId,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
-        let ws_clause = match workspace_id {
-            Some(ws_id) if !ws_id.is_empty() => format!("metadata.workspace_id = '{ws_id}'"),
-            _ => "metadata.workspace_id = NONE".to_string(),
-        };
+        let mut query_str = format!(
+            "SELECT * FROM nodes \
+             WHERE owner_id = '{owner_id}' \
+               AND zone <= {zone} \
+               AND metadata.workspace_id = $ws"
+        );
+        if domain.is_some() {
+            query_str.push_str(" AND domain = $domain");
+        }
 
-        let query = match domain {
-            Some(d) => format!(
-                "SELECT * FROM nodes \
-                 WHERE owner_id = '{owner_id}' \
-                   AND domain = '{d}' \
-                   AND zone <= {zone} \
-                   AND {ws_clause}"
-            ),
-            None => format!(
-                "SELECT * FROM nodes \
-                 WHERE owner_id = '{owner_id}' \
-                   AND zone <= {zone} \
-                   AND {ws_clause}"
-            ),
-        };
+        let mut q = self.db.query(query_str)
+            .bind(("ws", workspace_id.as_str().to_string()));
+        if let Some(d) = domain {
+            q = q.bind(("domain", d.to_string()));
+        }
 
-        let mut result = self.db.query(query).await
+        let mut result = q.await
             .map_err(|e| anyhow::anyhow!("get_user_nodes: {e}"))?;
 
         let nodes: Vec<SurrealNodeRow> = rows_from_json(&mut result, "get_user_nodes")?;
@@ -351,7 +352,7 @@ impl SurrealStorage {
         query_vec: &[f32],
         top_k:     usize,
         zone:      i16,
-        workspace_id: Option<&str>,
+        workspace_id: &WorkspaceId,
     ) -> anyhow::Result<Vec<(String, f32)>> {
         let rows = self.similarity_search_nodes(owner_id, query_vec, top_k, zone, workspace_id).await?;
         Ok(rows.into_iter()
@@ -370,19 +371,17 @@ impl SurrealStorage {
         query_vec: &[f32],
         top_k:     usize,
         max_zone:  i16,
-        workspace_id: Option<&str>,
+        workspace_id: &WorkspaceId,
     ) -> anyhow::Result<Vec<SurrealNodeRow>> {
-        let ws_clause = match workspace_id {
-            Some(ws_id) if !ws_id.is_empty() => format!("metadata.workspace_id = '{ws_id}'"),
-            _ => "metadata.workspace_id = NONE".to_string(),
-        };
-
+        // Required tenant scope; workspace_id is bound, not interpolated (§2.6).
         let query = format!(
             "SELECT * FROM nodes \
-             WHERE owner_id = '{owner_id}' AND zone <= {max_zone} AND {ws_clause}"
+             WHERE owner_id = '{owner_id}' AND zone <= {max_zone} AND metadata.workspace_id = $ws"
         );
-    
-        let mut result = self.db.query(query).await
+
+        let mut result = self.db.query(query)
+            .bind(("ws", workspace_id.as_str().to_string()))
+            .await
             .map_err(|e| anyhow::anyhow!("similarity_search_nodes: {e}"))?;
     
         let rows: Vec<SurrealNodeRow> = rows_from_json(&mut result, "similarity_search_nodes")?;
@@ -437,16 +436,42 @@ impl SurrealStorage {
     }
 
     /// Delete all nodes associated with a workspace.
-    pub async fn delete_workspace_nodes(&self, owner_id: Uuid, workspace_id: &str) -> anyhow::Result<()> {
+    pub async fn delete_workspace_nodes(&self, owner_id: Uuid, workspace_id: &WorkspaceId) -> anyhow::Result<()> {
         self.db
-            .query(format!(
-                "DELETE nodes WHERE owner_id = '{owner_id}' AND metadata.workspace_id = '{workspace_id}'"
-            ))
+            .query("DELETE nodes WHERE owner_id = $owner AND metadata.workspace_id = $ws")
+            .bind(("owner", owner_id.to_string()))
+            .bind(("ws", workspace_id.as_str().to_string()))
             .await
             .map_err(|e| anyhow::anyhow!("delete_workspace_nodes: {e}"))?;
 
         tracing::info!("[SurrealDB] Deleted workspace {workspace_id} nodes for owner {owner_id}");
         Ok(())
+    }
+
+    /// One-time migration for the required-`WorkspaceId` change (ADR 0002 §2.2
+    /// Fork A). Nodes written before tenancy have no `metadata.workspace_id`;
+    /// once reads require a workspace scope, those nodes would match no
+    /// workspace and vanish. This stamps every untagged node with the default
+    /// workspace so pre-tenancy data lands in `default_workspace()`.
+    ///
+    /// Idempotent: it only touches nodes whose `workspace_id` is still absent,
+    /// so running it again after a first pass updates nothing. Returns the
+    /// number of nodes stamped.
+    pub async fn backfill_default_workspace(&self, default: &WorkspaceId) -> anyhow::Result<usize> {
+        let mut result = self.db
+            .query(
+                "UPDATE nodes SET metadata.workspace_id = $ws \
+                 WHERE metadata.workspace_id = NONE RETURN AFTER"
+            )
+            .bind(("ws", default.as_str().to_string()))
+            .await
+            .map_err(|e| anyhow::anyhow!("backfill_default_workspace: {e}"))?;
+
+        let updated: Vec<serde_json::Value> = result.take(0)
+            .map_err(|e| anyhow::anyhow!("backfill_default_workspace take: {e}"))?;
+        let n = updated.len();
+        tracing::info!("[SurrealDB] Backfilled {n} untagged node(s) into workspace '{default}'");
+        Ok(n)
     }
 
     /// Cross-user similarity search — "who in my network works on X?"

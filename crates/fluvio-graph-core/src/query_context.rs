@@ -12,7 +12,7 @@ use uuid::Uuid;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use fluvio_types::{DomainGraph, GraphId, Domain, GraphQuery, GraphResult};
+use fluvio_types::{DomainGraph, GraphId, Domain, GraphQuery, GraphResult, WorkspaceId};
 
 use crate::graph::FluvioGraph;   // ← brings .query() into scope for DomainGraph
 use crate::storage::surreal::SurrealStorage;
@@ -62,7 +62,7 @@ impl QueryContext {
         config:   &QueryConfig,
         surreal:  &Arc<SurrealStorage>,
         embedder: &mut EmbeddingContext,
-        workspace_id: Option<&str>,
+        workspace_id: &WorkspaceId,
     ) -> anyhow::Result<Self> {
         let embedding = embedder.embed(query)
             .map_err(|e| anyhow::anyhow!("embed failed: {e:?}"))?;
@@ -75,7 +75,7 @@ impl QueryContext {
         embedding: &[f32],
         config:    &QueryConfig,
         surreal:   &Arc<SurrealStorage>,
-        workspace_id: Option<&str>,
+        workspace_id: &WorkspaceId,
     ) -> anyhow::Result<Self> {
         // Step 1: similarity search → seed nodes
         let seeds = surreal.similarity_search_nodes(

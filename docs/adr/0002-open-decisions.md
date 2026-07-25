@@ -45,6 +45,31 @@ stays mechanical and reviewable.
 
 ## 2.2 `WorkspaceId` — foundation landed; two forks remain (Phase 6)
 
+**Resolved (Phase 6).** Both forks were decided by the owner and implemented:
+
+- **Fork A → strict + backfill migration.** The read/scoping APIs
+  (`get_user_nodes`, `similarity_search[_nodes]`, `QueryContext::from_text/from_embedding`,
+  `delete_workspace_nodes`) now take a **required** `&WorkspaceId` instead of
+  `Option<&str>`; the `None → workspace_id = NONE` fallback is gone. Pre-tenancy
+  nodes are handled by `SurrealStorage::backfill_default_workspace`, an
+  idempotent migration that stamps untagged nodes with `default_workspace()`.
+  Breaking change to the facade → minor bump (`v0.2.0`).
+- **Fork B → hardened metadata filter, NOT namespace-per-workspace.** Empirical
+  finding (test `embedded_surrealkv_is_single_connection_per_path`): the embedded
+  surrealkv store rejects a second connection to the same path
+  (`LOCK is already locked`). Connection/namespace-per-workspace therefore cannot
+  work on the embedded backend — a first-class store and the CI test's backend.
+  So isolation stays a single-connection metadata filter, now **required** (Fork
+  A) and **injection-safe** (§2.6). The per-op-`use_db`-under-a-lock alternative
+  was rejected: it serialises all storage access, defeating the multi-tenant goal.
+
+Verified against embedded surrealkv (`cargo test -p fluvio-graph-core`, 6 tests
+green) and the facade compiles with the new signatures. The graph-server resolver
+wiring was edited but not compiled here (async-graphql build exceeded available
+disk); it needs a `cargo build` on a machine with headroom. Original analysis
+below.
+
+
 **Done (uncommitted, awaiting review):**
 - `WorkspaceId` newtype added to `fluvio-types` (rejects empty ids; has a named
   `default_workspace()` for single-tenant use) and re-exported from the facade.
@@ -87,6 +112,15 @@ breaking change — minor bump + `CHANGELOG` entry — and far cheaper before
 external consumers pin `v0.1.0` than after.
 
 ## 2.6 Query layer interpolates all values into SurrealQL strings
+
+**Fixed for the tenancy filter (Phase 6).** `workspace_id` (and `domain` in
+`get_user_nodes`) are now passed via `.bind()` rather than `format!`-interpolated,
+so a crafted id like `x' OR '1'='1` is treated as an opaque value and cannot
+widen the scope — guarded by test `crafted_workspace_id_cannot_escape_the_filter`.
+`owner_id`/`zone` remain interpolated (typed `Uuid`/`i16`, not injectable).
+Other queries outside the tenancy path may still interpolate typed values;
+audit separately. Original note below.
+
 
 Not specific to tenancy, but adjacent: every storage query builds SurrealQL by
 `format!`-interpolating `owner_id`, `domain`, `zone`, and `workspace_id`

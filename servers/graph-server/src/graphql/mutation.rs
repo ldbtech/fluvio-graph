@@ -4,7 +4,7 @@ use async_graphql::*;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use fluvio_types::{Node, NodeId, Edge, EdgeId, NodeKind, Domain};
+use fluvio_types::{Node, NodeId, Edge, EdgeId, NodeKind, Domain, WorkspaceId};
 
 use crate::server::AppState;
 use crate::graphql::types::*;
@@ -251,8 +251,12 @@ impl MutationRoot {
     ) -> Result<bool> {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
+        // A delete must target a real workspace — reject empty rather than
+        // defaulting, so an empty argument can never wipe the default tenant.
+        let ws = WorkspaceId::new(workspace_id.trim())
+            .map_err(|e| Error::new(e.to_string()))?;
 
-        state.surreal.delete_workspace_nodes(user_id, &workspace_id).await
+        state.surreal.delete_workspace_nodes(user_id, &ws).await
             .map_err(|e| Error::new(e.to_string()))?;
 
         Ok(true)

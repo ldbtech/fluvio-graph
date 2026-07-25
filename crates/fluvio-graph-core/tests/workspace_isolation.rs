@@ -40,6 +40,36 @@ async fn embedded_store() -> SurrealStorage {
     store
 }
 
+/// Documents the constraint that shapes the tenancy mechanism (ADR 0002 §2.2
+/// Fork B): the embedded surrealkv store is **single-connection per path**. A
+/// second connection to the same path — which "one connection per workspace
+/// database" would require — fails with a datastore LOCK error. Therefore
+/// database-per-workspace-via-separate-connections cannot be the isolation
+/// mechanism for the embedded backend; scoping must work over a single shared
+/// connection (metadata filter, or per-op use_db under a lock).
+#[tokio::test]
+async fn embedded_surrealkv_is_single_connection_per_path() {
+    let dir = std::env::temp_dir().join(format!("fluvio-dbprobe-{}", Uuid::new_v4()));
+    let url = format!("surrealkv://{}", dir.display());
+
+    let mk = |db: &str| SurrealConfig {
+        url: url.clone(),
+        namespace: "test".to_string(),
+        database: db.to_string(),
+        ..SurrealConfig::default()
+    };
+
+    let _store_a = SurrealStorage::connect(&mk("ws_alpha")).await.expect("first connection opens");
+    let second = SurrealStorage::connect(&mk("ws_beta")).await;
+    assert!(
+        second.is_err(),
+        "expected the embedded store to reject a second connection to the same path; \
+         if this ever succeeds, connection-per-workspace becomes viable for embedded"
+    );
+    let msg = format!("{:#}", second.err().unwrap());
+    assert!(msg.contains("locked"), "expected a datastore lock error, got: {msg}");
+}
+
 #[tokio::test]
 async fn workspace_reads_do_not_leak_across_tenants() {
     let store = embedded_store().await;
@@ -59,7 +89,7 @@ async fn workspace_reads_do_not_leak_across_tenants() {
 
     // Reading workspace A must return A's node and never B's.
     let a_view = store
-        .get_user_nodes(owner, None, 0, Some(ws_a.as_str()))
+        .get_user_nodes(owner, None, 0, &ws_a)
         .await
         .expect("read workspace A");
     let a_ids: Vec<String> = a_view.iter().map(|r| format!("{:?}", r.id)).collect();
@@ -74,7 +104,7 @@ async fn workspace_reads_do_not_leak_across_tenants() {
 
     // And symmetrically for workspace B.
     let b_view = store
-        .get_user_nodes(owner, None, 0, Some(ws_b.as_str()))
+        .get_user_nodes(owner, None, 0, &ws_b)
         .await
         .expect("read workspace B");
     let b_ids: Vec<String> = b_view.iter().map(|r| format!("{:?}", r.id)).collect();
@@ -109,7 +139,7 @@ async fn similarity_search_is_workspace_scoped() {
     store.upsert_node(owner, &b_node, 0).await.expect("write B");
 
     let hits = store
-        .similarity_search_nodes(owner, &vec![0.1_f32; 384], 10, 0, Some(ws_a.as_str()))
+        .similarity_search_nodes(owner, &vec![0.1_f32; 384], 10, 0, &ws_a)
         .await
         .expect("similarity search in workspace A");
 
@@ -126,4 +156,74 @@ async fn similarity_search_is_workspace_scoped() {
 fn empty_workspace_id_is_rejected() {
     assert!(WorkspaceId::new("").is_err());
     assert!(WorkspaceId::new("  ").is_err());
+}
+
+/// The workspace filter is BOUND, not string-interpolated (ADR 0002 §2.6). A
+/// workspace id crafted to break out of the SurrealQL string literal
+/// (`x' OR '1'='1`) must be treated as an opaque value — it matches its own
+/// (empty) tenant and can never widen the scope to another tenant's data.
+#[tokio::test]
+async fn crafted_workspace_id_cannot_escape_the_filter() {
+    let store = embedded_store().await;
+    let owner = Uuid::new_v4();
+
+    let victim_ws = WorkspaceId::new("victim").unwrap();
+    let victim = node_in_workspace("victim secret", &victim_ws);
+    let victim_id = victim.id;
+    store.upsert_node(owner, &victim, 0).await.expect("write victim");
+
+    // A classic injection payload as the workspace id. WorkspaceId accepts it as
+    // an opaque string; the query binds it, so it matches only a tenant literally
+    // named that — i.e. nothing — rather than OR-ing the WHERE clause to true.
+    let attack = WorkspaceId::new("x' OR '1'='1").unwrap();
+    let leaked = store
+        .get_user_nodes(owner, None, 0, &attack)
+        .await
+        .expect("query with crafted workspace id must not error");
+
+    let ids: Vec<String> = leaked.iter().map(|r| format!("{:?}", r.id)).collect();
+    assert!(
+        !ids.iter().any(|id| id.contains(&victim_id.to_string())),
+        "INJECTION: a crafted workspace_id widened the filter and leaked another tenant's node"
+    );
+    assert!(leaked.is_empty(), "crafted tenant should own no rows, got {}", leaked.len());
+}
+
+/// Fork A migration: nodes written before tenancy have no workspace tag and
+/// would vanish once reads require a scope. `backfill_default_workspace` stamps
+/// them into the default workspace, and it is idempotent.
+#[tokio::test]
+async fn backfill_moves_untagged_nodes_into_default_workspace() {
+    let store = embedded_store().await;
+    let owner = Uuid::new_v4();
+    let default = WorkspaceId::default_workspace();
+
+    // A legacy, untagged node (no metadata.workspace_id).
+    let mut legacy = Node::new(
+        NodeId::random(), Domain::Web, "test://legacy", "pre-tenancy data", NodeKind::Topic,
+    );
+    legacy.metadata.clear();
+    let legacy_id = legacy.id;
+    store.upsert_node(owner, &legacy, 0).await.expect("write legacy");
+
+    // Before backfill: invisible under the required default scope.
+    let before = store.get_user_nodes(owner, None, 0, &default).await.expect("read default");
+    assert!(
+        !before.iter().any(|r| format!("{:?}", r.id).contains(&legacy_id.to_string())),
+        "untagged node should not yet be in the default workspace"
+    );
+
+    let stamped = store.backfill_default_workspace(&default).await.expect("backfill");
+    assert_eq!(stamped, 1, "exactly the one untagged node should be stamped");
+
+    // After backfill: visible under the default scope.
+    let after = store.get_user_nodes(owner, None, 0, &default).await.expect("read default again");
+    assert!(
+        after.iter().any(|r| format!("{:?}", r.id).contains(&legacy_id.to_string())),
+        "backfilled node should now be readable in the default workspace"
+    );
+
+    // Idempotent: a second run stamps nothing.
+    let again = store.backfill_default_workspace(&default).await.expect("backfill again");
+    assert_eq!(again, 0, "backfill must be idempotent");
 }

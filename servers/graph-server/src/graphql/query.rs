@@ -9,7 +9,18 @@ use uuid::Uuid;
 use crate::server::AppState;
 use fluvio_graph_core::query_context::{QueryContext, QueryConfig};
 use crate::graphql::types::*;
-use fluvio_types::{NodeId, GraphQuery};
+use fluvio_types::{NodeId, GraphQuery, WorkspaceId};
+
+/// Turn the optional GraphQL `workspaceId` into the required tenant scope: an
+/// absent/empty value means the single-tenant default; a non-empty value must be
+/// a valid [`WorkspaceId`]. This is the transport boundary where "optional input"
+/// becomes "required scope" (ADR 0002 §2.2 Fork A).
+pub(crate) fn resolve_workspace(workspace_id: Option<String>) -> Result<WorkspaceId> {
+    match workspace_id.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(s) => WorkspaceId::new(s).map_err(|e| Error::new(e.to_string())),
+        None => Ok(WorkspaceId::default_workspace()),
+    }
+}
 
 pub struct QueryRoot;
 
@@ -46,9 +57,10 @@ impl QueryRoot {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
         let zone    = zone.unwrap_or(0) as i16;
+        let ws      = resolve_workspace(workspace_id)?;
 
         let rows = state.surreal
-            .get_user_nodes(user_id, domain.as_deref(), zone, workspace_id.as_deref())
+            .get_user_nodes(user_id, domain.as_deref(), zone, &ws)
             .await
             .map_err(|e| Error::new(e.to_string()))?;
 
@@ -69,6 +81,7 @@ impl QueryRoot {
         let state   = ctx.data::<AppState>()?;
         let user_id = extract_user_id(ctx)?;
         let config  = config.map(QueryConfig::from).unwrap_or_default();
+        let ws      = resolve_workspace(workspace_id)?;
 
         // Embed the query
         let embedding = {
@@ -84,7 +97,7 @@ impl QueryRoot {
                 &embedding,
                 config.similarity_top_k,
                 config.max_zone,
-                workspace_id.as_deref(),
+                &ws,
             )
             .await
             .map_err(|e| Error::new(e.to_string()))?;
