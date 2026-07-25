@@ -10,6 +10,15 @@ rather than guessed at.
 
 ## 2.1 Python config injection (blocks Phase 5)
 
+**Done — Option A landed.** A frozen, env-free `PlannerConfig`
+(`app/planner_config.py`) is now injected into the five domain modules;
+`Settings.as_planner_config()` is the single place env values cross into the
+domain. `config.py` stays in the service. Verified: importing any of the domain
+modules (plan_writer, mcp_client, orchestrator, harness, worker) no longer
+constructs the settings singleton — `app.config` never enters `sys.modules` as a
+side effect, transitively either. The file *move* into `packages/` (the second
+half of Phase 5) is now mechanical and unblocked. Original analysis kept below.
+
 `services/agent-planner/app/config.py` ends with `settings = Settings()` — a
 pydantic-settings singleton constructed at **import time**, reading env vars and
 two `.env` files whose paths are derived from `__file__` (`parents[3]`).

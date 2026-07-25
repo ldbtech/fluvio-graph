@@ -25,8 +25,6 @@ from typing import Any
 
 import httpx
 
-from app.config import settings
-
 logger = logging.getLogger("agent-planner.evals")
 
 GOLDEN_DIR = Path(__file__).parent / "golden"
@@ -74,8 +72,7 @@ def _score(response_text: str, golden: dict[str, Any]) -> tuple[bool, str]:
     return True, "ok"
 
 
-async def _call_claude(system: str, user: str) -> str:
-    api_key = settings.anthropic_api_key
+async def _call_claude(system: str, user: str, api_key: str | None) -> str:
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY not set — cannot run evals")
     async with httpx.AsyncClient() as http:
@@ -98,7 +95,7 @@ async def _call_claude(system: str, user: str) -> str:
         return resp.json()["content"][0]["text"]
 
 
-async def run_eval(prompt_name: str) -> dict[str, Any]:
+async def run_eval(prompt_name: str, api_key: str | None) -> dict[str, Any]:
     prompt_file = PROMPTS_DIR / f"{prompt_name}.txt"
     if not prompt_file.exists():
         raise FileNotFoundError(f"Prompt file not found: {prompt_file}")
@@ -117,7 +114,7 @@ async def run_eval(prompt_name: str) -> dict[str, Any]:
         )
         user = golden.get("user_message", "Generate steps.")
         try:
-            response = await _call_claude(system, user)
+            response = await _call_claude(system, user, api_key)
             passed, reason = _score(response, golden)
         except Exception as exc:
             passed, reason = False, str(exc)
@@ -151,7 +148,11 @@ async def run_eval(prompt_name: str) -> dict[str, Any]:
 
 if __name__ == "__main__":
     import sys
+    # The CLI entrypoint is a composition root: it may read the environment.
+    # Importing this module (e.g. from a test) does not — the singleton is only
+    # constructed here, when run as a script.
+    from app.config import settings
     name = sys.argv[1] if len(sys.argv) > 1 else "step_formulation"
-    result = asyncio.run(run_eval(name))
+    result = asyncio.run(run_eval(name, settings.anthropic_api_key))
     print(json.dumps(result, indent=2))
     sys.exit(0 if result.get("overall", True) else 1)

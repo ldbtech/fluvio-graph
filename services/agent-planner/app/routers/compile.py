@@ -131,7 +131,7 @@ async def compile_plan(
     # manifest; if not, the existing toolbox section still drives planning.
     try:
         from app.capabilities.mcp_client import list_tools, format_tools_for_prompt
-        mcp_section = format_tools_for_prompt(await list_tools())
+        mcp_section = format_tools_for_prompt(await list_tools(settings.mcp_server_url))
         if mcp_section:
             system_prompt += f"\n\n{mcp_section}"
     except Exception as exc:

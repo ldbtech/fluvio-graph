@@ -14,13 +14,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.config import settings
-
 logger = logging.getLogger("agent-planner")
 
 
-async def list_tools() -> list[dict[str, Any]]:
-    """Return full MCP tool specs [{name, description, inputSchema}], or []."""
+async def list_tools(mcp_server_url: str) -> list[dict[str, Any]]:
+    """Return full MCP tool specs [{name, description, inputSchema}], or [].
+
+    `mcp_server_url` is injected by the caller; this module reads no config.
+    """
     try:
         from mcp import ClientSession
         from mcp.client.streamable_http import streamablehttp_client
@@ -29,7 +30,7 @@ async def list_tools() -> list[dict[str, Any]]:
         return []
 
     try:
-        async with streamablehttp_client(settings.mcp_server_url) as (read, write, _):
+        async with streamablehttp_client(mcp_server_url) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = await session.list_tools()
@@ -38,13 +39,13 @@ async def list_tools() -> list[dict[str, Any]]:
                     for t in tools.tools
                 ]
     except Exception as exc:
-        logger.warning("MCP tools/list failed (%s): %s", settings.mcp_server_url, exc)
+        logger.warning("MCP tools/list failed (%s): %s", mcp_server_url, exc)
         return []
 
 
-async def list_tool_names() -> list[str]:
+async def list_tool_names(mcp_server_url: str) -> list[str]:
     """Return just the MCP tool names, or [] if unavailable."""
-    return [t["name"] for t in await list_tools()]
+    return [t["name"] for t in await list_tools(mcp_server_url)]
 
 
 def format_tools_for_prompt(tools: list[dict[str, Any]]) -> str:
@@ -64,12 +65,12 @@ def format_tools_for_prompt(tools: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-async def call_tool(name: str, arguments: dict[str, Any]) -> Any:
+async def call_tool(name: str, arguments: dict[str, Any], mcp_server_url: str) -> Any:
     """Invoke an MCP tool and return its parsed result payload."""
     from mcp import ClientSession
     from mcp.client.streamable_http import streamablehttp_client
 
-    async with streamablehttp_client(settings.mcp_server_url) as (read, write, _):
+    async with streamablehttp_client(mcp_server_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             res = await session.call_tool(name, arguments)

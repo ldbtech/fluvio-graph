@@ -3,6 +3,8 @@ from pathlib import Path
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.planner_config import PlannerConfig
+
 # The planner usually runs with CWD = services/agent-planner (no .env there); the
 # real secrets live in the repo-root .env. Point at both so the key resolves no
 # matter how the process is launched. Repo root is four levels up from this file
@@ -63,6 +65,15 @@ class Settings(BaseSettings):
         if v and v.strip():
             return v.strip()
         return _key_from_env_files()
+
+    def as_planner_config(self) -> PlannerConfig:
+        """Project the env-backed settings into the env-free config the domain
+        layer accepts. This is the one place env values cross into the domain."""
+        return PlannerConfig(
+            anthropic_api_key=self.anthropic_api_key,
+            graphql_gateway_url=self.graphql_gateway_url,
+            mcp_server_url=self.mcp_server_url,
+        )
 
 
 settings = Settings()

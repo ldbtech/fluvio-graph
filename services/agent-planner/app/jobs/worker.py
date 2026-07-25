@@ -18,9 +18,9 @@ import logging
 import time
 
 from app.audit.store import audit_store
-from app.config import settings
 from app.fetch import add_chat_message
 from app.gateway_client.client import FederationClient
+from app.planner_config import PlannerConfig
 from app.idempotency import IdempotencyStore
 from app.jobs.models import JobRecord, JobStatus
 from app.jobs.store import next_job
@@ -53,12 +53,12 @@ mutation ExecuteTool($toolId: String!, $inputs: String!) {
 idempotency = IdempotencyStore()
 
 
-async def _invoke_via_mcp(tool_id: str, action: str, arguments: dict) -> dict:
+async def _invoke_via_mcp(tool_id: str, action: str, arguments: dict, mcp_server_url: str) -> dict:
     """Invoke a tool through the MCP server (Phase M3). Returns a tool_run-shaped
     dict {status, output, logs}. Raises on transport failure (→ legacy fallback)."""
     from app.capabilities.mcp_client import call_tool as mcp_call
     name = f"{tool_id.replace('-', '_')}__{action}"
-    payload = await mcp_call(name, arguments)            # raises if MCP unreachable
+    payload = await mcp_call(name, arguments, mcp_server_url)  # raises if MCP unreachable
     inner = (payload or {}).get("result") or {}
     if inner.get("status") == "success":
         return {
@@ -82,13 +82,14 @@ async def _call_tool(
     tool_id: str,
     action: str,
     arguments: dict,
+    mcp_server_url: str,
 ) -> dict:
     """Single attempt to run a tool. Phase M3: prefer typed MCP `tools/call`;
     fall back to the legacy `executeTool` mutation only if the MCP server is
     unreachable. A tool that *runs and fails* does NOT fall back (no double-run).
     Raises ToolError on tool failure. Retry / circuit-breaker wrap this unchanged."""
     try:
-        tool_run = await _invoke_via_mcp(tool_id, action, arguments)
+        tool_run = await _invoke_via_mcp(tool_id, action, arguments, mcp_server_url)
     except Exception as exc:
         logger.info("MCP call unavailable (%s) — falling back to executeTool", exc)
         tool_run = await _invoke_via_graphql(client, tool_id, action, arguments)
@@ -106,6 +107,7 @@ async def _execute_step_with_reliability(
     step: dict,
     connector_configs: dict,
     rollback: RollbackRegistry,
+    mcp_server_url: str,
 ) -> dict:
     """Execute one step with retry, circuit breaker, and idempotency checks."""
     tool_id: str = step["tool_id"]
@@ -187,7 +189,7 @@ async def _execute_step_with_reliability(
 
     async def attempt():
         async with breaker():
-            return await _call_tool(client, tool_id, action, arguments)
+            return await _call_tool(client, tool_id, action, arguments, mcp_server_url)
 
     tool_run = await with_retry(
         attempt,  # factory: a fresh coroutine is created per attempt
@@ -218,8 +220,11 @@ async def _execute_step_with_reliability(
     return tool_run
 
 
-async def execute_job(job: JobRecord) -> None:
-    """Main entry point called by the worker loop for a single job."""
+async def execute_job(job: JobRecord, cfg: PlannerConfig) -> None:
+    """Main entry point called by the worker loop for a single job.
+
+    `cfg` is injected by the worker loop (ultimately the composition root in
+    main.py) so this module reads no config singleton."""
     trace_id = new_trace_id()
     set_trace_id(trace_id)
     job.status = JobStatus.RUNNING
@@ -228,7 +233,7 @@ async def execute_job(job: JobRecord) -> None:
 
     await audit_store.start_run(run_id=job.job_id, workspace_id=job.workspace_id, step_count=job.total)
 
-    client = FederationClient(settings.graphql_gateway_url, headers={
+    client = FederationClient(cfg.graphql_gateway_url, headers={
         "x-user-id": job.user_id,
         "x-trace-id": trace_id,
     })
@@ -254,7 +259,7 @@ async def execute_job(job: JobRecord) -> None:
 
         try:
             tool_run = await _execute_step_with_reliability(
-                client, job, i, step, connector_configs, rollback
+                client, job, i, step, connector_configs, rollback, cfg.mcp_server_url
             )
             if tool_run.get("skipped"):
                 emit(f"⏭️ Skipped (already completed).\n")
@@ -301,7 +306,7 @@ async def execute_job(job: JobRecord) -> None:
         # Attempt rollback of completed mutable steps
         if rollback.has_actions():
             emit("\n### Rolling back completed steps...\n")
-            await _run_rollback(client, rollback, emit)
+            await _run_rollback(client, rollback, emit, cfg.mcp_server_url)
 
         await audit_store.finish_run(job.job_id, status="failed", failed_step=failed_step)
     else:
@@ -338,10 +343,10 @@ async def execute_job(job: JobRecord) -> None:
     job.close_streams()
 
 
-async def _run_rollback(client: FederationClient, rollback: RollbackRegistry, emit) -> None:
+async def _run_rollback(client: FederationClient, rollback: RollbackRegistry, emit, mcp_server_url: str) -> None:
     for entry in reversed(rollback.actions):
         try:
-            await _call_tool(client, entry["tool_id"], entry["action"], entry["arguments"])
+            await _call_tool(client, entry["tool_id"], entry["action"], entry["arguments"], mcp_server_url)
             emit(f"↩️ Rolled back step {entry['step_index']}: `{entry['tool_id']}/{entry['action']}`\n")
         except Exception as exc:
             emit(f"⚠️ Rollback failed for step {entry['step_index']}: {exc}\n")
@@ -368,13 +373,16 @@ def _append_step_output(emit, step: dict, tool_run: dict) -> None:
         emit("✅ Completed.\n")
 
 
-async def worker_loop() -> None:
-    """Background task — runs forever, consuming jobs from the queue."""
+async def worker_loop(cfg: PlannerConfig) -> None:
+    """Background task — runs forever, consuming jobs from the queue.
+
+    `cfg` is injected by the composition root (main.py) and threaded into each
+    job, so nothing under jobs/ reads config from the environment."""
     logger.info("Deploy worker started")
     while True:
         job = await next_job()
         try:
-            await execute_job(job)
+            await execute_job(job, cfg)
         except Exception as exc:
             logger.exception("Unhandled error in job %s: %s", job.job_id, exc)
             job.status = JobStatus.FAILED

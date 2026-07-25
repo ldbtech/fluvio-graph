@@ -32,7 +32,7 @@ async def lifespan(_app: FastAPI):
         extra={"port": settings.port, "gateway": settings.graphql_gateway_url},
     )
     from app.jobs.worker import worker_loop
-    worker_task = asyncio.create_task(worker_loop())
+    worker_task = asyncio.create_task(worker_loop(settings.as_planner_config()))
     yield
     worker_task.cancel()
     try:

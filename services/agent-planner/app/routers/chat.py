@@ -172,6 +172,7 @@ async def chat(
             message=body.message,
             context_plan=context_plan,
             history=claude_messages,
+            api_key=settings.anthropic_api_key,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error authoring plan: {exc}")

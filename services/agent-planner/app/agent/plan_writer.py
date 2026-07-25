@@ -14,7 +14,6 @@ from pathlib import Path
 import httpx
 
 from app.agent.designation import AgentSession
-from app.config import settings
 
 logger = logging.getLogger("agent-planner")
 
@@ -31,6 +30,8 @@ async def write_plan(
     message: str,
     context_plan: str,
     history: list[dict] | None = None,
+    *,
+    api_key: str | None,
 ) -> str:
     """Author (or revise) the PLAN.md for this session and return it as Markdown.
 
@@ -39,6 +40,9 @@ async def write_plan(
     plan when the user edits it or answers a question, instead of starting over.
     The returned string already carries the agent's voice; the caller prepends
     the agent signature chip and saves it as the AI chat message.
+
+    `api_key` is injected by the caller (the composition root) rather than read
+    from a config singleton, so this module never touches the environment.
     """
     agent = session.agent
     system_prompt = _PLAN_WRITER_PROMPT.format(
@@ -49,7 +53,6 @@ async def write_plan(
         context_plan=context_plan or "(no workspace context could be assembled)",
     )
 
-    api_key = settings.anthropic_api_key
     if not api_key:
         # Degrade gracefully: still introduce the agent and echo the ask so the
         # conversation can continue without a key configured.

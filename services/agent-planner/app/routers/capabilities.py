@@ -76,7 +76,7 @@ async def synthesize_capability(
 
     # 2. No match → run CSP. It synthesizes the verb, sandboxes it, persists it
     #    locally and (via GraphPlannerStore) mirrors it into the knowledge graph.
-    app = build_capability_orchestrator(client)
+    app = build_capability_orchestrator(client, settings.as_planner_config())
     if app is None:
         raise HTTPException(
             status_code=503,

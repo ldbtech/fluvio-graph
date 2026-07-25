@@ -128,13 +128,16 @@ def _build_capability_input(cap: "SynthesizedCapability", mcp_tools: list[str]) 
     }
 
 
-async def mirror_capability_to_graph(client, cap: "SynthesizedCapability") -> None:
+async def mirror_capability_to_graph(client, cap: "SynthesizedCapability", mcp_server_url: str) -> None:
     """Upsert a synthesized capability into the graph, and wire USES_TOOL edges
-    to every MCP tool it calls (Phase C5 — the capability becomes self-describing)."""
+    to every MCP tool it calls (Phase C5 — the capability becomes self-describing).
+
+    `mcp_server_url` is injected by the caller (via GraphPlannerStore) so this
+    module never reads config from the environment."""
     from app.capabilities.mcp_client import list_tool_names
 
     code = getattr(cap, "code", "") or ""
-    catalog = await list_tool_names()  # best-effort; [] if MCP server is down
+    catalog = await list_tool_names(mcp_server_url)  # best-effort; [] if MCP server is down
     tools = detect_mcp_tools(code, catalog)
 
     try:
@@ -158,15 +161,18 @@ class GraphPlannerStore(PlannerStore):  # type: ignore[misc]
 
     Parameters
     ----------
-    root:    local planner_dir (kept for full-spec reload + readable .py)
-    client:  a FederationClient already carrying the owner's x-user-id header
+    root:            local planner_dir (kept for full-spec reload + readable .py)
+    client:          a FederationClient already carrying the owner's x-user-id header
+    mcp_server_url:  injected MCP endpoint, threaded to the graph-mirror step so
+                     this module reads no config singleton
     """
 
-    def __init__(self, root: str, *, client) -> None:
+    def __init__(self, root: str, *, client, mcp_server_url: str) -> None:
         if not _CSP_AVAILABLE:
             raise RuntimeError("csp is not installed — cannot use GraphPlannerStore")
         super().__init__(root)
         self._client = client
+        self._mcp_server_url = mcp_server_url
 
     def save_capability(self, cap: "SynthesizedCapability") -> None:  # type: ignore[override]
         # 1. Keep CSP's local persistence (full spec + runnable .py).
@@ -176,9 +182,9 @@ class GraphPlannerStore(PlannerStore):  # type: ignore[misc]
         #    fall back to a fresh loop if somehow called synchronously.
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(mirror_capability_to_graph(self._client, cap))
+            loop.create_task(mirror_capability_to_graph(self._client, cap, self._mcp_server_url))
         except RuntimeError:
             try:
-                asyncio.run(mirror_capability_to_graph(self._client, cap))
+                asyncio.run(mirror_capability_to_graph(self._client, cap, self._mcp_server_url))
             except Exception as exc:  # pragma: no cover
                 logger.warning("capability mirror (sync) failed: %s", exc)
