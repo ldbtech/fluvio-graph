@@ -152,6 +152,18 @@ monolith. Delete it, or move it to an archive branch. See `docs/FINDINGS.md`.
 
 ## 2.5 Licence text does not exist yet (Phase 7)
 
+**Done (Phase 7).** `/LICENSE` now holds the Business Source License 1.1,
+instantiated with the terms published at https://www.fluviome.com: free forever
+for any non-commercial use (students, researchers, non-profits, personal,
+open-source); for-profit production use requires a commercial "enterprise token";
+Change License Apache-2.0; Change Date four years per version; contact
+hello@fluviome.com. `examples/LICENSE` places `examples/` under MIT.
+`[workspace.package].license = "BUSL-1.1"` records the SPDX id. Two parameters
+the owner should confirm: the **Licensor legal entity** (the site shows only the
+"fluvioMe" brand — no Inc./LLC) and the exact **Change Date** wording. Original
+note below.
+
+
 There is no `LICENSE` file in the repo at all, despite a commit named "added
 license" (that commit only vendored `node_modules` licences). Plan §12 wants BSL
 plus a generous Additional Use Grant, a Change Date, and MIT for `examples/` and

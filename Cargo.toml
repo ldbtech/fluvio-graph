@@ -28,6 +28,9 @@ version      = "0.1.0"
 edition      = "2024"
 repository   = "https://github.com/ldbtech/fluvio-graph"
 rust-version = "1.85"
+# SPDX id for the Business Source License 1.1 (see /LICENSE). Available for
+# crates to inherit via `license.workspace = true`; examples/ are MIT.
+license      = "BUSL-1.1"
 
 [workspace.dependencies]
 fluvio-types  = { path = "crates/fluvio-types" }

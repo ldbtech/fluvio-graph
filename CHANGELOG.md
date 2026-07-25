@@ -22,6 +22,10 @@ Pre-1.0, a breaking change to the facade takes a **minor** bump.
 - `SurrealStorage::backfill_default_workspace` — idempotent migration that stamps
   pre-tenancy (untagged) nodes with the default workspace, so requiring a scope
   does not orphan existing data.
+- **`LICENSE`** — Business Source License 1.1 (free for non-commercial use;
+  for-profit requires a commercial license; converts to Apache-2.0 four years
+  per version). `examples/` are MIT (`examples/LICENSE`).
+  `[workspace.package].license = "BUSL-1.1"`.
 
 ### Fixed
 - **Tenant-filter SurrealQL injection.** `workspace_id` / `domain` are now bound,
