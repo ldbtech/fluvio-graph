@@ -121,6 +121,48 @@ cp .env.example .env          # fill in ANTHROPIC_API_KEY at minimum
 bash scripts/dev.sh
 ```
 
+### Embed as a library (no server, no gateway)
+
+Since `v0.1.0` the engine can be linked **in-process**. Depend on the facade
+crate — never on the internal `*-core` crates — and inject config rather than
+having the library read the environment:
+
+```toml
+[dependencies]
+fluvio-graph = { git = "https://github.com/ldbtech/fluvio-graph", tag = "v0.1.0" }
+# ingestion (pdf-extract, tokenizers) is on by default; turn it off to read an
+# already-built graph with no extra deps:
+#   fluvio-graph = { ..., default-features = false }
+```
+
+```rust
+use std::sync::Arc;
+use fluvio_graph::prelude::*;
+
+# async fn run() -> anyhow::Result<()> {
+// Config is injected — the library never reads the environment.
+let cfg = SurrealConfig { url: "ws://127.0.0.1:8000".into(), ..Default::default() };
+let store = Arc::new(SurrealStorage::connect(&cfg).await?);
+store.init_schema().await?;
+
+let mut embedder = EmbeddingContext::new()?;          // expensive — hold onto it
+let ctx = QueryContext::from_text(
+    Uuid::nil(),                                      // owner / tenant id
+    "what do we know about churn?",
+    &QueryConfig::default(),
+    &store,
+    &mut embedder,
+    None,                                             // Option<WorkspaceId> filter
+).await?;
+println!("retrieved {} grounded nodes", ctx.node_count);
+# Ok(()) }
+```
+
+See [`examples/embedded-consumer`](examples/embedded-consumer) for the full,
+runnable version. Public surface and versioning are documented in
+[`CHANGELOG.md`](CHANGELOG.md); the facade is the only thing that gets a version
+bump.
+
 ---
 
 ## Architecture
@@ -686,36 +728,56 @@ By contributing you agree your code may be distributed under the BUSL-1.1 licens
 
 ## Repository Layout
 
+> **Post-restructure layout (v0.1.0).** The engine is now *library-first*: the
+> logic lives in `crates/` and can be linked in-process; the network servers in
+> `servers/` are thin shells around it. External consumers depend on a single
+> facade crate, **`fluvio-graph`**.
+
 ```
 kg-engine/
 ├── Cargo.toml                     Rust workspace (resolver = "2")
 ├── Cargo.lock
 ├── docker-compose.yml             full stack: community + --profile enterprise
-├── .dockerignore
+├── CHANGELOG.md                   facade (fluvio-graph) public-surface changes
 ├── FLUVIOME_PLAN.md               product & architecture plan
 │
-├── crates/
-│   ├── fluvio-types/              shared domain types (Node, Edge, Domain, GraphQuery, …)
-│   ├── fluvio-common/             shared config, error handling, tracing utilities
-│   ├── fluvio-embed/              embedding utilities (shared)
-│   └── fluvio-auth/               Rust auth crate (internal — not the Node coprocessor)
+├── crates/                        library crates — linkable in-process
+│   ├── fluvio-graph/              ★ the facade — the ONLY crate consumers depend on
+│   ├── fluvio-graph-core/         graph storage · query · embeddings (SurrealDB)
+│   ├── fluvio-ingestion-core/     ingestion pipeline: extract · chunk · embed
+│   ├── fluvio-twin-core/          digital-twin / workspace logic
+│   ├── fluvio-collab-core/        collaboration logic [enterprise]
+│   ├── fluvio-database/           relational (Postgres) domain logic
+│   ├── fluvio-types/              shared domain types (Node, Edge, WorkspaceId, …)
+│   ├── fluvio-embed/              embedding helpers (BGE-small / fastembed)
+│   ├── fluvio-common/             shared config-loading · error · tracing helpers
+│   └── fluvio-auth/               internal auth stub (not the Node coprocessor)
 │
-├── services/
-│   ├── fluvio-graph/              knowledge graph subgraph — Rust, SurrealDB    :3001
-│   ├── fluvio-twin/               digital twin / workspace subgraph — Rust      :3002
-│   ├── fluvio-database/           relational subgraph — Rust, PostgreSQL        :3005
-│   ├── fluvio-ingestion/          ingestion subgraph — Rust, SurrealDB          :3004
-│   ├── fluvio-collab/             collaboration subgraph — Rust [enterprise]    :3003
-│   ├── fluvio-connectors/         data source connectors — Python, FastAPI      :3006
+├── servers/                       thin transport shells — one binary per subgraph
+│   ├── graph-server/              ← crates/fluvio-graph-core                    :3001
+│   ├── twin-server/               ← crates/fluvio-twin-core                     :3002
+│   ├── collab-server/             ← crates/fluvio-collab-core   [enterprise]    :3003
+│   ├── ingestion-server/          ← crates/fluvio-ingestion-core                :3004
+│   └── database-server/           ← crates/fluvio-database                      :3005
+│
+├── gateway/                       Apollo Router — federates the subgraphs        :4001
+│
+├── examples/
+│   └── embedded-consumer/         runs a grounded query in-process, no server
+│
+├── services/                      Python + Node services (run as processes)
+│   ├── agent-planner/             AI planning — Python, FastAPI                  :3007
+│   ├── fluvio-connectors/         data-source connectors — Python, FastAPI      :3006
 │   ├── fluvio-tool-builder/       tool execution engine — Python, FastAPI       :3008
-│   ├── fluvio-gateway/            Apollo Router gateway                         :4001
 │   └── fluvio-auth/               enterprise token coprocessor — Node.js [ent]  :4002
-│
-├── services/agent-planner/        AI planning service — Python, FastAPI         :3007
 │
 ├── enterprise/
 │   ├── token-service/             Stripe → JWT issuer (Node.js)                 :4003
 │   └── auth-adapter/              legacy auth adapter
+│
+├── docs/
+│   ├── adr/                       decision records (0001 layout · 0002 open decisions)
+│   └── FINDINGS.md                bugs / dead code found during the restructure
 │
 └── scripts/
     └── dev.sh                     full local dev stack launcher

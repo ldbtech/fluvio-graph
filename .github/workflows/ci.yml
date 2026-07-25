@@ -1,0 +1,68 @@
+name: CI
+
+# Guardrails for the library-first restructure (see docs/adr/0001, 0002).
+# What this protects, phase by phase:
+#   - Phase 2: the facade must build with transport OFF and features toggled.
+#   - Phase 4: the whole workspace (crates/ + servers/) must still compile.
+#   - Phase 6: the embedded workspace-isolation test must stay green.
+#
+# NOTE ON TEST SCOPE: only crates with *hermetic* tests are run here. The
+# isolation oracle uses an embedded surrealkv:// store and needs no Docker;
+# fluvio-types is pure unit tests. Service-level integration tests that expect
+# a live SurrealDB/Postgres are intentionally NOT run in this job — add a
+# separate services job with `services:` containers when you want them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  rust:
+    name: build · fmt · clippy · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo + target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (workspace)
+        run: cargo clippy --workspace --all-targets
+
+      - name: Build (workspace)
+        run: cargo build --workspace --locked
+
+      # Phase 2 guardrail: the facade's ingestion pipeline is an opt-in feature.
+      # Both the default (ingestion on) and the lean (ingestion off) builds must
+      # compile, so a consumer that only reads an already-built graph pays
+      # nothing for pdf-extract/tokenizers.
+      - name: Facade builds without default features
+        run: cargo build -p fluvio-graph --no-default-features --locked
+
+      - name: Facade builds with default features
+        run: cargo build -p fluvio-graph --locked
+
+      # Phase 6 guardrail: cross-workspace read isolation, proven against an
+      # embedded store (no Docker). Plus the pure-unit crates.
+      - name: Hermetic tests
+        run: |
+          cargo test -p fluvio-graph-core --test workspace_isolation --locked
+          cargo test -p fluvio-types --locked
