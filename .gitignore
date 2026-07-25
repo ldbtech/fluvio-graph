@@ -18,3 +18,9 @@ fluvio_surreal_data/
 # Nested example crates build their own target/
 examples/*/target/
 examples/*/Cargo.lock
+
+# Python bytecode + virtualenvs (regenerable — never commit)
+__pycache__/
+*.pyc
+.venv/
+venv/
