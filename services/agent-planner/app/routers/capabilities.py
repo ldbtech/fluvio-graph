@@ -36,6 +36,9 @@ class SynthesizeRequest(BaseModel):
     workspace_id: str
     goal: str
     ambient: dict | None = None
+    # Optional domain guidance: describe what kind of capability to write for your
+    # app (e.g. a tutor). When omitted, the built-in data-engine guidance is used.
+    synthesis_guidance: str | None = None
 
 
 def _client(x_user_id: str) -> FederationClient:
@@ -76,7 +79,9 @@ async def synthesize_capability(
 
     # 2. No match → run CSP. It synthesizes the verb, sandboxes it, persists it
     #    locally and (via GraphPlannerStore) mirrors it into the knowledge graph.
-    app = build_capability_orchestrator(client, settings.as_planner_config())
+    app = build_capability_orchestrator(
+        client, settings.as_planner_config(), synthesis_guidance=body.synthesis_guidance,
+    )
     if app is None:
         raise HTTPException(
             status_code=503,

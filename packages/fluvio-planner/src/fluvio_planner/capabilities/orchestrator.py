@@ -38,12 +38,22 @@ Conventions for the Python you generate:
 """.strip()
 
 
-def build_capability_orchestrator(client, cfg: PlannerConfig, *, planner_dir: str = "planner_caps"):
+def build_capability_orchestrator(
+    client,
+    cfg: PlannerConfig,
+    *,
+    planner_dir: str = "planner_caps",
+    synthesis_guidance: str | None = None,
+):
     """Construct a CSP Orchestrator backed by the knowledge graph.
 
     `client` is a FederationClient already carrying the owner's x-user-id, used
     to mirror/search capabilities in fluvio-graph. `cfg` is injected by the
     caller (the composition root) so this module reads no config singleton.
+
+    `synthesis_guidance` lets a caller override the domain guidance (the system
+    prompt that tells CSP what kind of capability to write) per request; when it
+    is None the built-in data-engine guidance is used.
 
     Returns the Orchestrator, or None if CSP / an API key isn't available — the
     planner then simply runs without runtime synthesis.
@@ -66,7 +76,7 @@ def build_capability_orchestrator(client, cfg: PlannerConfig, *, planner_dir: st
         "fluviome-capabilities",
         llm=llm,
         planner_dir=None,
-        synthesis_guidance=_SYNTHESIS_GUIDANCE,
+        synthesis_guidance=synthesis_guidance or _SYNTHESIS_GUIDANCE,
     )
 
     store = GraphPlannerStore(planner_dir, client=client, mcp_server_url=cfg.mcp_server_url)
