@@ -14,6 +14,5 @@ services/*/.venv/
 services/fluvio-auth/
 services/fluvio-gateway/
 services/fluvio-connectors/
-services/agent-planner/
 enterprise/
 infra/
