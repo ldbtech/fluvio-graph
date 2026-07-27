@@ -44,8 +44,12 @@ RUN cargo build --release \
       2>&1 | tail -5
 
 # Real sources → final compile of all binaries (deps already cached above).
+# Touch every .rs (not just main.rs): the stub phase above built empty lib.rs
+# crates, so the real lib.rs / server.rs / graphql sources must have newer mtimes
+# than the stub .rlibs or Cargo reuses the empty libs and the bins fail to find
+# their `server` module.
 COPY servers/ ./servers/
-RUN find servers -name main.rs -exec touch {} + && \
+RUN find servers -name '*.rs' -exec touch {} + && \
     cargo build --release \
       -p database-server -p ingestion-server -p twin-server -p collab-server -p graph-server
 
