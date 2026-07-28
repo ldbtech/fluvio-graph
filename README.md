@@ -28,6 +28,7 @@ fluvioMe is an open-source, headless engine for automated data pipelines, knowle
   - [fluvio-gateway](#fluvio-gateway)
 - [GraphQL API](#graphql-api)
 - [Configuration](#configuration)
+  - [LLM Providers (BYOK)](#llm-providers-byok)
 - [Enterprise](#enterprise)
 - [Contributing](#contributing)
 - [Repository Layout](#repository-layout)
@@ -117,7 +118,8 @@ docker compose --profile enterprise up
 # - Python 3.13    for agent-planner and connectors
 # - Rover CLI      https://www.apollographql.com/docs/rover/getting-started
 
-cp .env.example .env          # fill in ANTHROPIC_API_KEY at minimum
+cp .env.example .env          # fill in an LLM provider key at minimum — see
+                               # "LLM Providers (BYOK)" in Configuration
 bash scripts/dev.sh
 ```
 
@@ -188,7 +190,7 @@ embedding model
 (in-process, no API)
 
                             agent-planner  :3007  (Python / FastAPI)
-                             ↕  Anthropic API  (claude-sonnet-4)
+                             ↕  LLM Provider (BYOK — Claude, OpenAI, Gemini, or Ollama)
 ```
 
 All Rust services are **Apollo Federation 2.5** subgraphs.
@@ -476,7 +478,7 @@ Health: `GET http://localhost:3001/health` → `"ok"`
 
 **Port:** `3005`
 **Language:** Rust — Axum · async-graphql · PostgreSQL (sqlx)
-**Role:** Relational persistence for users, companies, teams, connectors, and chat history. SurrealDB holds the graph; Postgres holds structured business entities. Also owns the `getUserByFirebaseUid` / `createUser` mutations used during auth sync.
+**Role:** Relational persistence for users, companies, teams, connectors, and chat history. SurrealDB holds the graph; Postgres holds structured business entities. Also owns the `getUserByFirebaseUid` / `createUser` mutations used during auth sync, and the encrypted per-user LLM provider store (see [LLM Providers (BYOK)](#llm-providers-byok)) — including a non-GraphQL internal route other services use to resolve a decrypted credential, deliberately kept outside the public schema.
 
 ---
 
@@ -526,7 +528,7 @@ Built-in tools: `spark` (SQL), `dbt`, `dashboard-syncer` (Tableau / PowerBI), `e
 ### agent-planner
 
 **Port:** `3007`
-**Language:** Python — FastAPI · Anthropic SDK (claude-sonnet-4)
+**Language:** Python — FastAPI
 **Role:** AI orchestration layer — natural language → pipeline plan → compile → deploy.
 
 | Endpoint | Method | Description |
@@ -544,7 +546,7 @@ Built-in tools: `spark` (SQL), `dbt`, `dashboard-syncer` (Tableau / PowerBI), `e
 | `/circuit-breakers` | GET | Per-tool circuit breaker states |
 | `/health` | GET | Health check |
 
-Requires `ANTHROPIC_API_KEY`. Uses `claude-sonnet-4-20250514` for plan generation, reflection, and step compilation.
+Uses whichever LLM provider the calling user has connected (see [LLM Providers (BYOK)](#llm-providers-byok)) for plan generation, reflection, and step compilation — falling back to a deployment-level key (`ANTHROPIC_API_KEY` etc.) if the user hasn't connected one. `fluvio-twin` and `fluvio-collab` resolve providers the same way; `fluvio-database` owns the encrypted credential store.
 
 Pipeline features: circuit breaker (Phase 7), idempotent step execution (Phase 9), audit trail + rollback (Phase 11), plan reflection (Phase 18), RAG deployment memory (Phase 19), intent disambiguation (Phase 20), tool capability graph (Phase 22), SQL EXPLAIN validation (Phase 23).
 
@@ -602,6 +604,14 @@ mutation { createWorkspace(input: { name: "Q4 Pipeline", userId: "uid" }) { id }
 # Graph traversal
 query { neighbors(id: "node-uuid", depth: 2) { id sourceText } }
 query { shortestPath(from: "uuid-a", to: "uuid-b") { nodes { id } found } }
+
+# Connect an LLM provider (BYOK) — see "LLM Providers (BYOK)" below
+mutation {
+  connectLlmProvider(input: { provider: "anthropic", apiKey: "sk-ant-..." }) {
+    id provider hasApiKey isDefault
+  }
+}
+query { getUserLlmProviders { id provider hasApiKey isDefault baseUrl defaultModel } }
 ```
 
 **Agent planner (REST, not GraphQL):**
@@ -633,9 +643,6 @@ curl -X POST http://localhost:3007/deploy \
 Copy `.env.example` to `.env`:
 
 ```bash
-# ── Required ──────────────────────────────────────────────────────────────────
-ANTHROPIC_API_KEY=sk-ant-...       # agent-planner AI features
-
 # ── SurrealDB ─────────────────────────────────────────────────────────────────
 SURREAL_URL=ws://127.0.0.1:8000    # or "embedded" for in-process
 SURREAL_USER=root
@@ -656,10 +663,60 @@ FLUVIO_CONNECTORS_PORT=3006
 FLUVIO_AGENT_PLANNER_PORT=3007
 FLUVIO_TOOL_BUILDER_PORT=3008
 
+# ── LLM Providers (BYOK) ────────────────────────────────────────────────────
+# Deployment-level fallback only — used when a user hasn't connected their own
+# provider via the connectLlmProvider mutation. None are required to boot.
+ANTHROPIC_API_KEY=                 # sk-ant-...
+OPENAI_API_KEY=                    # sk-...
+GEMINI_API_KEY=
+OLLAMA_BASE_URL=                   # e.g. http://ollama:11434 — no key needed
+
+# AES-256-GCM key (32 raw bytes, base64) encrypting per-user BYOK credentials
+# at rest. Optional — fluvio-database boots without it, but BYOK
+# connect/resolve operations error until it's set. Generate with:
+#   openssl rand -base64 32
+FLUVIOME_CREDENTIAL_KEY=
+
+# Optional shared secret guarding fluvio-database's internal credential-
+# resolution route (never exposed through the public gateway). Recommended
+# whenever backend ports are reachable beyond localhost — docker-compose.yml
+# host-publishes every service's port by default.
+FLUVIOME_INTERNAL_SECRET=
+
 # ── Enterprise (omit entirely for community / non-commercial use) ─────────────
 FLUVIOME_ENTERPRISE_TOKEN=         # issued at https://fluviome.com
 FLUVIOME_PUBLIC_KEY=               # RS256 public key for offline token verification
 ```
+
+### LLM Providers (BYOK)
+
+Each user connects their own provider — Claude, OpenAI, Gemini, or a local/
+self-hosted model via Ollama — through GraphQL rather than the deployment
+sharing one operator-wide key:
+
+```graphql
+mutation {
+  connectLlmProvider(input: { provider: "anthropic", apiKey: "sk-ant-..." }) {
+    id provider hasApiKey isDefault
+  }
+}
+# provider: "anthropic" | "openai" | "gemini" | "ollama"
+#   - anthropic / openai / gemini require apiKey
+#   - ollama requires baseUrl instead (e.g. "http://ollama:11434")
+# Optional: defaultModel (override the built-in default), groupId (company-
+# brain scope instead of personal)
+
+query { getUserLlmProviders { id provider hasApiKey isDefault baseUrl defaultModel } }
+mutation { setDefaultLlmProvider(id: "connection-id") { id isDefault } }
+mutation { disconnectLlmProvider(id: "connection-id") }
+```
+
+The response never contains the raw key — only `hasApiKey: Boolean`. Keys are
+encrypted at rest (AES-256-GCM, `FLUVIOME_CREDENTIAL_KEY`) in a `llm_providers`
+table scoped per-user (optionally per-group, mirroring `connectors`). If a
+user hasn't connected anything, `fluvio-twin`/`fluvio-collab`/`agent-planner`
+fall back to this deployment's env-configured key — so a single-key setup
+(just `ANTHROPIC_API_KEY`, nothing else) keeps working exactly as before.
 
 ---
 
