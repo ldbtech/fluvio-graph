@@ -12,6 +12,9 @@ use crate::graphql::types::*;
 use crate::graphql::connectors_type;
 use crate::graphql::connectors_mutation;
 
+use crate::graphql::llm_providers_type;
+use crate::graphql::llm_providers_mutation;
+
 pub struct MutationRoot;
 
 #[Object(name = "Mutation")]
@@ -229,6 +232,24 @@ impl MutationRoot {
         &self, ctx: &Context<'_>, connector_id: String,
     ) -> Result<bool> {
         connectors_mutation::disconnect_connector(ctx, connector_id).await
+    }
+
+    async fn connect_llm_provider(
+        &self, ctx: &Context<'_>, input: llm_providers_type::ConnectLlmProviderInput,
+    ) -> Result<llm_providers_type::GqlLlmProvider> {
+        llm_providers_mutation::connect_llm_provider(ctx, input).await
+    }
+
+    async fn disconnect_llm_provider(
+        &self, ctx: &Context<'_>, id: String,
+    ) -> Result<bool> {
+        llm_providers_mutation::disconnect_llm_provider(ctx, id).await
+    }
+
+    async fn set_default_llm_provider(
+        &self, ctx: &Context<'_>, id: String,
+    ) -> Result<llm_providers_type::GqlLlmProvider> {
+        llm_providers_mutation::set_default_llm_provider(ctx, id).await
     }
 
     async fn create_workspace(
@@ -973,9 +994,13 @@ impl MutationRoot {
             }
         }
 
-        // 5. Query Anthropic API to generate draft
-        let api_key = std::env::var("ANTHROPIC_API_KEY")
-            .map_err(|_| Error::new("ANTHROPIC_API_KEY environment variable is not set"))?;
+        // 5. Resolve the admin's LLM connection (falls back to this
+        // deployment's env-configured default). The target user being
+        // drafted for is likely mid-onboarding and may have no connection of
+        // their own yet, so this intentionally uses the calling admin's.
+        let provider_cfg = crate::internal::resolve_credential_inner(state, admin_id, None, None)
+            .await
+            .map_err(|e| Error::new(format!("no LLM provider available: {e}")))?;
 
         let display_name = user.display_name.unwrap_or_else(|| user.email.clone().unwrap_or_else(|| "Employee".to_string()));
         let user_position = user.role; // position/role
@@ -1023,36 +1048,13 @@ Your response MUST contain ONLY the raw markdown content. Do NOT wrap it in mark
             )
         };
 
-        let client = reqwest::Client::new();
-        let payload = serde_json::json!({
-            "model": "claude-sonnet-4-20250514",
-            "max_tokens": 4096,
-            "system": system_prompt,
-            "messages": [
-                { "role": "user", "content": user_message }
-            ]
-        });
-
-        let resp: serde_json::Value = client
-            .post("https://api.anthropic.com/v1/messages")
-            .header("x-api-key", &api_key)
-            .header("anthropic-version", "2023-06-01")
-            .header("content-type", "application/json")
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| Error::new(format!("Failed to connect to Anthropic API: {}", e)))?
-            .json()
-            .await
-            .map_err(|e| Error::new(format!("Failed to parse Anthropic response: {}", e)))?;
-
-        let answer = resp["content"][0]["text"]
-            .as_str()
-            .ok_or_else(|| {
-                let err_msg = resp["error"]["message"].as_str().unwrap_or("Unknown error");
-                Error::new(format!("Anthropic API error: {}", err_msg))
-            })?
-            .to_string();
+        let answer = fluvio_llm::chat::chat(
+            &provider_cfg,
+            &system_prompt,
+            &[fluvio_llm::types::Message { role: "user".to_string(), content: user_message }],
+        )
+        .await
+        .map_err(|e| Error::new(format!("LLM error: {e}")))?;
 
         Ok(answer)
     }

@@ -5,6 +5,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use fluvio_collab_core::clients::{DatabaseClient, GraphClient, IngestionClient};
+use fluvio_llm::resolver::CredentialResolver;
 use crate::graphql::{build_schema, graphql_router};
 
 #[derive(Clone)]
@@ -12,7 +13,9 @@ pub struct AppState {
     pub db:            DatabaseClient,
     pub graph:         GraphClient,
     pub ingestion:     IngestionClient,
-    pub anthropic_key: String,
+    /// Resolves the caller's LLM provider connection (or deployment
+    /// fallback) from fluvio-database's internal credential route.
+    pub llm_resolver:  CredentialResolver,
 }
 
 pub async fn serve() -> anyhow::Result<()> {
@@ -29,18 +32,23 @@ pub async fn serve() -> anyhow::Result<()> {
     let ingestion_url = std::env::var("INGESTION_GRAPHQL_URL")
         .unwrap_or_else(|_| "http://localhost:3004/graphql".to_string());
 
-    let anthropic_key = std::env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY not set"))?;
+    let internal_secret = std::env::var("FLUVIOME_INTERNAL_SECRET").ok()
+        .filter(|s| !s.trim().is_empty());
 
     tracing::info!("Database service → {db_url}");
     tracing::info!("Graph service    → {graph_url}");
     tracing::info!("Ingestion service→ {ingestion_url}");
 
+    // CredentialResolver hits fluvio-database's plain internal route, not
+    // its GraphQL endpoint — strip the /graphql suffix DatabaseClient needs.
+    let credential_base = db_url.trim_end_matches("/graphql").to_string();
+    let llm_resolver = CredentialResolver::new(credential_base, internal_secret);
+
     let state = AppState {
         db:            DatabaseClient::new(&db_url),
         graph:         GraphClient::new(&graph_url),
         ingestion:     IngestionClient::new(&ingestion_url),
-        anthropic_key,
+        llm_resolver,
     };
 
     let schema = build_schema(state.clone());

@@ -2,9 +2,13 @@ pub mod mutation;
 pub mod query;
 pub mod types;
 
-pub mod connectors_type;    
-pub mod connectors_query;     
-pub mod connectors_mutation;  
+pub mod connectors_type;
+pub mod connectors_query;
+pub mod connectors_mutation;
+
+pub mod llm_providers_type;
+pub mod llm_providers_query;
+pub mod llm_providers_mutation;
 
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;

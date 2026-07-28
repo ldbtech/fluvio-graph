@@ -7,4 +7,7 @@ pydantic>=2.0.0
 # Sandbox / container orchestration for tool execution
 docker>=7.1.0
 # MCP server — exposes tools to agent-planner and external MCP clients (Phase M1)
-mcp>=1.2.0
+# Capped below 2.0: that release redesigned the low-level Server API (dropped
+# the @server.list_tools()/@server.call_tool() decorators used in server.py)
+# in a way this code hasn't been migrated to yet.
+mcp>=1.2.0,<2.0.0

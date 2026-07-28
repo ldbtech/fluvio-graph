@@ -5,6 +5,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use fluvio_twin_core::graph::GraphClient;
+use fluvio_llm::resolver::CredentialResolver;
 use crate::graphql::{build_schema, graphql_router};
 
 // ── AppState ──────────────────────────────────────────────────────────────────
@@ -12,9 +13,10 @@ use crate::graphql::{build_schema, graphql_router};
 #[derive(Clone)]
 pub struct AppState {
     /// GraphQL client → fluvio-graph
-    pub graph_client:  GraphClient,
-    /// Anthropic API key for Claude
-    pub anthropic_key: String,
+    pub graph_client: GraphClient,
+    /// Resolves the caller's LLM provider connection (or deployment
+    /// fallback) from fluvio-database's internal credential route.
+    pub llm_resolver: CredentialResolver,
 }
 
 // ── serve() ───────────────────────────────────────────────────────────────────
@@ -26,15 +28,19 @@ pub async fn serve() -> anyhow::Result<()> {
     let graph_url = std::env::var("GRAPH_GRAPHQL_URL")
         .unwrap_or_else(|_| "http://localhost:3001/graphql".to_string());
 
-    let anthropic_key = std::env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| anyhow::anyhow!(
-            "ANTHROPIC_API_KEY not set — add it to .env or export it"
-        ))?;
+    // Bare base URL (not /graphql-suffixed) — this hits fluvio-database's
+    // plain internal credential-resolution route, not its GraphQL endpoint.
+    let database_service_url = std::env::var("DATABASE_SERVICE_URL")
+        .unwrap_or_else(|_| "http://localhost:3005".to_string());
+    let internal_secret = std::env::var("FLUVIOME_INTERNAL_SECRET").ok()
+        .filter(|s| !s.trim().is_empty());
 
     let graph_client = GraphClient::new(&graph_url);
     tracing::info!("Graph client → {graph_url}");
+    tracing::info!("Database credential resolver → {database_service_url}");
 
-    let state = AppState { graph_client, anthropic_key };
+    let llm_resolver = CredentialResolver::new(database_service_url, internal_secret);
+    let state = AppState { graph_client, llm_resolver };
 
     let schema = build_schema(state.clone());
 

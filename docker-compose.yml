@@ -14,10 +14,35 @@
 # ── Shared defaults ───────────────────────────────────────────────────────────
 
 x-common-env: &common-env
-  SURREAL_URL: http://surrealdb:8000
-  POSTGRES_URL: postgresql://fluviome:fluviome@postgres:5432/fluviome
+  # ws:// not http:// — the `surrealdb` crate is built with its default
+  # `protocol-ws` feature only; `protocol-http` isn't enabled, so an http://
+  # URL fails at connect time with "HTTP remote engine ... not enabled".
+  SURREAL_URL: ws://surrealdb:8000
+  DATABASE_URL: postgresql://fluviome:fluviome@postgres:5432/fluviome
   GATEWAY_URL: http://gateway:4001/graphql
   FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
+  # Deployment-level fallback LLM provider — used by fluvio-database's
+  # internal credential resolver when a user hasn't connected their own
+  # provider (Settings → Connections). Only fluvio-database reads these;
+  # twin-server/collab-server/agent-planner resolve per-request via it, so
+  # they no longer need — or hard-fail without — a key at boot.
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+  # AES-256-GCM key (32 raw bytes, base64) for encrypting per-user BYOK LLM
+  # credentials at rest. Optional — fluvio-database still boots without it;
+  # BYOK connect/resolve operations error until it's set. Generate with:
+  #   openssl rand -base64 32
+  FLUVIOME_CREDENTIAL_KEY: ${FLUVIOME_CREDENTIAL_KEY:-}
+  # Optional shared secret guarding fluvio-database's internal (non-GraphQL,
+  # non-public) credential-resolution route. Recommended whenever backend
+  # ports are reachable beyond localhost — every service in this compose
+  # file host-publishes its port today.
+  FLUVIOME_INTERNAL_SECRET: ${FLUVIOME_INTERNAL_SECRET:-}
+  # Bare base URL (not /graphql-suffixed) for fluvio-database's internal
+  # credential-resolution route.
+  DATABASE_SERVICE_URL: http://fluvio-database:3005
 
 x-restart: &restart
   restart: unless-stopped
@@ -28,6 +53,16 @@ services:
 
   # ── Data stores ─────────────────────────────────────────────────────────────
 
+  # The surrealdb image runs as a non-root user (uid/gid 65532). Docker
+  # creates named volumes owned by root:root, so surrealdb can't write to
+  # /data until we chown it once here.
+  surrealdb-init:
+    image: alpine:latest
+    command: chown -R 65532:65532 /data
+    volumes:
+      - surreal_data:/data
+    restart: "no"
+
   surrealdb:
     image: surrealdb/surrealdb:latest
     <<: *restart
@@ -36,8 +71,12 @@ services:
       - surreal_data:/data
     ports:
       - "8000:8000"
+    depends_on:
+      surrealdb-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      # The surrealdb image ships no shell/curl, so use its own is-ready subcommand.
+      test: ["CMD", "/surreal", "is-ready", "--endpoint", "http://localhost:8000"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -51,6 +90,7 @@ services:
       POSTGRES_DB: fluviome
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -95,6 +135,8 @@ services:
     depends_on:
       surrealdb:
         condition: service_healthy
+      fluvio-database:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3002/health"]
       interval: 5s
@@ -110,6 +152,7 @@ services:
     environment:
       <<: *common-env
       PORT: 3005
+      COMPANY_DATABASE_URL: postgresql://fluviome:fluviome@postgres:5432/fluvio_company
     ports:
       - "3005:3005"
     depends_on:
@@ -152,12 +195,21 @@ services:
     environment:
       <<: *common-env
       PORT: 3003
+      # /graphql-suffixed, unlike the bare common-env default — this
+      # service's DatabaseClient needs the GraphQL endpoint; it strips the
+      # suffix itself when building the (separate) internal credential
+      # resolver. Previously unset entirely, which meant DatabaseClient
+      # silently fell back to localhost:3005/graphql — unreachable in the
+      # docker network.
+      DATABASE_SERVICE_URL: http://fluvio-database:3005/graphql
       # Collaboration features require an enterprise token.
       # Without FLUVIOME_ENTERPRISE_TOKEN this service starts but gates features.
     ports:
       - "3003:3003"
     depends_on:
       surrealdb:
+        condition: service_healthy
+      fluvio-database:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3003/health"]
@@ -211,8 +263,6 @@ services:
     environment:
       <<: *common-env
       PORT: 3007
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
     ports:
       - "3007:3007"
     depends_on:
@@ -247,7 +297,9 @@ services:
       fluvio-tool-builder:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:4001/health"]
+      # Apollo Router serves /health on its own listener (default 8088), not
+      # the GraphQL port (4001) — hitting 4001/health always 404s.
+      test: ["CMD", "curl", "-sf", "http://localhost:8088/health"]
       interval: 5s
       timeout: 3s
       retries: 15

@@ -14,7 +14,7 @@ import logging
 import re
 from pathlib import Path
 
-import httpx
+from fluvio_planner.llm import ProviderConfig, chat as llm_chat
 
 logger = logging.getLogger("agent-planner")
 
@@ -36,8 +36,7 @@ def _looks_like_plan(text: str) -> bool:
 async def reflect_on_plan(
     plan: str,
     tools_context: str,
-    api_key: str,
-    model: str = "claude-sonnet-4-20250514",
+    provider_config: ProviderConfig,
 ) -> str:
     """Run a reflection pass on plan. Returns the (possibly revised) plan text."""
     if not _looks_like_plan(plan):
@@ -50,26 +49,7 @@ async def reflect_on_plan(
     user = "Review the plan above and output APPROVED or a revised plan."
 
     try:
-        async with httpx.AsyncClient() as http:
-            resp = await http.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": api_key,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": model,
-                    "max_tokens": 4096,
-                    "system": system,
-                    "messages": [{"role": "user", "content": user}],
-                },
-                timeout=60.0,
-            )
-            if resp.status_code != 200:
-                logger.warning("Reflection call failed (%d) — returning original plan", resp.status_code)
-                return plan
-            text = resp.json()["content"][0]["text"].strip()
+        text = (await llm_chat(provider_config, system, [{"role": "user", "content": user}])).strip()
     except Exception as exc:
         logger.warning("Reflection call error — returning original plan: %s", exc)
         return plan

@@ -11,18 +11,14 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import httpx
-
 from fluvio_planner.agent.designation import AgentSession
+from fluvio_planner.llm import ProviderConfig, chat as llm_chat
 
 logger = logging.getLogger("agent-planner")
 
 _PLAN_WRITER_PROMPT = (
     Path(__file__).parent.parent / "prompts" / "plan_writer.txt"
 ).read_text()
-
-# Match the model used elsewhere in the planner chat path.
-_MODEL = "claude-sonnet-4-20250514"
 
 
 async def write_plan(
@@ -31,7 +27,7 @@ async def write_plan(
     context_plan: str,
     history: list[dict] | None = None,
     *,
-    api_key: str | None,
+    provider_config: ProviderConfig | None,
 ) -> str:
     """Author (or revise) the PLAN.md for this session and return it as Markdown.
 
@@ -41,8 +37,10 @@ async def write_plan(
     The returned string already carries the agent's voice; the caller prepends
     the agent signature chip and saves it as the AI chat message.
 
-    `api_key` is injected by the caller (the composition root) rather than read
-    from a config singleton, so this module never touches the environment.
+    `provider_config` is injected by the caller (the composition root) rather
+    than read from a config singleton, so this module never touches the
+    environment — it resolves the user's connected LLM provider, or this
+    deployment's fallback.
     """
     agent = session.agent
     system_prompt = _PLAN_WRITER_PROMPT.format(
@@ -53,12 +51,13 @@ async def write_plan(
         context_plan=context_plan or "(no workspace context could be assembled)",
     )
 
-    if not api_key:
+    if not provider_config:
         # Degrade gracefully: still introduce the agent and echo the ask so the
-        # conversation can continue without a key configured.
+        # conversation can continue without a provider configured.
         return (
             f"{agent.intro_line()}\n\n"
-            f"_(ANTHROPIC_API_KEY not configured — cannot author the full plan yet.)_\n\n"
+            f"_(No LLM provider configured — connect one, or set a deployment "
+            f"fallback key, to author the full plan.)_\n\n"
             f"You asked: \"{message}\""
         )
 
@@ -67,25 +66,7 @@ async def write_plan(
     messages = list(history) if history else [{"role": "user", "content": message}]
 
     try:
-        async with httpx.AsyncClient() as http:
-            resp = await http.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": api_key,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": _MODEL,
-                    "max_tokens": 4096,
-                    "system": system_prompt,
-                    "messages": messages,
-                },
-                timeout=90.0,
-            )
-            if resp.status_code != 200:
-                raise RuntimeError(f"Anthropic API error: {resp.text}")
-            return resp.json()["content"][0]["text"]
+        return await llm_chat(provider_config, system_prompt, messages)
     except Exception as exc:
         logger.error("Plan authoring failed for session %s: %s", session.session_id, exc)
         raise

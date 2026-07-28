@@ -1,7 +1,6 @@
-//! Anthropic API client.
-//!
-//! Supports both streaming (SSE) and non-streaming responses.
-//! Ported from the monolith's twin chat handler.
+//! Native Anthropic Messages API client.
+//! Ported from the original `fluvio-twin-core::llm::anthropic`, generalized
+//! to take a `ProviderConfig` instead of a bare API key string.
 
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -9,22 +8,23 @@ use anyhow::Context;
 use futures_util::StreamExt;
 use tokio::sync::mpsc;
 
-pub const MODEL: &str = "claude-sonnet-4-20250514";
+use crate::types::{ProviderConfig, Message};
+
 pub const MAX_TOKENS: u32 = 4096;
 
-#[derive(Debug, Clone)]
-pub struct Message {
-    pub role:    String,
-    pub content: String,
+fn require_key(cfg: &ProviderConfig) -> anyhow::Result<&str> {
+    cfg.api_key.as_deref()
+        .filter(|k| !k.trim().is_empty())
+        .context("Anthropic connection is missing an API key")
 }
 
-/// Non-streaming chat — returns the full answer at once.
 pub async fn chat(
-    api_key:  &str,
+    cfg:      &ProviderConfig,
     system:   &str,
     messages: &[Message],
 ) -> anyhow::Result<String> {
-    let client = Client::new();
+    let api_key = require_key(cfg)?;
+    let client  = Client::new();
 
     let msgs: Vec<Value> = messages.iter()
         .filter(|m| !m.content.trim().is_empty())
@@ -37,7 +37,7 @@ pub async fn chat(
         .header("anthropic-version", "2023-06-01")
         .header("content-type",      "application/json")
         .json(&json!({
-            "model":      MODEL,
+            "model":      cfg.model(),
             "max_tokens": MAX_TOKENS,
             "system":     system,
             "messages":   msgs,
@@ -49,6 +49,10 @@ pub async fn chat(
         .await
         .context("failed to parse Anthropic response")?;
 
+    if let Some(err) = resp.get("error") {
+        anyhow::bail!("Anthropic error: {err}");
+    }
+
     let answer = resp["content"][0]["text"]
         .as_str()
         .context("no text in Anthropic response")?
@@ -58,13 +62,16 @@ pub async fn chat(
 }
 
 /// Streaming chat — sends chunks via mpsc channel as they arrive.
-/// The receiver end is converted to an HTTP stream in the GraphQL resolver.
 pub async fn chat_streaming(
-    api_key:  String,
+    cfg:      ProviderConfig,
     system:   String,
     messages: Vec<Message>,
     tx:       mpsc::Sender<anyhow::Result<String>>,
 ) {
+    let api_key = match require_key(&cfg) {
+        Ok(k)  => k.to_string(),
+        Err(e) => { let _ = tx.send(Err(e)).await; return; }
+    };
     let client = Client::new();
 
     let msgs: Vec<Value> = messages.iter()
@@ -78,7 +85,7 @@ pub async fn chat_streaming(
         .header("anthropic-version", "2023-06-01")
         .header("content-type",      "application/json")
         .json(&json!({
-            "model":      MODEL,
+            "model":      cfg.model(),
             "max_tokens": MAX_TOKENS,
             "stream":     true,
             "system":     system,

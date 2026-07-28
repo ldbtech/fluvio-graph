@@ -6,10 +6,10 @@ use uuid::Uuid;
 use crate::server::AppState;
 use crate::graphql::types::*;
 use fluvio_twin_core::llm::{
-    self, Message,
     build_context_from_seeds, build_system_prompt,
     SEED_K, SIM_TOP_K, BFS_DEPTH,
 };
+use fluvio_llm::types::Message;
 
 pub struct QueryRoot;
 
@@ -91,8 +91,12 @@ impl QueryRoot {
 
         let system = build_system_prompt(&context, user_name, true);
 
-        // 5. Call Claude
-        let answer = llm::chat(&state.anthropic_key, &system, &messages)
+        // 5. Resolve the caller's LLM provider (BYOK connection, or this
+        // deployment's env-configured fallback) and call it.
+        let provider_cfg = state.llm_resolver.resolve(user_id, None, None)
+            .await
+            .map_err(|e| Error::new(format!("no LLM provider available: {e}")))?;
+        let answer = fluvio_llm::chat::chat(&provider_cfg, &system, &messages)
             .await
             .map_err(|e| Error::new(format!("LLM error: {e}")))?;
 

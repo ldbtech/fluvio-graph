@@ -7,6 +7,7 @@ pub mod queue;
 pub mod queries;
 
 pub mod connectors;
+pub mod llm_providers;
 pub mod resources;
 pub mod workspaces;
 pub mod companies;

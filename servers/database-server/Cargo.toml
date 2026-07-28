@@ -13,6 +13,7 @@ path = "src/main.rs"
 [dependencies]
 fluvio-database = { workspace = true }
 fluvio-common   = { workspace = true, features = ["server"] }
+fluvio-llm      = { workspace = true }
 
 tokio              = { workspace = true }
 axum               = { workspace = true }

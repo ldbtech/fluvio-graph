@@ -11,6 +11,7 @@ members = [
     "crates/fluvio-twin-core",
     "crates/fluvio-collab-core",
     "crates/fluvio-graph-core",
+    "crates/fluvio-llm",
 
     # Facade — the crate external consumers depend on
     "crates/fluvio-graph",
@@ -43,6 +44,7 @@ fluvio-twin-core = { path = "crates/fluvio-twin-core" }
 fluvio-collab-core = { path = "crates/fluvio-collab-core" }
 fluvio-graph-core = { path = "crates/fluvio-graph-core" }
 fluvio-graph = { path = "crates/fluvio-graph" }
+fluvio-llm = { path = "crates/fluvio-llm" }
 
 tokio        = { version = "1",   features = ["full"] }
 tokio-util   = { version = "0.7" }
@@ -86,6 +88,7 @@ dotenvy     = { version = "0.15" }
 bytes       = { version = "1" }
 rand        = { version = "0.8" }
 base64      = { version = "0.22" }
+aes-gcm     = { version = "0.10" }
 regex       = { version = "1" }
 pdf-extract = { version = "0.10" }
 memmap2     = { version = "0.9" }

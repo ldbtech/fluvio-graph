@@ -25,6 +25,7 @@ from fluvio_planner.fetch.iam import fetch_user_profile
 from fluvio_planner.fetch.nodes import fetch_semantic_nodes
 from fluvio_planner.gateway_client.client import FederationClient
 from fluvio_planner.intent import needs_clarification
+from fluvio_planner.llm import resolve_provider
 from fluvio_planner.plan.orchestrator import generate_plan_context
 from fluvio_planner.reflection import reflect_on_plan
 from fluvio_planner.schema_inspector import extract_schema_from_resources
@@ -164,6 +165,12 @@ async def chat(
         for m in history
     ]
 
+    # Resolve the caller's LLM provider (BYOK connection, or this
+    # deployment's env-configured fallback) once for both calls below.
+    provider_config = await resolve_provider(
+        settings.database_service_url, x_user_id, internal_secret=settings.internal_secret,
+    )
+
     # The designated agent authors (or revises) the PLAN.md for this turn.
     try:
         plan_md = await write_plan(
@@ -171,20 +178,19 @@ async def chat(
             message=body.message,
             context_plan=context_plan,
             history=claude_messages,
-            api_key=settings.anthropic_api_key,
+            provider_config=provider_config,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error authoring plan: {exc}")
 
     # Phase 18 — Reflect on the proposed pipeline for missing steps / broken deps.
-    api_key = settings.anthropic_api_key
-    if api_key:
+    if provider_config:
         tools_context = (
             context_plan[context_plan.find("### Available Execution Tools"):]
             if "### Available Execution Tools" in context_plan
             else context_plan[:2000]
         )
-        plan_md = await reflect_on_plan(plan_md, tools_context, api_key)
+        plan_md = await reflect_on_plan(plan_md, tools_context, provider_config)
 
     # Keep the plan markdown clean; the agent identity travels as structured
     # fields so the UI renders it as a sender badge, not inside the plan body.

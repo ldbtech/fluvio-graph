@@ -410,6 +410,113 @@ pub mod connectors {
     ";
 }
 
+pub mod llm_providers {
+    use uuid::Uuid;
+    use chrono::{DateTime, Utc};
+
+    #[derive(Debug, Clone, sqlx::FromRow)]
+    pub struct LlmProvider {
+        pub id:                 Uuid,
+        pub user_id:            Uuid,
+        pub group_id:           Option<Uuid>,
+        pub provider:           String,
+        pub api_key_ciphertext: Option<Vec<u8>>,
+        pub base_url:           Option<String>,
+        pub default_model:      Option<String>,
+        pub is_default:         bool,
+        pub created_at:         DateTime<Utc>,
+        pub updated_at:         DateTime<Utc>,
+    }
+
+    // Two separate upsert queries (not one shared ON CONFLICT) because each
+    // targets a different partial unique index — Postgres requires the
+    // conflict target to match exactly one. Mixing them the way `connectors`
+    // does silently fails to catch conflicts on the other scope.
+    pub const UPSERT_PERSONAL: &str = "
+        INSERT INTO llm_providers
+            (user_id, group_id, provider, api_key_ciphertext, base_url, default_model)
+        VALUES ($1, NULL, $2::llm_provider_kind, $3, $4, $5)
+        ON CONFLICT (user_id, provider) WHERE group_id IS NULL
+            DO UPDATE SET
+                api_key_ciphertext = EXCLUDED.api_key_ciphertext,
+                base_url           = EXCLUDED.base_url,
+                default_model      = EXCLUDED.default_model,
+                updated_at         = now()
+        RETURNING
+            id, user_id, group_id, provider::text, api_key_ciphertext,
+            base_url, default_model, is_default, created_at, updated_at
+    ";
+
+    pub const UPSERT_GROUP: &str = "
+        INSERT INTO llm_providers
+            (user_id, group_id, provider, api_key_ciphertext, base_url, default_model)
+        VALUES ($1, $2, $3::llm_provider_kind, $4, $5, $6)
+        ON CONFLICT (user_id, provider, group_id) WHERE group_id IS NOT NULL
+            DO UPDATE SET
+                api_key_ciphertext = EXCLUDED.api_key_ciphertext,
+                base_url           = EXCLUDED.base_url,
+                default_model      = EXCLUDED.default_model,
+                updated_at         = now()
+        RETURNING
+            id, user_id, group_id, provider::text, api_key_ciphertext,
+            base_url, default_model, is_default, created_at, updated_at
+    ";
+
+    pub const GET_BY_ID: &str = "
+        SELECT id, user_id, group_id, provider::text, api_key_ciphertext,
+               base_url, default_model, is_default, created_at, updated_at
+        FROM llm_providers WHERE id = $1
+    ";
+
+    pub const GET_USER_PROVIDERS: &str = "
+        SELECT id, user_id, group_id, provider::text, api_key_ciphertext,
+               base_url, default_model, is_default, created_at, updated_at
+        FROM llm_providers
+        WHERE user_id = $1 AND group_id IS NOT DISTINCT FROM $2
+        ORDER BY created_at DESC
+    ";
+
+    pub const GET_DEFAULT_FOR_USER: &str = "
+        SELECT id, user_id, group_id, provider::text, api_key_ciphertext,
+               base_url, default_model, is_default, created_at, updated_at
+        FROM llm_providers
+        WHERE user_id = $1 AND group_id IS NOT DISTINCT FROM $2 AND is_default
+        LIMIT 1
+    ";
+
+    pub const GET_FOR_USER_AND_PROVIDER: &str = "
+        SELECT id, user_id, group_id, provider::text, api_key_ciphertext,
+               base_url, default_model, is_default, created_at, updated_at
+        FROM llm_providers
+        WHERE user_id = $1 AND group_id IS NOT DISTINCT FROM $2 AND provider = $3::llm_provider_kind
+        LIMIT 1
+    ";
+
+    // Unsets any existing default for the same scope, then sets the new one —
+    // run inside a transaction by the caller.
+    pub const CLEAR_DEFAULT_PERSONAL: &str = "
+        UPDATE llm_providers SET is_default = false, updated_at = now()
+        WHERE user_id = $1 AND group_id IS NULL AND is_default
+    ";
+
+    pub const CLEAR_DEFAULT_GROUP: &str = "
+        UPDATE llm_providers SET is_default = false, updated_at = now()
+        WHERE user_id = $1 AND group_id = $2 AND is_default
+    ";
+
+    pub const SET_DEFAULT: &str = "
+        UPDATE llm_providers SET is_default = true, updated_at = now()
+        WHERE id = $1
+        RETURNING
+            id, user_id, group_id, provider::text, api_key_ciphertext,
+            base_url, default_model, is_default, created_at, updated_at
+    ";
+
+    pub const DELETE: &str = "
+        DELETE FROM llm_providers WHERE id = $1
+    ";
+}
+
 pub mod resources {
     use uuid::Uuid;
     use chrono::{DateTime, Utc};

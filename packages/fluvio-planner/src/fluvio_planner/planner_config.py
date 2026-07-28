@@ -27,3 +27,7 @@ class PlannerConfig:
     anthropic_api_key: str | None
     graphql_gateway_url: str
     mcp_server_url: str
+    # fluvio-database's bare base URL (not /graphql-suffixed) for resolving a
+    # per-user BYOK LLM connection via its internal, non-GraphQL route.
+    database_service_url: str
+    internal_secret: str | None

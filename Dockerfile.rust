@@ -9,11 +9,19 @@
 # docker-compose selects a service via `target:` (e.g. target: fluvio-graph).
 
 # ── Builder: deps + all binaries, once ───────────────────────────────────────
-# rust:1-slim = latest stable 1.x. Several deps (async-graphql 7.2 → rustc 1.89,
-# darling/fastnum → 1.88) require newer than 1.87, which is why the repo pins
-# `stable` in rust-toolchain.toml. Using the latest base satisfies them without a
-# fragile rustup network sync.
-FROM rust:1-slim AS builder
+# rust:1-slim-trixie = latest stable 1.x, pinned explicitly (not the floating
+# `rust:1-slim` tag) so the Debian release can't silently drift again. Several
+# deps (async-graphql 7.2 → rustc 1.89, darling/fastnum → 1.88) require newer
+# than 1.87, which is why the repo pins `stable` in rust-toolchain.toml.
+#
+# Must be trixie, not bookworm: `ort` (ONNX Runtime bindings, via
+# fluvio-graph-core) downloads a prebuilt onnxruntime binary that references
+# glibc's ISO C23 strtol symbols (__isoc23_strtol/strtoll/strtoull), only
+# present in glibc >= 2.38 (trixie ships 2.41; bookworm ships 2.36). Building
+# on bookworm fails at link time with "undefined symbol: __isoc23_strtoll" —
+# it's not a toolchain-version issue, the blob itself requires glibc 2.38+.
+# runtime-base below must stay on the same Debian release (trixie) to match.
+FROM rust:1-slim-trixie AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev libclang-dev clang && \
@@ -54,12 +62,17 @@ RUN find servers -name '*.rs' -exec touch {} + && \
       -p database-server -p ingestion-server -p twin-server -p collab-server -p graph-server
 
 # ── Shared runtime base ───────────────────────────────────────────────────────
-FROM debian:bookworm-slim AS runtime-base
+# Must match the builder's Debian release (trixie) — see note above.
+FROM debian:trixie-slim AS runtime-base
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 libgomp1 curl && \
+    ca-certificates libssl3t64 libgomp1 curl && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m -u 1001 fluviome
 WORKDIR /app
+# fastembed (fluvio-graph, fluvio-ingestion) caches the downloaded ONNX model
+# under a relative ".fastembed_cache" dir inside the CWD on first run, so /app
+# itself must be writable by the runtime user, not just root:root default.
+RUN chown fluviome:fluviome /app
 USER fluviome
 
 # ── Per-service runtime targets ───────────────────────────────────────────────

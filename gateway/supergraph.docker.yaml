@@ -1,0 +1,36 @@
+federation_version: =2.5.0
+
+# Docker Compose variant of supergraph.yaml: `routing_url` (baked into the
+# composed supergraph.graphql, used by the gateway container at runtime) uses
+# the compose service hostnames — the plain supergraph.yaml's 127.0.0.1 URLs
+# only work for scripts/dev.sh's local (non-Docker) workflow, where every
+# service is a separate localhost process. `subgraph_url` (used only at
+# compose time, to fetch each subgraph's SDL) points at localhost because
+# `rover supergraph compose` runs on the host, where docker-compose.yml
+# host-publishes each service's port.
+
+subgraphs:
+  fluvio-graph:
+    routing_url: http://fluvio-graph:3001/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3001/graphql
+
+  fluvio-ingestion:
+    routing_url: http://fluvio-ingestion:3004/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3004/graphql
+
+  fluvio-twin:
+    routing_url: http://fluvio-twin:3002/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3002/graphql
+
+  fluvio-database:
+    routing_url: http://fluvio-database:3005/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3005/graphql
+
+  fluvio-tool-builder:
+    routing_url: http://fluvio-tool-builder:3008/graphql
+    schema:
+      subgraph_url: http://127.0.0.1:3008/graphql

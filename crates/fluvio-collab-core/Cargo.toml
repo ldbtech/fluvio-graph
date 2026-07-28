@@ -11,6 +11,7 @@ name = "fluvio_collab_core"
 
 [dependencies]
 fluvio-common = { workspace = true }
+fluvio-llm    = { workspace = true }
 
 tokio      = { workspace = true }
 serde      = { workspace = true }

@@ -130,7 +130,7 @@ impl QueryRoot {
             caller_id,
             &question,
             history_pairs,
-            &state.anthropic_key,
+            &state.llm_resolver,
             &state.db,
             &state.graph,
         ).await.map_err(|e| Error::new(e.to_string()))?;

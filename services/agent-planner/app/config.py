@@ -57,6 +57,16 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MCP_SERVER_URL", "TOOL_BUILDER_MCP_URL"),
         description="fluvio-tool-builder MCP Streamable-HTTP endpoint (tools/list + tools/call).",
     )
+    database_service_url: str = Field(
+        default="http://127.0.0.1:3005",
+        validation_alias=AliasChoices("DATABASE_SERVICE_URL"),
+        description="fluvio-database's bare base URL — used for per-user BYOK LLM "
+                     "credential resolution via its internal (non-GraphQL) route.",
+    )
+    internal_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FLUVIOME_INTERNAL_SECRET"),
+    )
 
     @field_validator("anthropic_api_key", mode="after")
     @classmethod
@@ -73,6 +83,8 @@ class Settings(BaseSettings):
             anthropic_api_key=self.anthropic_api_key,
             graphql_gateway_url=self.graphql_gateway_url,
             mcp_server_url=self.mcp_server_url,
+            database_service_url=self.database_service_url,
+            internal_secret=self.internal_secret,
         )
 
 

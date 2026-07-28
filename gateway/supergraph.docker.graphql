@@ -1,0 +1,1031 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+}
+
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+input AddMemberInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  userId: String!
+  role: String!
+  invitedBy: String
+}
+
+input AddTeamMemberInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  teamId: String!
+  userId: String!
+  role: String!
+}
+
+input ConnectLlmProviderInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  """One of "anthropic", "openai", "gemini", "ollama"."""
+  provider: String!
+
+  """Required for anthropic/openai/gemini; optional for ollama."""
+  apiKey: String
+
+  """Required for ollama; optional custom endpoint override otherwise."""
+  baseUrl: String
+  defaultModel: String
+  groupId: String
+}
+
+input CreateCompanyInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  name: String!
+  website: String!
+  linkedinUrl: String!
+  twitterUrl: String
+  githubUrl: String
+  createdBy: String!
+}
+
+input CreateCompanyInviteInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  companyId: String!
+  invitedBy: String!
+  email: String!
+  token: String!
+  role: String!
+  expiresAt: String!
+}
+
+input CreateConnectorInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  kind: String!
+  authMethod: String!
+  accessToken: String!
+  groupId: String
+}
+
+input CreateGroupInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  name: String!
+  description: String
+  createdBy: String!
+}
+
+input CreateInviteInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  invitedBy: String!
+  role: String!
+  email: String
+
+  """Hours until expiry — default 72"""
+  expiresInHours: Int
+}
+
+input CreatePlannerApprovalInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  workspaceId: String!
+  suggestedBy: String!
+  changeType: String!
+  changeDetails: String!
+}
+
+input CreateTeamInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  companyId: String!
+  name: String!
+  description: String
+}
+
+input CreateTeamWorkflowInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  teamId: String!
+  name: String!
+  description: String
+  steps: String!
+  createdBy: String!
+}
+
+input CreateUserInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  firebaseUid: String!
+  email: String
+  displayName: String
+  avatarUrl: String
+  role: String
+  mustChangePassword: Boolean
+  policies: [String!]
+  assignedAgentRoles: [String!]
+  twinManifest: String
+}
+
+input CreateWorkspaceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  ownerId: String!
+  name: String!
+  isPublic: Boolean!
+  teamId: String
+}
+
+type GqlActionAuthorization
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  actionType: String!
+  description: String!
+  severity: String!
+  initiatedByUserId: String!
+  status: String!
+  authorizedByUserId: String
+  notes: String
+  createdAt: String!
+  resolvedAt: String
+}
+
+"""
+Input for registering or updating a CSP capability as a graph node.
+`spec` is embedded server-side (BGE-small, 384-dim) so reuse-first search
+is semantic; `code` + the rest travel in the node's metadata.
+"""
+input GqlCapabilityInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  """
+  Stable capability name, e.g. "score_churn_risk". Doubles as the node key.
+  """
+  name: String!
+
+  """
+  The capability spec / docstring / signature summary — the text embedded.
+  """
+  spec: String!
+
+  """
+  Generated `def run(args)` source (empty for registered, non-synthesized).
+  """
+  code: String
+
+  """Human/LLM-readable signature, e.g. "run(rows: list, by: str) -> dict"."""
+  signature: String
+
+  """MCP tool names this capability calls, comma-separated."""
+  mcpTools: String
+
+  """Synthesizer tags, comma-separated."""
+  tags: String
+
+  """"synthesized" (default) or "registered"."""
+  status: String
+
+  """
+  Full CSP JSON-RPC spec as a JSON string — lets another instance
+  reconstruct the capability from the graph alone (cross-process reuse).
+  """
+  specJson: String
+}
+
+input GqlChatMessage
+  @join__type(graph: FLUVIO_TWIN)
+{
+  role: String!
+  content: String!
+}
+
+type GqlChatResponse
+  @join__type(graph: FLUVIO_TWIN)
+{
+  answer: String!
+  sources: [GqlSource!]!
+}
+
+type GqlCompany
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String!
+  website: String!
+  linkedinUrl: String!
+  twitterUrl: String
+  githubUrl: String
+  createdBy: String!
+  createdAt: String!
+}
+
+type GqlCompanyInvite
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  invitedBy: String!
+  email: String!
+  token: String!
+  role: String!
+  expiresAt: String!
+  acceptedAt: String
+  createdAt: String!
+}
+
+type GqlConnector
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  userId: String!
+  groupId: String
+  kind: String!
+  authMethod: String!
+  status: String!
+  errorMessage: String
+  accessToken: String!
+  createdAt: String!
+  updatedAt: String!
+  lastSyncAt: String
+}
+
+type GqlConnectorResource
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  connectorId: String!
+  resourceKind: String!
+  externalId: String!
+  name: String!
+  description: String
+  selected: Boolean!
+  lastSyncAt: String
+  nodeCount: Int!
+  createdAt: String!
+  meta: String!
+}
+
+type GqlDocument
+  @join__type(graph: FLUVIO_TWIN)
+{
+  id: String!
+  title: String!
+  kind: String!
+  domain: String!
+  excerpt: String!
+  zone: Int!
+}
+
+type GqlDocumentReconciliation
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  title: String!
+  description: String!
+  sourceA: String!
+  sourceB: String!
+  resolvedTo: String!
+  timeAgo: String!
+  createdAt: String!
+}
+
+enum GqlDomain
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  PDF @join__enumValue(graph: FLUVIO_GRAPH)
+  EMAIL @join__enumValue(graph: FLUVIO_GRAPH)
+  WHATSAPP @join__enumValue(graph: FLUVIO_GRAPH)
+  CALENDAR @join__enumValue(graph: FLUVIO_GRAPH)
+  CODEBASE @join__enumValue(graph: FLUVIO_GRAPH)
+  WEB @join__enumValue(graph: FLUVIO_GRAPH)
+  CUSTOM @join__enumValue(graph: FLUVIO_GRAPH)
+}
+
+"""A directed, weighted relationship between two nodes."""
+type GqlEdge
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  id: String!
+  from: String!
+  to: String!
+  label: String!
+
+  """Approximate LLM token cost of this edge."""
+  token: Int!
+
+  """Confidence [0.0, 1.0] that the relationship is real."""
+  relationshipProbability: Float!
+  metadata: [GqlMetadataEntry!]!
+}
+
+"""Input for creating or updating an edge."""
+input GqlEdgeInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  from: String!
+  to: String!
+  label: String!
+  token: Int
+  relationshipProbability: Float
+}
+
+type GqlExecutionLog
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  initiatedByUserId: String!
+  initiatedByTwinId: String
+  agentName: String!
+  message: String!
+  logLevel: String!
+  timestamp: String!
+}
+
+type GqlGroup
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String!
+  description: String
+  graphId: String!
+  createdBy: String!
+  createdAt: String!
+}
+
+type GqlIngestJob
+  @join__type(graph: FLUVIO_INGESTION)
+{
+  id: String!
+  ownerId: String!
+  filename: String!
+  status: String!
+  chunkCount: Int!
+  nodeIds: [String!]!
+  error: String
+}
+
+type GqlIngestResult
+  @join__type(graph: FLUVIO_INGESTION)
+{
+  jobId: String!
+  status: String!
+  message: String!
+}
+
+type GqlInvite
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  invitedBy: String!
+  token: String!
+  role: String!
+  email: String
+  expiresAt: String!
+  acceptedAt: String
+  createdAt: String!
+}
+
+type GqlLlmProvider
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  userId: String!
+  groupId: String
+  provider: String!
+  baseUrl: String
+  defaultModel: String
+  isDefault: Boolean!
+  hasApiKey: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type GqlMember
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  userId: String!
+  role: String!
+  invitedBy: String
+  joinedAt: String!
+}
+
+"""Key-value metadata pair (GraphQL can't return HashMap directly)."""
+type GqlMetadataEntry
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  key: String!
+  value: String!
+}
+
+"""Metadata key-value input."""
+input GqlMetadataInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  key: String!
+  value: String!
+}
+
+"""
+A node in the Fluvio knowledge graph.
+This is the primary entity — everything else references it.
+"""
+type GqlNode
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  """Stable UUID — content-addressed or random."""
+  id: String!
+  domain: GqlDomain!
+
+  """Opaque locator: file path, message-id, GitHub URL, etc."""
+  sourceUri: String!
+
+  """Canonical extractable text used for embedding + LLM context."""
+  sourceText: String!
+  kind: GqlNodeKind!
+
+  """Arbitrary key-value metadata."""
+  metadata: [GqlMetadataEntry!]!
+
+  """Zone level of this node."""
+  zone: Int!
+
+  """Number of embedding dimensions. 0 means not yet embedded."""
+  embeddingDimensions: Int!
+
+  """Whether this node has been embedded."""
+  isEmbedded: Boolean!
+}
+
+"""Input for creating or updating a node."""
+input GqlNodeInput
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  id: String
+  domain: GqlDomain!
+  sourceUri: String!
+  sourceText: String!
+  kind: GqlNodeKind!
+  metadata: [GqlMetadataInput!]
+  zone: Int
+  embeddings: [Float!]
+}
+
+enum GqlNodeKind
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  ENTITY @join__enumValue(graph: FLUVIO_GRAPH)
+  TOPIC @join__enumValue(graph: FLUVIO_GRAPH)
+
+  """Preserved typo from SurrealDB records — do not rename"""
+  ARTIFCAT @join__enumValue(graph: FLUVIO_GRAPH)
+  EVENT @join__enumValue(graph: FLUVIO_GRAPH)
+  CONVERSATION @join__enumValue(graph: FLUVIO_GRAPH)
+  CAPABILITY @join__enumValue(graph: FLUVIO_GRAPH)
+  EXTERNAL_REF @join__enumValue(graph: FLUVIO_GRAPH)
+}
+
+"""A sequence of nodes representing a path through the graph."""
+type GqlPath
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  nodes: [GqlNode!]!
+  found: Boolean!
+}
+
+type GqlPipelineRun
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  name: String!
+  agentName: String!
+  status: String!
+  progress: Int!
+  detail: String
+  startedAt: String!
+  updatedAt: String!
+}
+
+type GqlPlannerApproval
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  suggestedBy: String!
+  changeType: String!
+  changeDetails: String!
+  status: String!
+  createdAt: String!
+  reviewedAt: String
+  reviewNote: String
+}
+
+type GqlPlannerChatMessage
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  sender: String!
+  content: String!
+  createdAt: String!
+}
+
+"""Query tuning config — mirrors QueryConfig."""
+input GqlQueryConfig
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  similarityTopK: Int
+  expansionDepth: Int
+  maxSubgraphNodes: Int
+
+  """0 = own data, 1 = network"""
+  maxZone: Int
+}
+
+type GqlQueueItem
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  groupId: String!
+  contributedBy: String!
+  kind: String!
+  surrealNodeId: String!
+  status: String!
+  reviewedBy: String
+  reviewNote: String
+  createdAt: String!
+  reviewedAt: String
+}
+
+type GqlSandboxContainerStatus
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  name: String!
+  component: String!
+  status: String!
+  image: String!
+  ports: [String!]!
+  arn: String
+  costHourly: Float
+  efficiencyScore: Float
+}
+
+type GqlSandboxStatus
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  sandboxId: String!
+  status: String!
+  containers: [GqlSandboxContainerStatus!]!
+  provider: String
+  costHourly: Float
+  efficiencyScore: Float
+  agentTwinMonitored: Boolean
+}
+
+type GqlSaveResult
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  nodesSaved: Int!
+  edgesSaved: Int!
+}
+
+"""A node with a similarity score — returned by search queries."""
+type GqlScoredNode
+  @join__type(graph: FLUVIO_GRAPH)
+{
+  node: GqlNode!
+  score: Float!
+}
+
+type GqlSource
+  @join__type(graph: FLUVIO_TWIN)
+{
+  id: String!
+  page: String!
+  score: Float!
+  text: String!
+}
+
+type GqlTeam
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  companyId: String!
+  name: String!
+  description: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type GqlTeamMember
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  teamId: String!
+  userId: String!
+  role: String!
+  joinedAt: String!
+}
+
+type GqlTeamWorkflow
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  teamId: String!
+  name: String!
+  description: String
+  steps: String!
+  createdBy: String!
+  createdAt: String!
+  updatedAt: String!
+  isEnabled: Boolean!
+}
+
+type GqlTool
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  id: String!
+  name: String!
+  description: String!
+  category: String!
+  isDataScience: Boolean!
+  parameters: [GqlToolParameter!]!
+}
+
+type GqlToolParameter
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  name: String!
+  paramType: String!
+  description: String!
+  required: Boolean!
+  defaultValue: String
+}
+
+type GqlToolRun
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  id: String!
+  toolId: String!
+  toolName: String!
+  status: String!
+  inputs: String!
+  output: String
+  logs: String
+  startedAt: String!
+  finishedAt: String
+  durationMs: Int
+}
+
+type GqlUser
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  firebaseUid: String!
+  email: String
+  displayName: String
+  avatarUrl: String
+  companyEmail: String
+  companyId: String
+  role: String!
+  mustChangePassword: Boolean!
+  policies: [String!]!
+  assignedAgentRoles: [String!]!
+  twinManifest: String
+  createdAt: String!
+}
+
+type GqlWorkspace
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  ownerId: String!
+  name: String!
+  isPublic: Boolean!
+  createdAt: String!
+  teamId: String
+}
+
+type GqlWorkspaceShare
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  workspaceId: String!
+  userId: String!
+  sharedAt: String!
+  email: String
+  displayName: String
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  FLUVIO_DATABASE @join__graph(name: "fluvio-database", url: "http://fluvio-database:3005/graphql")
+  FLUVIO_GRAPH @join__graph(name: "fluvio-graph", url: "http://fluvio-graph:3001/graphql")
+  FLUVIO_INGESTION @join__graph(name: "fluvio-ingestion", url: "http://fluvio-ingestion:3004/graphql")
+  FLUVIO_TOOL_BUILDER @join__graph(name: "fluvio-tool-builder", url: "http://fluvio-tool-builder:3008/graphql")
+  FLUVIO_TWIN @join__graph(name: "fluvio-twin", url: "http://fluvio-twin:3002/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+type Mutation
+  @join__type(graph: FLUVIO_DATABASE)
+  @join__type(graph: FLUVIO_GRAPH)
+  @join__type(graph: FLUVIO_INGESTION)
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+{
+  createUser(input: CreateUserInput!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  createGroup(input: CreateGroupInput!): GqlGroup! @join__field(graph: FLUVIO_DATABASE)
+  addMember(input: AddMemberInput!): GqlMember! @join__field(graph: FLUVIO_DATABASE)
+  updateMemberRole(groupId: String!, userId: String!, newRole: String!): GqlMember! @join__field(graph: FLUVIO_DATABASE)
+  removeMember(groupId: String!, userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  createInvite(input: CreateInviteInput!): GqlInvite! @join__field(graph: FLUVIO_DATABASE)
+  acceptInvite(token: String!, acceptedBy: String!): GqlInvite! @join__field(graph: FLUVIO_DATABASE)
+  submitToQueue(input: SubmitToQueueInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
+  updateQueueStatus(input: UpdateQueueStatusInput!): GqlQueueItem! @join__field(graph: FLUVIO_DATABASE)
+  createConnector(input: CreateConnectorInput!): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  upsertResource(input: UpsertResourceInput!): GqlConnectorResource! @join__field(graph: FLUVIO_DATABASE)
+  selectResources(input: SelectResourcesInput!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  updateConnectorStatus(connectorId: String!, status: String!, error: String): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  markSynced(connectorId: String!): GqlConnector! @join__field(graph: FLUVIO_DATABASE)
+  updateResourceSyncStats(connectorId: String!, externalId: String!, nodesAdded: Int!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  disconnectConnector(connectorId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  connectLlmProvider(input: ConnectLlmProviderInput!): GqlLlmProvider! @join__field(graph: FLUVIO_DATABASE)
+  disconnectLlmProvider(id: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  setDefaultLlmProvider(id: String!): GqlLlmProvider! @join__field(graph: FLUVIO_DATABASE)
+  createWorkspace(input: CreateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
+  updateWorkspace(input: UpdateWorkspaceInput!): GqlWorkspace! @join__field(graph: FLUVIO_DATABASE)
+  createPlannerApproval(input: CreatePlannerApprovalInput!): GqlPlannerApproval! @join__field(graph: FLUVIO_DATABASE)
+  reviewPlannerApproval(input: ReviewPlannerApprovalInput!): GqlPlannerApproval! @join__field(graph: FLUVIO_DATABASE)
+  deleteWorkspace(id: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  shareWorkspace(workspaceId: String!, email: String!): GqlWorkspaceShare! @join__field(graph: FLUVIO_DATABASE)
+  unshareWorkspace(workspaceId: String!, userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  createCompany(input: CreateCompanyInput!): GqlCompany! @join__field(graph: FLUVIO_DATABASE)
+  updateUserCompanyEmail(userId: String!, email: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  updateUserCompany(userId: String!, companyId: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  createCompanyInvite(input: CreateCompanyInviteInput!): GqlCompanyInvite! @join__field(graph: FLUVIO_DATABASE)
+  acceptCompanyInvite(inviteId: String!): GqlCompanyInvite! @join__field(graph: FLUVIO_DATABASE)
+  createTeam(input: CreateTeamInput!): GqlTeam! @join__field(graph: FLUVIO_DATABASE)
+  addTeamMember(input: AddTeamMemberInput!): GqlTeamMember! @join__field(graph: FLUVIO_DATABASE)
+  createTeamWorkflow(input: CreateTeamWorkflowInput!): GqlTeamWorkflow! @join__field(graph: FLUVIO_DATABASE)
+  toggleWorkflowEnabled(id: String!, isEnabled: Boolean!): GqlTeamWorkflow! @join__field(graph: FLUVIO_DATABASE)
+  addPlannerChatMessage(workspaceId: String!, sender: String!, content: String!): GqlPlannerChatMessage! @join__field(graph: FLUVIO_DATABASE)
+  clearPlannerChatHistory(workspaceId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  resolveActionAuthorization(id: String!, status: String!, notes: String): GqlActionAuthorization! @join__field(graph: FLUVIO_DATABASE)
+  logExecution(companyId: String!, agentName: String!, message: String!, logLevel: String!): GqlExecutionLog! @join__field(graph: FLUVIO_DATABASE)
+  registerEmployee(firebaseUid: String!, email: String!, displayName: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  attachUserPolicy(userId: String!, policy: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  detachUserPolicy(userId: String!, policy: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  attachUserTwinRole(userId: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  detachUserTwinRole(userId: String!, role: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  draftTwinRole(userId: String!): String! @join__field(graph: FLUVIO_DATABASE)
+  saveUserTwinManifest(userId: String!, manifest: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  completePasswordReset: Boolean! @join__field(graph: FLUVIO_DATABASE)
+  updateUserRole(userId: String!, newRole: String!): GqlUser! @join__field(graph: FLUVIO_DATABASE)
+  removeUserFromCompany(userId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  deleteCompany(companyId: String!): Boolean! @join__field(graph: FLUVIO_DATABASE)
+  deleteUser: Boolean! @join__field(graph: FLUVIO_DATABASE)
+  upsertNode(input: GqlNodeInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Register or update a CSP capability as a `Capability` graph node.
+  The spec is embedded server-side (BGE-small, 384-dim) so the capability
+  becomes semantically searchable for reuse-first. Keyed by name, so a
+  re-synthesis of the same capability updates the same node.
+  """
+  upsertCapability(input: GqlCapabilityInput!): GqlNode! @join__field(graph: FLUVIO_GRAPH)
+  deleteNode(id: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
+  upsertEdge(input: GqlEdgeInput!): GqlEdge! @join__field(graph: FLUVIO_GRAPH)
+  saveGraph(zone: Int): GqlSaveResult! @join__field(graph: FLUVIO_GRAPH)
+  deleteUserGraph: Boolean! @join__field(graph: FLUVIO_GRAPH)
+  deleteWorkspaceNodes(workspaceId: String!): Boolean! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Upload and ingest a file (PDF, TXT, MD).
+  Returns immediately with a job_id — processing runs in background.
+  """
+  ingestFile(file: Upload!, filename: String!, zone: Int, workspaceId: String): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+
+  """
+  Ingest raw text directly — no file upload needed.
+  Runs synchronously since text is small.
+  """
+  ingestRaw(text: String!, sourceUri: String!, domain: String, zone: Int, workspaceId: String): GqlIngestResult! @join__field(graph: FLUVIO_INGESTION)
+
+  """Executes a tool with the provided input parameters."""
+  executeTool(toolId: String!, inputs: String!): GqlToolRun! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Create and start a new containerized sandbox."""
+  createSandbox(sandboxId: String!, components: [String!] = null, provider: String = "docker"): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Stop all active containers for a sandbox."""
+  stopSandbox(sandboxId: String!): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Clean up and remove all containers and networks for a sandbox."""
+  cleanSandbox(sandboxId: String!): Boolean! @join__field(graph: FLUVIO_TOOL_BUILDER)
+}
+
+type Query
+  @join__type(graph: FLUVIO_DATABASE)
+  @join__type(graph: FLUVIO_GRAPH)
+  @join__type(graph: FLUVIO_INGESTION)
+  @join__type(graph: FLUVIO_TOOL_BUILDER)
+  @join__type(graph: FLUVIO_TWIN)
+{
+  getUser(id: String!): GqlUser @join__field(graph: FLUVIO_DATABASE)
+  getUserByFirebaseUid(firebaseUid: String!): GqlUser @join__field(graph: FLUVIO_DATABASE)
+  getGroup(id: String!): GqlGroup @join__field(graph: FLUVIO_DATABASE)
+  getUserGroups(userId: String!): [GqlGroup!]! @join__field(graph: FLUVIO_DATABASE)
+  getMember(groupId: String!, userId: String!): GqlMember @join__field(graph: FLUVIO_DATABASE)
+  getGroupMembers(groupId: String!): [GqlMember!]! @join__field(graph: FLUVIO_DATABASE)
+  getInviteByToken(token: String!): GqlInvite @join__field(graph: FLUVIO_DATABASE)
+  getGroupInvites(groupId: String!): [GqlInvite!]! @join__field(graph: FLUVIO_DATABASE)
+  getPendingQueue(groupId: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
+  getUserContributions(groupId: String!, contributedBy: String!): [GqlQueueItem!]! @join__field(graph: FLUVIO_DATABASE)
+  getUserConnectors(groupId: String): [GqlConnector!]! @join__field(graph: FLUVIO_DATABASE)
+  getConnectorResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  getSelectedResources(connectorId: String!): [GqlConnectorResource!]! @join__field(graph: FLUVIO_DATABASE)
+  getConnector(connectorId: String!): GqlConnector @join__field(graph: FLUVIO_DATABASE)
+  getUserLlmProviders(groupId: String): [GqlLlmProvider!]! @join__field(graph: FLUVIO_DATABASE)
+  myWorkspaces(userId: String!): [GqlWorkspace!]! @join__field(graph: FLUVIO_DATABASE)
+  workspaceShares(workspaceId: String!): [GqlWorkspaceShare!]! @join__field(graph: FLUVIO_DATABASE)
+  plannerApprovals(workspaceId: String!): [GqlPlannerApproval!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompany(id: String!): GqlCompany @join__field(graph: FLUVIO_DATABASE)
+  getPendingCompanyInvites(email: String!): [GqlCompanyInvite!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompanyTeams(companyId: String!): [GqlTeam!]! @join__field(graph: FLUVIO_DATABASE)
+  getCompanyUsers(companyId: String!): [GqlUser!]! @join__field(graph: FLUVIO_DATABASE)
+  getTeam(id: String!): GqlTeam @join__field(graph: FLUVIO_DATABASE)
+  getTeamMembers(teamId: String!): [GqlTeamMember!]! @join__field(graph: FLUVIO_DATABASE)
+  getTeamWorkflows(teamId: String!): [GqlTeamWorkflow!]! @join__field(graph: FLUVIO_DATABASE)
+  plannerChatHistory(workspaceId: String!): [GqlPlannerChatMessage!]! @join__field(graph: FLUVIO_DATABASE)
+  companyExecutionLogs(companyId: String!, limit: Int): [GqlExecutionLog!]! @join__field(graph: FLUVIO_DATABASE)
+  companyActionAuthorizations(companyId: String!, status: String): [GqlActionAuthorization!]! @join__field(graph: FLUVIO_DATABASE)
+  companyDocumentReconciliations(companyId: String!): [GqlDocumentReconciliation!]! @join__field(graph: FLUVIO_DATABASE)
+  companyPipelineRuns(companyId: String!): [GqlPipelineRun!]! @join__field(graph: FLUVIO_DATABASE)
+  downloadCompanyData(companyId: String!): String! @join__field(graph: FLUVIO_DATABASE)
+
+  """Fetch a single node by ID."""
+  node(id: String!): GqlNode @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Fetch all nodes for the authenticated user, optionally filtered by domain.
+  """
+  nodes(domain: String, zone: Int, workspaceId: String): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Semantic similarity search — returns top-K nodes closest to the query.
+  Goes directly to SurrealDB — no in-memory subgraph needed.
+  """
+  search(query: String!, config: GqlQueryConfig, workspaceId: String): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Semantic search over the caller's CSP `Capability` nodes. Powers
+  reuse-first: before synthesizing a new capability, the planner checks
+  here for an existing general verb that already covers the goal.
+  """
+  searchCapabilities(goal: String!, topK: Int): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Cross-user semantic search — "who in my network knows about X?"
+  Zone 1 required — searches across connected users' nodes.
+  """
+  networkSearch(query: String!, userIds: [String!]!, topK: Int): [GqlScoredNode!]! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  BFS expansion — returns all nodes within `depth` hops of the given node.
+  Served directly from SurrealDB for depth <= 3.
+  """
+  neighbors(id: String!, depth: Int): [GqlNode!]! @join__field(graph: FLUVIO_GRAPH)
+
+  """
+  Dual-weight Dijkstra shortest path between two nodes.
+  Builds a request-scoped QueryContext — dropped after this resolver returns.
+  """
+  shortestPath(from: String!, to: String!): GqlPath! @join__field(graph: FLUVIO_GRAPH)
+
+  """Get the status of an ingestion job by ID."""
+  ingestJob(jobId: String!): GqlIngestJob @join__field(graph: FLUVIO_INGESTION)
+
+  """List all available tools."""
+  availableTools: [GqlTool!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Retrieve the execution history, optionally filtered by tool ID."""
+  toolExecutionHistory(toolId: String = null): [GqlToolRun!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """List all active sandboxes."""
+  listSandboxes: [GqlSandboxStatus!]! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """Retrieve the status of a specific sandbox."""
+  getSandboxStatus(sandboxId: String!): GqlSandboxStatus! @join__field(graph: FLUVIO_TOOL_BUILDER)
+
+  """
+  Ask a question over the user's knowledge graph.
+  
+  Pipeline:
+  1. Semantic search in fluvio-graph (top-K nodes)
+  2. BFS expansion for each seed (graph context)
+  3. Assemble knowledge context
+  4. Call Claude with context + question
+  5. Return grounded answer + sources
+  """
+  chat(question: String!, history: [GqlChatMessage!], topK: Int, zone: Int, workspaceId: String): GqlChatResponse! @join__field(graph: FLUVIO_TWIN)
+
+  """List all documents (graph nodes) in the user's knowledge graph."""
+  documents(zone: Int, workspaceId: String): [GqlDocument!]! @join__field(graph: FLUVIO_TWIN)
+}
+
+input ReviewPlannerApprovalInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  status: String!
+  reviewNote: String
+}
+
+input SelectResourcesInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  connectorId: String!
+
+  """List of external_ids to select — all others deselected"""
+  externalIds: [String!]!
+}
+
+input SubmitToQueueInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  groupId: String!
+  contributedBy: String!
+  kind: String!
+  surrealNodeId: String!
+}
+
+input UpdateQueueStatusInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  status: String!
+  reviewedBy: String!
+  reviewNote: String
+}
+
+input UpdateWorkspaceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  id: String!
+  name: String
+  isPublic: Boolean
+  teamId: String
+}
+
+"""A multipart file upload"""
+scalar Upload
+  @join__type(graph: FLUVIO_INGESTION)
+
+input UpsertResourceInput
+  @join__type(graph: FLUVIO_DATABASE)
+{
+  connectorId: String!
+  resourceKind: String!
+  externalId: String!
+  name: String!
+  description: String
+  meta: String
+}

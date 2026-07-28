@@ -18,7 +18,6 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
@@ -29,6 +28,7 @@ from fluvio_planner.fetch import fetch_chat_history
 from fluvio_planner.fetch.connectors import fetch_connectors_with_resources
 from fluvio_planner.fetch.tools import fetch_available_tools
 from fluvio_planner.gateway_client.client import FederationClient
+from fluvio_planner.llm import chat as llm_chat, resolve_provider
 from fluvio_planner.memory.rag import fetch_similar_deployments, format_rag_examples
 from fluvio_planner.plan.orchestrator import generate_plan_context
 from app.schemas import PlanContextRequest, PlanContextResponse
@@ -71,9 +71,11 @@ async def compile_plan(
     if not x_user_id:
         raise HTTPException(status_code=401, detail="x-user-id header is required")
 
-    api_key = settings.anthropic_api_key
-    if not api_key:
-        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured")
+    provider_config = await resolve_provider(
+        settings.database_service_url, x_user_id, internal_secret=settings.internal_secret,
+    )
+    if not provider_config:
+        raise HTTPException(status_code=503, detail="no LLM provider configured")
 
     client = FederationClient(settings.graphql_gateway_url, headers={"x-user-id": x_user_id})
     await verify_workspace_access(client, body.workspace_id)
@@ -207,29 +209,9 @@ async def compile_plan(
 
     for attempt in range(1, 4):  # max 3 attempts
         try:
-            async with httpx.AsyncClient() as http:
-                resp = await http.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
-                    },
-                    json={
-                        "model": "claude-sonnet-4-20250514",
-                        "max_tokens": 4096,
-                        "system": system_prompt,
-                        "messages": messages,
-                    },
-                    timeout=90.0,
-                )
-                if resp.status_code != 200:
-                    raise HTTPException(status_code=502, detail=f"Anthropic API error: {resp.text}")
-                raw_text = resp.json()["content"][0]["text"]
-        except HTTPException:
-            raise
+            raw_text = await llm_chat(provider_config, system_prompt, messages)
         except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Error calling Anthropic API: {exc}")
+            raise HTTPException(status_code=500, detail=f"Error calling LLM provider: {exc}")
 
         # Parse JSON
         try:

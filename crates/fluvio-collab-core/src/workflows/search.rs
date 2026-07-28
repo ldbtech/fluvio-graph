@@ -1,9 +1,9 @@
 //! Search and chat workflows for group knowledge graph.
 
 use uuid::Uuid;
-use reqwest::Client;
-use serde_json::json;
-use anyhow::Context;
+
+use fluvio_llm::resolver::CredentialResolver;
+use fluvio_llm::types::Message;
 
 use crate::clients::{DatabaseClient, GraphClient};
 use crate::clients::graph_client::GraphNode;
@@ -64,7 +64,7 @@ pub async fn group_chat(
     caller_id:    Uuid,
     question:     &str,
     history:      Vec<(String, String)>,  // (role, content)
-    anthropic_key: &str,
+    llm_resolver: &CredentialResolver,
     db:           &DatabaseClient,
     graph:        &GraphClient,
 ) -> anyhow::Result<ChatResponse> {
@@ -125,11 +125,11 @@ pub async fn group_chat(
     let context = context_parts.join("\n");
 
     // Build messages
-    let mut messages: Vec<serde_json::Value> = history.iter()
+    let mut messages: Vec<Message> = history.iter()
         .filter(|(_, c)| !c.trim().is_empty())
-        .map(|(role, content)| json!({ "role": role, "content": content }))
+        .map(|(role, content)| Message { role: role.clone(), content: content.clone() })
         .collect();
-    messages.push(json!({ "role": "user", "content": question }));
+    messages.push(Message { role: "user".to_string(), content: question.to_string() });
 
     // Later instead of source isnt there , we will use a way to figure out which digital twin that is responsible of specific things.
     let system = format!(
@@ -141,30 +141,10 @@ pub async fn group_chat(
          KNOWLEDGE CONTEXT:\n{context}"
     );
 
-    // Call Claude
-    let client = Client::new();
-    let resp: serde_json::Value = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key",         anthropic_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type",      "application/json")
-        .json(&json!({
-            "model":      "claude-sonnet-4-20250514",
-            "max_tokens": 2048,
-            "system":     system,
-            "messages":   messages,
-        }))
-        .send()
-        .await
-        .context("failed to reach Anthropic API")?
-        .json()
-        .await
-        .context("failed to parse Anthropic response")?;
-
-    let answer = resp["content"][0]["text"]
-        .as_str()
-        .unwrap_or("No response generated.")
-        .to_string();
+    // Resolve the caller's LLM provider (BYOK connection, or this
+    // deployment's env-configured fallback) and call it.
+    let provider_cfg = llm_resolver.resolve(caller_id, None, None).await?;
+    let answer = fluvio_llm::chat::chat(&provider_cfg, &system, &messages).await?;
 
     Ok(ChatResponse { answer, sources })
 }

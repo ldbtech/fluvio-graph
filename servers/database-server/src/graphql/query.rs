@@ -9,6 +9,9 @@ use crate::graphql::types::*;
 use crate::graphql::connectors_type;
 use crate::graphql::connectors_query;
 
+use crate::graphql::llm_providers_type;
+use crate::graphql::llm_providers_query;
+
 pub struct QueryRoot;
 
 #[Object(name = "Query")]
@@ -158,6 +161,12 @@ impl QueryRoot {
         &self, ctx: &Context<'_>, connector_id: String,
     ) -> Result<Option<connectors_type::GqlConnector>> {
         connectors_query::get_connector(ctx, connector_id).await
+    }
+
+    async fn get_user_llm_providers(
+        &self, ctx: &Context<'_>, group_id: Option<String>,
+    ) -> Result<Vec<llm_providers_type::GqlLlmProvider>> {
+        llm_providers_query::get_user_llm_providers(ctx, group_id).await
     }
 
     async fn my_workspaces(
