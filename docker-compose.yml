@@ -19,7 +19,18 @@ x-common-env: &common-env
   # URL fails at connect time with "HTTP remote engine ... not enabled".
   SURREAL_URL: ws://surrealdb:8000
   DATABASE_URL: postgresql://fluviome:fluviome@postgres:5432/fluviome
-  GATEWAY_URL: http://gateway:4001/graphql
+  # No /graphql suffix — Apollo Router serves the GraphQL endpoint at root
+  # (router.yaml sets no `supergraph.path`, which defaults to /). This had a
+  # spurious /graphql suffix, so agent-planner's every gateway call 404'd —
+  # matches agent-planner's own correct default of http://127.0.0.1:4001.
+  GATEWAY_URL: http://gateway:4001
+  # Never set anywhere before — twin-server, collab-server, and
+  # ingestion-server all default to localhost:3001/3004 when these are
+  # unset, which inside their own containers means "myself", not
+  # fluvio-graph/fluvio-ingestion. Broke twin chat's RAG search entirely
+  # under docker-compose (collab-server and ingestion-server too).
+  GRAPH_GRAPHQL_URL: http://fluvio-graph:3001/graphql
+  INGESTION_GRAPHQL_URL: http://fluvio-ingestion:3004/graphql
   FLUVIOME_ENTERPRISE_TOKEN: ${FLUVIOME_ENTERPRISE_TOKEN:-}
   # Deployment-level fallback LLM provider — used by fluvio-database's
   # internal credential resolver when a user hasn't connected their own
@@ -149,6 +160,8 @@ services:
         condition: service_healthy
       fluvio-database:
         condition: service_healthy
+      fluvio-graph:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3002/health"]
       interval: 5s
@@ -194,6 +207,8 @@ services:
         condition: service_healthy
       fluvio-database:
         condition: service_healthy
+      fluvio-graph:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3004/health"]
       interval: 5s
@@ -226,6 +241,10 @@ services:
       surrealdb:
         condition: service_healthy
       fluvio-database:
+        condition: service_healthy
+      fluvio-graph:
+        condition: service_healthy
+      fluvio-ingestion:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3003/health"]

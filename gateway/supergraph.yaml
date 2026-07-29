@@ -16,6 +16,14 @@ subgraphs:
     schema:
       subgraph_url: http://127.0.0.1:3002/graphql
 
+  # fluvio-collab is deliberately NOT federated here. It defines its own
+  # GqlCompany/GqlGroup/GqlTeam types and createGroup/createCompany/
+  # createTeam/acceptInvite mutations that overlap with fluvio-database's —
+  # with incompatible field sets/arguments/return types (verified: `rover
+  # supergraph compose` reports ~68 INVALID_FIELD_SHARING/FIELD_TYPE_MISMATCH
+  # errors if added as-is). Reconciling the two schemas is a real refactor,
+  # not a compose-config fix. fluvio-collab's API is reachable directly on
+  # :3003 in the meantime.
   fluvio-database:
     routing_url: http://127.0.0.1:3005/graphql
     schema:
