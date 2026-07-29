@@ -664,12 +664,27 @@ FLUVIO_AGENT_PLANNER_PORT=3007
 FLUVIO_TOOL_BUILDER_PORT=3008
 
 # ── LLM Providers (BYOK) ────────────────────────────────────────────────────
-# Deployment-level fallback only — used when a user hasn't connected their own
-# provider via the connectLlmProvider mutation. None are required to boot.
+# Set ONE of these and you're done — this is the deployment-wide default,
+# used whenever a user hasn't connected their own provider via the
+# connectLlmProvider GraphQL mutation. None are required to boot; the engine
+# just returns "no LLM provider configured" for AI features until one is set.
+# DEFAULT_MODEL is optional for all four — omit it to use the built-in
+# default (claude-sonnet-4-20250514 / gpt-4o / gemini-2.0-flash / llama3.1).
 ANTHROPIC_API_KEY=                 # sk-ant-...
+ANTHROPIC_DEFAULT_MODEL=
+
 OPENAI_API_KEY=                    # sk-...
+OPENAI_DEFAULT_MODEL=
+
 GEMINI_API_KEY=
-OLLAMA_BASE_URL=                   # e.g. http://ollama:11434 — no key needed
+GEMINI_DEFAULT_MODEL=
+
+# Local/self-hosted, no API key or spend — e.g. `ollama serve` running on
+# your machine. Under docker-compose, reach the host via
+# host.docker.internal (already wired up via extra_hosts on the services
+# that make LLM calls); running scripts/dev.sh locally, localhost works.
+OLLAMA_BASE_URL=                   # e.g. http://host.docker.internal:11434
+OLLAMA_DEFAULT_MODEL=              # must match a model you've pulled, e.g. llama3:latest
 
 # AES-256-GCM key (32 raw bytes, base64) encrypting per-user BYOK credentials
 # at rest. Optional — fluvio-database boots without it, but BYOK
@@ -690,9 +705,32 @@ FLUVIOME_PUBLIC_KEY=               # RS256 public key for offline token verifica
 
 ### LLM Providers (BYOK)
 
-Each user connects their own provider — Claude, OpenAI, Gemini, or a local/
-self-hosted model via Ollama — through GraphQL rather than the deployment
-sharing one operator-wide key:
+**For local dev / getting a deployment running: just set one thing in `.env`.**
+No code, no GraphQL call, nothing to run. Pick one provider block from the
+`.env.example` snippet above, fill it in, restart the affected services
+(`docker compose up -d`, or re-run `scripts/dev.sh`), and every AI feature
+(twin chat, collab chat, agent-planner) uses it automatically as the
+deployment-wide default. This is the only step a new developer needs.
+
+The cheapest way to try it with zero API spend is a local Ollama model:
+
+```bash
+# 1. Install Ollama and pull a model: https://ollama.com
+ollama pull llama3
+
+# 2. In .env:
+OLLAMA_BASE_URL=http://host.docker.internal:11434   # localhost:11434 for scripts/dev.sh
+OLLAMA_DEFAULT_MODEL=llama3:latest                  # must match `ollama list` exactly
+
+# 3. Restart whatever's running, then try it (any endpoint that hits an LLM,
+#    e.g. agent-planner's /chat, or the draftTwinRole GraphQL mutation).
+```
+
+**Per-user BYOK is a separate, optional layer on top**, for when individual
+users (not just the deployment operator) should bring their own key — e.g. a
+multi-tenant deployment where each person pays for their own usage. That's a
+GraphQL API, not an env var, because it's per-request/per-user state, not
+static config:
 
 ```graphql
 mutation {
@@ -715,8 +753,8 @@ The response never contains the raw key — only `hasApiKey: Boolean`. Keys are
 encrypted at rest (AES-256-GCM, `FLUVIOME_CREDENTIAL_KEY`) in a `llm_providers`
 table scoped per-user (optionally per-group, mirroring `connectors`). If a
 user hasn't connected anything, `fluvio-twin`/`fluvio-collab`/`agent-planner`
-fall back to this deployment's env-configured key — so a single-key setup
-(just `ANTHROPIC_API_KEY`, nothing else) keeps working exactly as before.
+fall back to the `.env` default above — so the simple single-provider setup
+always keeps working, with per-user BYOK layered on only if/when you need it.
 
 ---
 
