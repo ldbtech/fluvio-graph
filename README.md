@@ -544,9 +544,11 @@ Built-in tools: `spark` (SQL), `dbt`, `dashboard-syncer` (Tableau / PowerBI), `e
 | `/sandbox/provision` | POST | Provision Docker sandbox |
 | `/sandbox/resolve` | POST | Resolve sandbox port mappings |
 | `/circuit-breakers` | GET | Per-tool circuit breaker states |
+| `/capabilities/search` | POST | Reuse-first lookup — semantic search for an existing synthesized capability covering a goal |
+| `/capabilities/synthesize` | POST | CSP synthesizes, sandbox-tests, and persists a new capability if no reusable match exists |
 | `/health` | GET | Health check |
 
-Uses whichever LLM provider the calling user has connected (see [LLM Providers (BYOK)](#llm-providers-byok)) for plan generation, reflection, and step compilation — falling back to a deployment-level key (`ANTHROPIC_API_KEY` etc.) if the user hasn't connected one. `fluvio-twin` and `fluvio-collab` resolve providers the same way; `fluvio-database` owns the encrypted credential store.
+Uses whichever LLM provider the calling user has connected (see [LLM Providers (BYOK)](#llm-providers-byok)) for plan generation, reflection, step compilation, and CSP capability synthesis — falling back to a deployment-level key (`ANTHROPIC_API_KEY` etc.) if the user hasn't connected one. `fluvio-twin` and `fluvio-collab` resolve providers the same way; `fluvio-database` owns the encrypted credential store.
 
 Pipeline features: circuit breaker (Phase 7), idempotent step execution (Phase 9), audit trail + rollback (Phase 11), plan reflection (Phase 18), RAG deployment memory (Phase 19), intent disambiguation (Phase 20), tool capability graph (Phase 22), SQL EXPLAIN validation (Phase 23).
 
