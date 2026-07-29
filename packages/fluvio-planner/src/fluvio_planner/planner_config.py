@@ -24,7 +24,6 @@ class PlannerConfig:
     instance is safe to share across concurrent tasks.
     """
 
-    anthropic_api_key: str | None
     graphql_gateway_url: str
     mcp_server_url: str
     # fluvio-database's bare base URL (not /graphql-suffixed) for resolving a

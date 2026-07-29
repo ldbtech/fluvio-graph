@@ -21,6 +21,7 @@ from app.config import settings
 from fluvio_planner.gateway_client.client import FederationClient
 from fluvio_planner.capabilities.resolver import find_reusable_capability, DEFAULT_REUSE_THRESHOLD
 from fluvio_planner.capabilities.orchestrator import build_capability_orchestrator
+from fluvio_planner.llm import resolve_provider
 
 logger = logging.getLogger("agent-planner")
 router = APIRouter()
@@ -79,13 +80,17 @@ async def synthesize_capability(
 
     # 2. No match → run CSP. It synthesizes the verb, sandboxes it, persists it
     #    locally and (via GraphPlannerStore) mirrors it into the knowledge graph.
+    provider_config = await resolve_provider(
+        settings.database_service_url, x_user_id, internal_secret=settings.internal_secret,
+    )
     app = build_capability_orchestrator(
-        client, settings.as_planner_config(), synthesis_guidance=body.synthesis_guidance,
+        client, settings.as_planner_config(), provider_config,
+        synthesis_guidance=body.synthesis_guidance,
     )
     if app is None:
         raise HTTPException(
             status_code=503,
-            detail="Capability synthesis unavailable (csp not installed or ANTHROPIC_API_KEY unset)",
+            detail="Capability synthesis unavailable (csp not installed or no LLM provider configured)",
         )
 
     try:

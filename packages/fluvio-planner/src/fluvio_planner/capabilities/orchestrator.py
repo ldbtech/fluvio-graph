@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 
 from fluvio_planner.capabilities.graph_store import GraphPlannerStore
+from fluvio_planner.llm.types import ProviderConfig
 from fluvio_planner.planner_config import PlannerConfig
 
 logger = logging.getLogger("agent-planner")
@@ -41,6 +42,7 @@ Conventions for the Python you generate:
 def build_capability_orchestrator(
     client,
     cfg: PlannerConfig,
+    provider_config: ProviderConfig | None,
     *,
     planner_dir: str = "planner_caps",
     synthesis_guidance: str | None = None,
@@ -50,25 +52,31 @@ def build_capability_orchestrator(
     `client` is a FederationClient already carrying the owner's x-user-id, used
     to mirror/search capabilities in fluvio-graph. `cfg` is injected by the
     caller (the composition root) so this module reads no config singleton.
+    `provider_config` is the caller's resolved LLM connection (BYOK or the
+    deployment fallback) — same object `resolve_provider()` returns for
+    chat/compile — so CSP synthesis uses whichever provider the caller has
+    configured (anthropic/openai/gemini/ollama), not just Anthropic.
 
     `synthesis_guidance` lets a caller override the domain guidance (the system
     prompt that tells CSP what kind of capability to write) per request; when it
     is None the built-in data-engine guidance is used.
 
-    Returns the Orchestrator, or None if CSP / an API key isn't available — the
+    Returns the Orchestrator, or None if CSP / a provider isn't available — the
     planner then simply runs without runtime synthesis.
     """
-    if not cfg.anthropic_api_key:
-        logger.info("CSP disabled — no ANTHROPIC_API_KEY")
+    if not provider_config:
+        logger.info("CSP disabled — no LLM provider configured")
         return None
 
     try:
-        from csp import Orchestrator, AnthropicLLM
+        from csp import Orchestrator
     except Exception as exc:
         logger.info("CSP not installed (%s) — capability synthesis disabled", exc)
         return None
 
-    llm = AnthropicLLM(api_key=cfg.anthropic_api_key)
+    from fluvio_planner.llm.csp_adapter import FluvioLLM
+
+    llm = FluvioLLM(provider_config)
 
     # planner_dir=None so the Orchestrator skips its own local-only store and
     # seeding; we attach the graph-backed store and replicate the seed/hook.
