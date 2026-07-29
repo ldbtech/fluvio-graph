@@ -11,18 +11,24 @@ use tokio::sync::mpsc;
 
 use crate::types::{Provider, ProviderConfig, Message};
 
+/// Always ends in `/v1` — user-supplied `base_url`s (e.g. a bare
+/// `http://host:11434`, as Ollama's own docs show it) commonly omit it, and
+/// appending `/chat/completions` directly to those 404s instead of erroring
+/// clearly (Ollama returns a plain-text 404 body, which then fails to parse
+/// as JSON one layer up — a confusing error for what's really a URL bug).
 fn base_url(cfg: &ProviderConfig) -> String {
-    if let Some(url) = &cfg.base_url {
-        return url.trim_end_matches('/').to_string();
-    }
-    match cfg.provider {
-        Provider::OpenAi => "https://api.openai.com/v1".to_string(),
-        // Ollama requires an explicit base_url (enforced by the DB constraint
-        // and the connect mutation) — this default only covers the common
-        // "running alongside this engine" case.
-        Provider::Ollama => "http://localhost:11434/v1".to_string(),
-        _ => unreachable!("openai_compat only dispatches OpenAi/Ollama"),
-    }
+    let raw = match &cfg.base_url {
+        Some(url) => url.trim_end_matches('/').to_string(),
+        None => match cfg.provider {
+            Provider::OpenAi => "https://api.openai.com".to_string(),
+            // Ollama requires an explicit base_url (enforced by the DB
+            // constraint and the connect mutation) — this default only
+            // covers the common "running alongside this engine" case.
+            Provider::Ollama => "http://localhost:11434".to_string(),
+            _ => unreachable!("openai_compat only dispatches OpenAi/Ollama"),
+        },
+    };
+    if raw.ends_with("/v1") { raw } else { format!("{raw}/v1") }
 }
 
 fn build_messages(system: &str, messages: &[Message]) -> Vec<Value> {

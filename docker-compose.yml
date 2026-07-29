@@ -27,9 +27,16 @@ x-common-env: &common-env
   # twin-server/collab-server/agent-planner resolve per-request via it, so
   # they no longer need — or hard-fail without — a key at boot.
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_DEFAULT_MODEL: ${ANTHROPIC_DEFAULT_MODEL:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_DEFAULT_MODEL: ${OPENAI_DEFAULT_MODEL:-}
   GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_DEFAULT_MODEL: ${GEMINI_DEFAULT_MODEL:-}
+  # e.g. http://host.docker.internal:11434 to reach `ollama serve` running on
+  # the host machine (needs extra_hosts: host.docker.internal:host-gateway,
+  # already set on the services that make LLM calls).
   OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+  OLLAMA_DEFAULT_MODEL: ${OLLAMA_DEFAULT_MODEL:-}
   # AES-256-GCM key (32 raw bytes, base64) for encrypting per-user BYOK LLM
   # credentials at rest. Optional — fluvio-database still boots without it;
   # BYOK connect/resolve operations error until it's set. Generate with:
@@ -130,6 +137,11 @@ services:
     environment:
       <<: *common-env
       PORT: 3002
+    # Lets an Ollama connection's baseUrl use host.docker.internal to reach a
+    # model server running on the host (e.g. `ollama serve`), instead of a
+    # network-specific gateway IP that can change if the network is recreated.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3002:3002"
     depends_on:
@@ -153,6 +165,8 @@ services:
       <<: *common-env
       PORT: 3005
       COMPANY_DATABASE_URL: postgresql://fluviome:fluviome@postgres:5432/fluvio_company
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3005:3005"
     depends_on:
@@ -204,6 +218,8 @@ services:
       DATABASE_SERVICE_URL: http://fluvio-database:3005/graphql
       # Collaboration features require an enterprise token.
       # Without FLUVIOME_ENTERPRISE_TOKEN this service starts but gates features.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3003:3003"
     depends_on:
@@ -263,6 +279,8 @@ services:
     environment:
       <<: *common-env
       PORT: 3007
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3007:3007"
     depends_on:

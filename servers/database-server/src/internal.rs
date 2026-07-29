@@ -73,22 +73,31 @@ pub async fn resolve_credential_inner(
 
 /// Deployment-level fallback, sourced from env vars read fresh on each call
 /// (cheap, called only when a user has no BYOK connection). Keeps today's
-/// single-key deployments working unchanged.
+/// single-key deployments working unchanged. This — env vars in
+/// docker-compose.yml/.env — is the intended way to configure a provider for
+/// a deployment; the GraphQL connectLlmProvider mutation is for individual
+/// users bringing their own key, not deployment setup.
 fn fallback_provider_config(requested: Option<Provider>) -> Option<ProviderConfig> {
+    // Env var name for an optional default-model override, e.g.
+    // OLLAMA_DEFAULT_MODEL — falls back to the provider's compiled-in
+    // default (types.rs) if unset.
+    let model_override = |env_prefix: &str| std::env::var(format!("{env_prefix}_DEFAULT_MODEL")).ok()
+        .filter(|m| !m.trim().is_empty());
+
     let try_provider = |p: Provider| -> Option<ProviderConfig> {
         match p {
             Provider::Anthropic => std::env::var("ANTHROPIC_API_KEY").ok()
                 .filter(|k| !k.trim().is_empty())
-                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: None }),
+                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: model_override("ANTHROPIC") }),
             Provider::OpenAi => std::env::var("OPENAI_API_KEY").ok()
                 .filter(|k| !k.trim().is_empty())
-                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: None }),
+                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: model_override("OPENAI") }),
             Provider::Gemini => std::env::var("GEMINI_API_KEY").ok()
                 .filter(|k| !k.trim().is_empty())
-                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: None }),
+                .map(|k| ProviderConfig { provider: p, api_key: Some(k), base_url: None, model: model_override("GEMINI") }),
             Provider::Ollama => std::env::var("OLLAMA_BASE_URL").ok()
                 .filter(|u| !u.trim().is_empty())
-                .map(|u| ProviderConfig { provider: p, api_key: None, base_url: Some(u), model: None }),
+                .map(|u| ProviderConfig { provider: p, api_key: None, base_url: Some(u), model: model_override("OLLAMA") }),
         }
     };
 

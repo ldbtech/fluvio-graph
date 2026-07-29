@@ -69,14 +69,23 @@ async def _chat_gemini(cfg: ProviderConfig, system: str, messages: list[dict]) -
         return body["candidates"][0]["content"]["parts"][0]["text"]
 
 
-async def _chat_openai_compat(cfg: ProviderConfig, system: str, messages: list[dict]) -> str:
+def _openai_compat_base_url(cfg: ProviderConfig) -> str:
+    """Always ends in /v1 — user-supplied base_urls (e.g. a bare
+    http://host:11434, as Ollama's own docs show it) commonly omit it, and
+    appending /chat/completions directly to those 404s instead of erroring
+    clearly."""
     if cfg.base_url:
-        base_url = cfg.base_url.rstrip("/")
+        raw = cfg.base_url.rstrip("/")
     elif cfg.provider == "openai":
-        base_url = "https://api.openai.com/v1"
+        raw = "https://api.openai.com"
     else:
         # Ollama and similar local endpoints commonly run alongside this engine.
-        base_url = "http://localhost:11434/v1"
+        raw = "http://localhost:11434"
+    return raw if raw.endswith("/v1") else f"{raw}/v1"
+
+
+async def _chat_openai_compat(cfg: ProviderConfig, system: str, messages: list[dict]) -> str:
+    base_url = _openai_compat_base_url(cfg)
 
     payload_messages = [{"role": "system", "content": system}]
     payload_messages.extend(m for m in messages if m.get("content", "").strip())
