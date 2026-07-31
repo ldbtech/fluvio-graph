@@ -262,6 +262,11 @@ services:
     environment:
       <<: *common-env
       PORT: 3006
+      # DatabaseClient POSTs GraphQL to this URL directly, so it needs the
+      # /graphql suffix (the bare common-env default is for the internal
+      # credential-resolution route). Without this it 404s on
+      # http://fluvio-database:3005 — same fix as fluvio-collab above.
+      DATABASE_SERVICE_URL: http://fluvio-database:3005/graphql
     ports:
       - "3006:3006"
     depends_on:
